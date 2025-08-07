@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+pip-log.txt
+pip-delete-this-directory.txt
+.venv
+.env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs (these will be mounted as volumes)
+logs/
+*.log
+
+# Local data that should be mounted as volumes
+snapshots/
+monitor_state.json
+monitor_config.json
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov/
+
+# Documentation
+README.md
+*.md
