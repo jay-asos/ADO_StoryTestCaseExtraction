@@ -1,5 +1,5 @@
 {
-  "poll_interval_seconds": 300,
+  "poll_interval_seconds": 30,
   "auto_sync": true,
   "auto_extract_new_epics": true,
   "story_extraction_type": "Task",

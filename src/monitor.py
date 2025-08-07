@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, ClassVar
 from dataclasses import dataclass, asdict
 from concurrent.futures import ThreadPoolExecutor
+import requests
 
 from src.agent import StoryExtractionAgent
 from src.models import EpicSyncResult
@@ -202,6 +203,102 @@ class EpicChangeMonitor:
         except Exception as e:
             self.logger.error(f"Failed to save snapshot for EPIC {epic_id}: {e}")
 
+    def _check_epic_exists(self, epic_id: str) -> bool:
+        """Check if an EPIC exists in Azure DevOps"""
+        try:
+            # Try to get the EPIC work item to verify it exists
+            work_item = self.agent.ado_client.get_work_item_by_id(epic_id)
+            if work_item:
+                self.logger.debug(f"EPIC {epic_id} exists in Azure DevOps")
+                return True
+            else:
+                self.logger.warning(f"EPIC {epic_id} not found in Azure DevOps")
+                return False
+        except requests.exceptions.HTTPError as e:
+            # Only treat 404 (Not Found) as EPIC doesn't exist
+            if e.response.status_code == 404:
+                self.logger.warning(f"EPIC {epic_id} not found in Azure DevOps (404)")
+                return False
+            else:
+                # Other HTTP errors (401, 403, 500, etc.) should not be treated as "doesn't exist"
+                self.logger.error(f"HTTP error checking EPIC {epic_id}: {e} - treating as exists")
+                return True
+        except Exception as e:
+            # Check for Azure DevOps specific "work item does not exist" errors
+            error_message = str(e).lower()
+            if ("does not exist" in error_message or
+                "tf401232" in error_message or
+                "work item not found" in error_message or
+                "you do not have permissions to read it" in error_message):
+                self.logger.warning(f"EPIC {epic_id} not found in Azure DevOps: {e}")
+                return False
+            else:
+                # Network issues, authentication problems, etc. should not be treated as "doesn't exist"
+                self.logger.error(f"Error checking if EPIC {epic_id} exists: {e} - treating as exists to avoid false removal")
+                return True
+
+    def _handle_epic_failure(self, epic_id: str, error: str):
+        """Handle EPIC failure and potentially remove it from monitoring after 3 retries"""
+        epic_state = self.monitored_epics.get(epic_id)
+        if not epic_state:
+            return
+
+        epic_state.consecutive_errors += 1
+        self.logger.warning(f"EPIC {epic_id} failed (attempt {epic_state.consecutive_errors}/3): {error}")
+
+        # Remove EPIC from monitoring after 3 consecutive failures
+        if epic_state.consecutive_errors >= 3:
+            self.logger.error(f"EPIC {epic_id} has failed {epic_state.consecutive_errors} times. Removing from monitoring.")
+
+            # Check if EPIC still exists in Azure DevOps
+            if not self._check_epic_exists(epic_id):
+                self.logger.info(f"EPIC {epic_id} no longer exists in Azure DevOps. Removing from monitoring.")
+            else:
+                self.logger.warning(f"EPIC {epic_id} still exists but has too many failures. Removing from monitoring.")
+
+            # Remove from monitoring
+            self._remove_epic_from_monitoring(epic_id)
+
+            # Send notification if webhook is configured
+            if self.config.notification_webhook:
+                self._send_notification(f"EPIC {epic_id} has been automatically removed from monitoring after 3 consecutive failures.")
+
+    def _remove_epic_from_monitoring(self, epic_id: str):
+        """Remove an EPIC from monitoring and clean up associated files"""
+        try:
+            # Remove from monitored epics
+            if epic_id in self.monitored_epics:
+                del self.monitored_epics[epic_id]
+                self.logger.info(f"Removed EPIC {epic_id} from monitored epics list")
+
+            # Remove from processed epics if present
+            if epic_id in self.processed_epics:
+                self.processed_epics.remove(epic_id)
+                self._save_processed_epics()
+                self.logger.info(f"Removed EPIC {epic_id} from processed epics list")
+
+            # Remove snapshot file if it exists
+            snapshot_file = self.snapshot_dir / f"epic_{epic_id}.json"
+            if snapshot_file.exists():
+                snapshot_file.unlink()
+                self.logger.info(f"Removed snapshot file for EPIC {epic_id}")
+
+            self.logger.info(f"Successfully removed EPIC {epic_id} from all monitoring systems")
+
+        except Exception as e:
+            self.logger.error(f"Error removing EPIC {epic_id} from monitoring: {e}")
+
+    def _send_notification(self, message: str):
+        """Send notification about EPIC removal (placeholder for webhook implementation)"""
+        try:
+            self.logger.info(f"Notification: {message}")
+            # TODO: Implement actual webhook notification if needed
+            # import requests
+            # if self.config.notification_webhook:
+            #     requests.post(self.config.notification_webhook, json={'message': message})
+        except Exception as e:
+            self.logger.error(f"Failed to send notification: {e}")
+
     def _check_epic_changes(self, epic_id: str) -> bool:
         """Check if epic already has stories extracted to prevent duplicates"""
         state = self.monitored_epics.get(epic_id)
@@ -312,30 +409,47 @@ class EpicChangeMonitor:
                         try:
                             epic_state = self.monitored_epics[epic_id]
 
-                            # Skip if too many consecutive errors
-                            if epic_state.consecutive_errors >= 5:
-                                self.logger.warning(f"Skipping EPIC {epic_id} due to consecutive errors")
+                            # Check if EPIC exists before processing
+                            if not self._check_epic_exists(epic_id):
+                                self.logger.info(f"EPIC {epic_id} no longer exists in Azure DevOps. Removing from monitoring.")
+                                self._remove_epic_from_monitoring(epic_id)
                                 continue
 
-                            # Check for changes
-                            if self._check_epic_changes(epic_id):
-                                if self.config.auto_sync:
-                                    # Schedule sync
-                                    if not asyncio.get_event_loop().is_closed():
-                                        future = asyncio.get_event_loop().run_in_executor(
-                                            self.executor, self._sync_epic, epic_id
-                                        )
-                                        sync_tasks.append((epic_id, future))
+                            # Reset consecutive errors on successful existence check
+                            if epic_state.consecutive_errors > 0:
+                                self.logger.info(f"EPIC {epic_id} is accessible again, resetting error count")
+                                epic_state.consecutive_errors = 0
+
+                            # Skip if too many consecutive errors (will be removed by _handle_epic_failure)
+                            if epic_state.consecutive_errors >= 3:
+                                continue
+
+                            # Check for actual content changes using enhanced detection
+                            if self._check_for_epic_changes(epic_id):
+                                # Only proceed with sync if stories should be extracted
+                                if self._should_extract_stories(epic_id):
+                                    if self.config.auto_sync:
+                                        # Schedule sync
+                                        if not asyncio.get_event_loop().is_closed():
+                                            future = asyncio.get_event_loop().run_in_executor(
+                                                self.executor, self._sync_epic, epic_id
+                                            )
+                                            sync_tasks.append((epic_id, future))
+                                        else:
+                                            self.logger.warning("Event loop is closed, skipping scheduling new tasks.")
                                     else:
-                                        self.logger.warning("Event loop is closed, skipping scheduling new tasks.")
+                                        self.logger.info(f"Changes detected in EPIC {epic_id}, but auto-sync is disabled")
                                 else:
-                                    self.logger.info(f"Changes detected in EPIC {epic_id}, but auto-sync is disabled")
+                                    self.logger.debug(f"EPIC {epic_id} has changes but stories should not be extracted")
+                            else:
+                                self.logger.debug(f"EPIC {epic_id} - No content changes detected")
 
                             # Update last check time
                             epic_state.last_check = datetime.now()
 
                         except Exception as e:
                             self.logger.error(f"Error processing EPIC {epic_id}: {e}")
+                            self._handle_epic_failure(epic_id, str(e))
                             import traceback
                             self.logger.error(traceback.format_exc())
 
@@ -417,6 +531,10 @@ class EpicChangeMonitor:
         
         self.is_running = True
         self.logger.info("Starting EPIC Change Monitor")
+
+        # Load all existing EPICs from Azure DevOps when monitoring starts
+        self._load_all_existing_epics()
+
         self.logger.info(f"Monitoring {len(self.monitored_epics)} EPICs")
         self.logger.info(f"Poll interval: {self.config.poll_interval_seconds} seconds")
         self.logger.info(f"Auto-sync enabled: {self.config.auto_sync}")
@@ -522,6 +640,112 @@ class EpicChangeMonitor:
         
         return results
 
+    def _load_all_existing_epics(self):
+        """Load all existing EPICs from Azure DevOps and add them to monitoring"""
+        try:
+            self.logger.info("Scanning for all existing EPICs in Azure DevOps...")
+            all_epic_ids = self.fetch_all_epic_ids()
+
+            if not all_epic_ids:
+                self.logger.warning("No EPICs found in Azure DevOps")
+                return
+
+            self.logger.info(f"Found {len(all_epic_ids)} EPICs in Azure DevOps")
+
+            # Add each EPIC to monitoring if not already monitored
+            newly_added = 0
+            for epic_id in all_epic_ids:
+                if epic_id not in self.monitored_epics:
+                    self.logger.info(f"Adding existing EPIC {epic_id} to monitoring")
+                    if self.add_epic(epic_id):
+                        newly_added += 1
+                else:
+                    self.logger.debug(f"EPIC {epic_id} already being monitored")
+
+            self.logger.info(f"Added {newly_added} new EPICs to monitoring")
+            self.logger.info(f"Total EPICs being monitored: {len(self.monitored_epics)}")
+
+        except Exception as e:
+            self.logger.error(f"Failed to load existing EPICs: {e}")
+
+    def _check_for_epic_changes(self, epic_id: str) -> bool:
+        """Check if an EPIC has actual content changes that warrant story extraction/sync"""
+        try:
+            epic_state = self.monitored_epics.get(epic_id)
+            if not epic_state:
+                return False
+
+            # Get current snapshot of the EPIC
+            current_snapshot = self.agent.get_epic_snapshot(epic_id)
+            if not current_snapshot:
+                self.logger.warning(f"Could not get current snapshot for EPIC {epic_id}")
+                return False
+
+            # If we have no previous snapshot, this is a change (new EPIC)
+            if not epic_state.last_snapshot:
+                self.logger.info(f"EPIC {epic_id} - No previous snapshot, treating as changed")
+                epic_state.last_snapshot = current_snapshot
+                self._save_snapshot(epic_id, current_snapshot)
+                return True
+
+            # Compare snapshots to detect changes
+            previous_snapshot = epic_state.last_snapshot
+
+            # Check for title changes
+            title_changed = (
+                current_snapshot.get('title', '') != previous_snapshot.get('title', '')
+            )
+
+            # Check for description changes
+            description_changed = (
+                current_snapshot.get('description', '') != previous_snapshot.get('description', '')
+            )
+
+            # Check for state changes
+            state_changed = (
+                current_snapshot.get('state', '') != previous_snapshot.get('state', '')
+            )
+
+            if title_changed or description_changed or state_changed:
+                self.logger.info(f"EPIC {epic_id} - Changes detected:")
+                if title_changed:
+                    self.logger.info(f"  Title changed: '{previous_snapshot.get('title', '')}' -> '{current_snapshot.get('title', '')}'")
+                if description_changed:
+                    self.logger.info(f"  Description changed")
+                if state_changed:
+                    self.logger.info(f"  State changed: '{previous_snapshot.get('state', '')}' -> '{current_snapshot.get('state', '')}'")
+
+                # Update stored snapshot
+                epic_state.last_snapshot = current_snapshot
+                self._save_snapshot(epic_id, current_snapshot)
+                return True
+
+            self.logger.debug(f"EPIC {epic_id} - No changes detected")
+            return False
+
+        except Exception as e:
+            self.logger.error(f"Error checking changes for EPIC {epic_id}: {e}")
+            return False
+
+    def _should_extract_stories(self, epic_id: str) -> bool:
+        """Determine if stories should be extracted for an EPIC based on configuration and state"""
+        state = self.monitored_epics.get(epic_id)
+        if not state:
+            return False
+
+        # If stories were already extracted, skip extraction
+        if state.stories_extracted:
+            self.logger.info(f"Stories already extracted for EPIC {epic_id}, skipping extraction")
+            return False
+
+        # Check if the EPIC has changes that warrant story extraction
+        if self.config.skip_duplicate_check or epic_id not in self.processed_epics:
+            self.logger.info(f"EPIC {epic_id} has changes, proceeding with story extraction")
+            return True
+        else:
+            self.logger.info(f"EPIC {epic_id} has no changes or duplicates, skipping story extraction")
+            return False
+
 
 def load_config_from_file(config_file: str) -> MonitorConfig:
     """Load monitor configuration from JSON file"""
@@ -546,9 +770,9 @@ def create_default_config(config_file: str = "monitor_config.json"):
         retry_attempts=3,
         retry_delay_seconds=60
     )
-    
+
     with open(config_file, 'w') as f:
         json.dump(asdict(default_config), f, indent=2)
-    
+
     print(f"Created default configuration file: {config_file}")
     return default_config

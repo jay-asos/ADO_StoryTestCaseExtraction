@@ -332,10 +332,118 @@ class MonitorAPI:
                     'total_lines': 0
                 })
 
+        @self.app.route('/api/logs/clear', methods=['DELETE'])
+        def clear_logs():
+            """Clear logs from display (doesn't delete log file)"""
+            try:
+                # This endpoint just returns success - it's for clearing the display only
+                # The actual log file remains intact on disk
+                return jsonify({
+                    'success': True,
+                    'message': 'Logs cleared from display'
+                })
+            except Exception as e:
+                return jsonify({
+                    'success': False,
+                    'message': str(e)
+                }), 500
+
         @self.app.route('/')
         def dashboard():
             """Serve the dashboard"""
             return render_template('dashboard.html')
+
+        @self.app.route('/api/update_extraction_type', methods=['POST'])
+        def update_extraction_type():
+            """Update the user story extraction type in the .env file"""
+            data = request.get_json()
+            new_type = data.get('user_story_type')
+            if not new_type:
+                return jsonify({'success': False, 'message': 'Missing user_story_type'}), 400
+            env_path = os.path.join(os.path.dirname(__file__), '../.env')
+            try:
+                # Read current .env
+                with open(env_path, 'r') as f:
+                    lines = f.readlines()
+
+                # Update or add both ADO_USER_STORY_TYPE and ADO_STORY_EXTRACTION_TYPE
+                variables_to_update = ['ADO_USER_STORY_TYPE', 'ADO_STORY_EXTRACTION_TYPE']
+                updated_vars = {}
+
+                for var_name in variables_to_update:
+                    updated = False
+                    for i, line in enumerate(lines):
+                        if line.startswith(f'{var_name}='):
+                            lines[i] = f'{var_name}={new_type}\n'
+                            updated = True
+                            updated_vars[var_name] = 'updated'
+                            break
+                    if not updated:
+                        lines.append(f'{var_name}={new_type}\n')
+                        updated_vars[var_name] = 'added'
+
+                # Write back
+                with open(env_path, 'w') as f:
+                    f.writelines(lines)
+
+                # Reload Settings class to reflect changes immediately
+                from config.settings import Settings
+                Settings.reload_config()
+
+                # Verify both updates
+                verification_results = {}
+                verification_results['ADO_USER_STORY_TYPE'] = Settings.verify_env_file_update('ADO_USER_STORY_TYPE', new_type)
+                verification_results['ADO_STORY_EXTRACTION_TYPE'] = Settings.verify_env_file_update('ADO_STORY_EXTRACTION_TYPE', new_type)
+
+                return jsonify({
+                    'success': True,
+                    'message': 'Extraction type updated for both USER_STORY_TYPE and STORY_EXTRACTION_TYPE.',
+                    'new_value': new_type,
+                    'updated_variables': updated_vars,
+                    'verification_results': verification_results,
+                    'current_settings': {
+                        'USER_STORY_TYPE': Settings.USER_STORY_TYPE,
+                        'STORY_EXTRACTION_TYPE': Settings.STORY_EXTRACTION_TYPE
+                    }
+                })
+            except Exception as e:
+                return jsonify({'success': False, 'message': str(e)}), 500
+
+        @self.app.route('/api/config/verify', methods=['GET'])
+        def verify_config():
+            """Verify current configuration values"""
+            try:
+                from config.settings import Settings
+
+                # Reload configuration to get latest values
+                Settings.reload_config()
+
+                # Get current config
+                current_config = Settings.get_current_config()
+
+                # Verify specific values in .env file
+                env_verification = {}
+                env_verification['ADO_USER_STORY_TYPE'] = Settings.verify_env_file_update(
+                    'ADO_USER_STORY_TYPE', current_config['ADO_USER_STORY_TYPE']
+                )
+                env_verification['ADO_STORY_EXTRACTION_TYPE'] = Settings.verify_env_file_update(
+                    'ADO_STORY_EXTRACTION_TYPE', current_config['ADO_STORY_EXTRACTION_TYPE']
+                )
+
+                Settings.print_current_config()
+
+                return jsonify({
+                    'success': True,
+                    'current_config': current_config,
+                    'env_file_verification': env_verification,
+                    'timestamp': datetime.now().isoformat()
+                })
+
+            except Exception as e:
+                return jsonify({
+                    'success': False,
+                    'error': str(e)
+                }), 500
 
     def run(self, host='127.0.0.1', port=5000, debug=False):
         """Run the Flask API server"""

@@ -80,3 +80,83 @@ class Settings:
 
         print("[CONFIG] All required settings are present")
         return True
+
+    @classmethod
+    def reload_config(cls):
+        """Reload configuration from .env file"""
+        print("[CONFIG] Reloading configuration...")
+        load_dotenv(override=True)  # Force reload with override
+
+        # Reload all class variables
+        cls.ADO_ORGANIZATION = os.getenv('ADO_ORGANIZATION')
+        cls.ADO_PROJECT = os.getenv('ADO_PROJECT')
+        cls.ADO_PAT = os.getenv('ADO_PAT')
+
+        # Work item types
+        cls.REQUIREMENT_TYPE = os.getenv('ADO_REQUIREMENT_TYPE', 'Epic')
+        cls.USER_STORY_TYPE = os.getenv('ADO_USER_STORY_TYPE', 'User Story')
+        cls.STORY_EXTRACTION_TYPE = os.getenv('ADO_STORY_EXTRACTION_TYPE', 'User Story')
+        cls.TEST_CASE_EXTRACTION_TYPE = os.getenv('ADO_TEST_CASE_EXTRACTION_TYPE', 'Issue')
+
+        # OpenAI settings
+        cls.OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+        cls.OPENAI_MAX_RETRIES = int(os.getenv('OPENAI_MAX_RETRIES', 3))
+        try:
+            cls.OPENAI_RETRY_DELAY = int(os.getenv('OPENAI_RETRY_DELAY', 5))
+        except Exception:
+            cls.OPENAI_RETRY_DELAY = 5
+
+        print(f"[CONFIG] Reloaded - USER_STORY_TYPE: {cls.USER_STORY_TYPE}")
+        print(f"[CONFIG] Reloaded - STORY_EXTRACTION_TYPE: {cls.STORY_EXTRACTION_TYPE}")
+        print(f"[CONFIG] Reloaded - TEST_CASE_EXTRACTION_TYPE: {cls.TEST_CASE_EXTRACTION_TYPE}")
+
+        return True
+
+    @classmethod
+    def get_current_config(cls):
+        """Get current configuration values for verification"""
+        return {
+            'ADO_USER_STORY_TYPE': cls.USER_STORY_TYPE,
+            'ADO_STORY_EXTRACTION_TYPE': cls.STORY_EXTRACTION_TYPE,
+            'ADO_TEST_CASE_EXTRACTION_TYPE': cls.TEST_CASE_EXTRACTION_TYPE,
+            'ADO_ORGANIZATION': cls.ADO_ORGANIZATION,
+            'ADO_PROJECT': cls.ADO_PROJECT,
+            'OPENAI_MAX_RETRIES': cls.OPENAI_MAX_RETRIES,
+            'OPENAI_RETRY_DELAY': cls.OPENAI_RETRY_DELAY
+        }
+
+    @classmethod
+    def verify_env_file_update(cls, key, expected_value):
+        """Verify that a specific key in .env file has the expected value"""
+        env_path = os.path.join(os.path.dirname(__file__), '../.env')
+        try:
+            with open(env_path, 'r') as f:
+                lines = f.readlines()
+
+            for line in lines:
+                if line.strip().startswith(f'{key}='):
+                    actual_value = line.strip().split('=', 1)[1]
+                    if actual_value == expected_value:
+                        print(f"[CONFIG] Verified - {key}={actual_value} matches expected value")
+                        return True
+                    else:
+                        print(f"[CONFIG] Mismatch - {key}={actual_value} != {expected_value}")
+                        return False
+
+            print(f"[CONFIG] Key {key} not found in .env file")
+            return False
+        except Exception as e:
+            print(f"[CONFIG] Error verifying .env file: {e}")
+            return False
+
+    @classmethod
+    def print_current_config(cls):
+        """Print current configuration for debugging"""
+        print("="*50)
+        print("[CONFIG] Current Configuration:")
+        print(f"  ADO_USER_STORY_TYPE: {cls.USER_STORY_TYPE}")
+        print(f"  ADO_STORY_EXTRACTION_TYPE: {cls.STORY_EXTRACTION_TYPE}")
+        print(f"  ADO_TEST_CASE_EXTRACTION_TYPE: {cls.TEST_CASE_EXTRACTION_TYPE}")
+        print(f"  ADO_ORGANIZATION: {cls.ADO_ORGANIZATION}")
+        print(f"  ADO_PROJECT: {cls.ADO_PROJECT}")
+        print("="*50)

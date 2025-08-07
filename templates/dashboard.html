@@ -1399,6 +1399,17 @@
                 async updateConfig() {
                     this.loading = true;
                     try {
+                        // Update extraction type in .env via backend API
+                        const extractionTypeResponse = await fetch('/api/update_extraction_type', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_story_type: this.configForm.story_extraction_type })
+                        });
+                        const extractionTypeData = await extractionTypeResponse.json();
+                        if (!extractionTypeData.success) {
+                            this.showNotification(extractionTypeData.message || 'Failed to update extraction type', 'error');
+                        }
+                        // Continue with config update as before
                         const configUpdate = {
                             poll_interval_seconds: parseInt(this.configForm.poll_interval_seconds),
                             retry_attempts: parseInt(this.configForm.retry_attempts),
@@ -1410,15 +1421,12 @@
                             skip_duplicate_check: this.configForm.skip_duplicate_check,
                             log_level: this.configForm.log_level || 'INFO'
                         };
-
                         const response = await fetch('/api/config', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(configUpdate)
                         });
-                        
                         const data = await response.json();
-                        
                         if (data.success) {
                             this.showNotification('Configuration updated successfully', 'success', 'Configuration', [
                                 { label: 'Restart Monitor', handler: () => this.restartMonitor() }
