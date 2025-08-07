@@ -1,0 +1,53 @@
+/* Enhanced styles for the EPIC Monitor Dashboard */
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: .5;
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Custom scrollbar for logs */
+.bg-gray-900::-webkit-scrollbar {
+    width: 8px;
+}
+
+.bg-gray-900::-webkit-scrollbar-track {
+    background: #374151;
+    border-radius: 4px;
+}
+
+.bg-gray-900::-webkit-scrollbar-thumb {
+    background: #6b7280;
+    border-radius: 4px;
+}
+
+.bg-gray-900::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Smooth transitions */
+.transition-colors {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}

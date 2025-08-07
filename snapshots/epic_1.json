@@ -1,0 +1,54 @@
+{
+  "content_hash": "be3542956ec226345d6f4a83297790ee36517fadfc676b077274c37cd72a15ae",
+  "last_modified": "2025-07-31T11:18:27.700000",
+  "title": "As a User I need to Fill Username & Password field.",
+  "state": "To Do",
+  "stories": [
+    {
+      "heading": "User can fill Username field",
+      "description": "As a User, I want to fill the Username field so that I can log in with my username.",
+      "acceptance_criteria": [
+        "Username field is present on the webpage",
+        "Username field has validation logic",
+        "Username field is center aligned"
+      ],
+      "test_cases": []
+    },
+    {
+      "heading": "User can fill Password field",
+      "description": "As a User, I want to fill the Password field so that I can securely log in with my password.",
+      "acceptance_criteria": [
+        "Password field is present on the webpage",
+        "Password field has validation logic",
+        "Password field is center aligned"
+      ],
+      "test_cases": []
+    },
+    {
+      "heading": "Prevent user from clicking Login Button without validation",
+      "description": "As a User, I want to be unable to click the Login Button unless my Username and Password pass validation.",
+      "acceptance_criteria": [
+        "Login Button is disabled by default",
+        "Login Button becomes enabled only when both Username and Password pass validation"
+      ],
+      "test_cases": []
+    },
+    {
+      "heading": "User receives message after successful login",
+      "description": "As a User, I want to receive a message after successfully logging in to confirm my login status.",
+      "acceptance_criteria": [
+        "Message is displayed on the webpage after successful login"
+      ],
+      "test_cases": []
+    },
+    {
+      "heading": "User can clear Username & Password fields using Cancel Button",
+      "description": "As a User, I want to clear the Username & Password fields by clicking the Cancel Button.",
+      "acceptance_criteria": [
+        "Cancel Button is present on the webpage",
+        "Clicking Cancel Button clears both Username and Password fields"
+      ],
+      "test_cases": []
+    }
+  ]
+}

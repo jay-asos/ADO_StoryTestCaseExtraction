@@ -1,0 +1,11 @@
+{
+  "poll_interval_seconds": 300,
+  "auto_sync": true,
+  "auto_extract_new_epics": true,
+  "story_extraction_type": "User Story",
+  "test_case_extraction_type": "Issue",
+  "skip_duplicate_check": false,
+  "retry_attempts": 3,
+  "retry_delay_seconds": 60,
+  "log_level": "INFO"
+}
