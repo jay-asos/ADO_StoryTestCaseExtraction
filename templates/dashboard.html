@@ -483,8 +483,12 @@
                 
                 <div class="p-6">
                     <div class="bg-gray-900 dark:bg-gray-950 rounded-lg p-4 font-mono text-sm text-gray-100 dark:text-gray-200 h-64 overflow-y-auto border border-gray-700">
-                        <template x-for="log in logs" :key="log">
-                            <div x-text="log" class="mb-1"></div>
+                        <template x-for="log in logs" :key="log.timestamp">
+                            <div class="mb-1">
+                                <span class="text-gray-400" x-text="log.timestamp"></span>
+                                <span class="text-blue-400" x-text="'[' + log.level + ']'"></span>
+                                <span x-text="log.message"></span>
+                            </div>
                         </template>
                         <div x-show="logs.length === 0" class="text-gray-500 dark:text-gray-400 text-center py-8">
                             No logs available
@@ -1450,6 +1454,7 @@
                 },
 
                 // Enhanced notification system
+
                 showNotification(message, type = 'info', title = null, actions = null) {
                     console.log('showNotification called:', { message, type, title, actions });
                     

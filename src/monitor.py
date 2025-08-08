@@ -226,8 +226,8 @@ class EpicChangeMonitor:
         except Exception as e:
             # Check for Azure DevOps specific "work item does not exist" errors
             error_message = str(e).lower()
-            if ("does not exist" in error_message or
-                "tf401232" in error_message or
+            if ("does not exist" in error_message or 
+                "tf401232" in error_message or 
                 "work item not found" in error_message or
                 "you do not have permissions to read it" in error_message):
                 self.logger.warning(f"EPIC {epic_id} not found in Azure DevOps: {e}")
