@@ -26,6 +26,7 @@ class Settings:
 
     # OpenAI settings
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo')
     OPENAI_MAX_RETRIES = int(os.getenv('OPENAI_MAX_RETRIES', 3))
     try:
         OPENAI_RETRY_DELAY = int(os.getenv('OPENAI_RETRY_DELAY', 5))
@@ -100,6 +101,7 @@ class Settings:
         
         # OpenAI settings
         cls.OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+        cls.OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo')
         cls.OPENAI_MAX_RETRIES = int(os.getenv('OPENAI_MAX_RETRIES', 3))
         try:
             cls.OPENAI_RETRY_DELAY = int(os.getenv('OPENAI_RETRY_DELAY', 5))

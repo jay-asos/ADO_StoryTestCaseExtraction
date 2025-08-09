@@ -16,6 +16,12 @@ class TestCase(BaseModel):
     priority: str = Field(default="Medium", description="Test priority: 'High', 'Medium', or 'Low'")
     parent_story_id: Optional[str] = Field(None, description="ID of the parent user story")
     
+    def get_formatted_steps(self) -> str:
+        """Format test steps for Azure DevOps"""
+        if not self.test_steps:
+            return ""
+        return "<br>".join([f"{i+1}. {step}" for i, step in enumerate(self.test_steps)])
+
     def to_ado_format(self) -> dict:
         """Convert to Azure DevOps test case format"""
         # Format preconditions and test steps as HTML lists

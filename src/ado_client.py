@@ -473,6 +473,56 @@ class ADOClient:
             print(f"[ERROR] Error in create_test_case_as_test_case: {str(e)}")
             raise
 
+    def create_work_item(self, work_item_type: str, title: str, description: str, additional_fields: Optional[Dict[str, Any]] = None) -> int:
+        """Generic method to create any type of work item"""
+        try:
+            print(f"[DEBUG] Creating {work_item_type} work item: {title}")
+
+            # Prepare the basic document
+            document = [
+                {
+                    "op": "add",
+                    "path": "/fields/System.Title",
+                    "value": title
+                },
+                {
+                    "op": "add",
+                    "path": "/fields/System.Description",
+                    "value": description
+                }
+            ]
+
+            # Add any additional fields
+            if additional_fields:
+                for field, value in additional_fields.items():
+                    if field not in ["System.Title", "System.Description"]:
+                        document.append({
+                            "op": "add",
+                            "path": f"/fields/{field}",
+                            "value": value
+                        })
+
+            print(f"[DEBUG] Document prepared for {work_item_type}: {document}")
+
+            # Create the work item
+            try:
+                work_item = self.wit_client.create_work_item(
+                    document=document,
+                    project=self.project,
+                    type=work_item_type
+                )
+                print(f"[DEBUG] Successfully created {work_item_type} with ID: {work_item.id}")
+                return work_item.id
+            except Exception as e:
+                print(f"[ERROR] Failed to create {work_item_type}: {str(e)}")
+                print(f"[DEBUG] Project: {self.project}")
+                print(f"[DEBUG] Type: {work_item_type}")
+                raise Exception(f"Failed to create {work_item_type}: {str(e)}")
+
+        except Exception as e:
+            print(f"[ERROR] Error in create_work_item: {str(e)}")
+            raise
+
     def _format_test_case_description(self, test_case_data: Dict[str, Any]) -> str:
         """Format test case data into a comprehensive description for Issue work item"""
         description_parts = []
@@ -511,12 +561,39 @@ class ADOClient:
         return priority_mapping.get(priority_text, 2)
 
     def get_work_item_by_id(self, work_item_id: str):
-        """Get a work item by ID"""
+        """Get a work item by ID with work item type information"""
         try:
             numeric_id = int(work_item_id)
-            work_item = self.wit_client.get_work_item(id=numeric_id)
+            work_item = self.wit_client.get_work_item(
+                id=numeric_id,
+                fields=["System.Id", "System.Title", "System.Description", "System.WorkItemType", "System.State"]
+            )
             return work_item
         except ValueError:
             raise Exception(f"Invalid work item ID: {work_item_id}")
         except Exception as e:
             raise Exception(f"Failed to get work item {work_item_id}: {str(e)}")
+
+    def get_work_item_type(self, work_item_id: str) -> str:
+        """Get the work item type for a specific work item ID"""
+        try:
+            work_item = self.get_work_item_by_id(work_item_id)
+            return work_item.fields.get("System.WorkItemType", "Unknown")
+        except Exception as e:
+            raise Exception(f"Failed to get work item type for {work_item_id}: {str(e)}")
+
+    def is_valid_work_item_for_test_extraction(self, work_item_id: str) -> tuple[bool, str]:
+        """Check if a work item is valid for test case extraction"""
+        try:
+            work_item_type = self.get_work_item_type(work_item_id)
+
+            # Define allowed work item types for test case extraction
+            allowed_types = ['User Story', 'Task']
+
+            if work_item_type in allowed_types:
+                return True, work_item_type
+            else:
+                return False, work_item_type
+
+        except Exception as e:
+            return False, f"Error: {str(e)}"

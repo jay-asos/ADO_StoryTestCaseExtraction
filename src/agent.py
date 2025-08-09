@@ -141,6 +141,49 @@ class StoryExtractionAgent:
     def extract_test_cases_for_story(self, story_id: str) -> TestCaseExtractionResult:
         """Extract test cases for an existing user story by ID"""
         try:
+            # First validate that the work item is appropriate for test case extraction
+            is_valid, work_item_type = self.ado_client.is_valid_work_item_for_test_extraction(story_id)
+
+            if not is_valid:
+                if work_item_type.startswith("Error:"):
+                    # Handle API errors
+                    return TestCaseExtractionResult(
+                        story_id=story_id,
+                        story_title="",
+                        test_cases=[],
+                        extraction_successful=False,
+                        error_message=f"Failed to validate work item: {work_item_type}"
+                    )
+                else:
+                    # Handle invalid work item types
+                    allowed_types = "User Story or Task"
+                    if work_item_type.lower() == 'epic':
+                        error_message = (
+                            f"❌ Test case extraction not allowed from Epic work items.\n\n"
+                            f"📝 **Current work item:** {work_item_type} (ID: {story_id})\n"
+                            f"✅ **Allowed types:** {allowed_types}\n\n"
+                            f"**Solution:** Please use a {allowed_types} work item ID instead of an Epic ID. "
+                            f"Epics are high-level containers and should not have direct test cases. "
+                            f"Extract test cases from the User Stories or Tasks that belong to this Epic."
+                        )
+                    else:
+                        error_message = (
+                            f"❌ Test case extraction not allowed from '{work_item_type}' work items.\n\n"
+                            f"📝 **Current work item:** {work_item_type} (ID: {story_id})\n"
+                            f"✅ **Allowed types:** {allowed_types}\n\n"
+                            f"**Solution:** Please provide a {allowed_types} work item ID for test case extraction."
+                        )
+
+                    return TestCaseExtractionResult(
+                        story_id=story_id,
+                        story_title="",
+                        test_cases=[],
+                        extraction_successful=False,
+                        error_message=error_message
+                    )
+
+            print(f"[AGENT] ✅ Work item {story_id} is valid for test extraction (Type: {work_item_type})")
+
             # Fetch the user story from ADO
             story_work_item = self.ado_client.get_work_item_by_id(story_id)
             if not story_work_item:
@@ -149,7 +192,7 @@ class StoryExtractionAgent:
                     story_title="",
                     test_cases=[],
                     extraction_successful=False,
-                    error_message=f"User story {story_id} not found"
+                    error_message=f"{work_item_type} {story_id} not found"
                 )
             
             # Convert ADO work item to UserStory model
