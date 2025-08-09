@@ -5,6 +5,7 @@ Provides REST API endpoints for the web dashboard
 
 import json
 import logging
+import threading
 from datetime import datetime
 from typing import Dict, Any, List
 from flask import Flask, render_template, request, jsonify, Response
@@ -12,19 +13,36 @@ from flask_cors import CORS
 
 from src.agent import StoryExtractionAgent
 from src.models import TestCaseExtractionResult, StoryExtractionResult
+from src.monitor import EpicChangeMonitor, MonitorConfig
 from config.settings import Settings
 
 
 class MonitorAPI:
     """Flask-based API for monitoring and controlling the story extraction process"""
 
-    def __init__(self):
+    def __init__(self, config: MonitorConfig = None, port: int = 5001):
         self.app = Flask(__name__, template_folder='../templates', static_folder='../static')
         CORS(self.app)
+        self.port = port
 
         self.agent = StoryExtractionAgent()
         self.settings = Settings()
         self.logger = logging.getLogger(__name__)
+
+        # Create monitor instance, loading config from file if none provided
+        self.monitor = None
+        self.monitor_thread = None
+        if config is None:
+            try:
+                with open('monitor_config.json', 'r') as f:
+                    config_data = json.load(f)
+                    config = MonitorConfig(**config_data)
+                    self.logger.info("Loaded monitor configuration from monitor_config.json")
+            except Exception as e:
+                self.logger.error(f"Failed to load monitor configuration: {str(e)}")
+                raise RuntimeError("Monitor configuration is required. Please provide a valid configuration.")
+
+        self.monitor = EpicChangeMonitor(config)
 
         # Setup routes
         self._setup_routes()
@@ -45,6 +63,100 @@ class MonitorAPI:
                 'timestamp': datetime.now().isoformat(),
                 'service': 'ADO Story Extractor API'
             })
+
+        # Monitor control endpoints
+        @self.app.route('/api/monitor/start', methods=['POST'])
+        def start_monitor():
+            """Start the monitoring service"""
+            try:
+                if not self.monitor:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Monitor not configured. Please restart the API with monitor configuration.'
+                    }), 400
+
+                if self.monitor.is_running:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Monitor is already running'
+                    }, 400)
+
+                # Start monitor in a separate thread to avoid blocking the API
+                def start_monitor_thread():
+                    try:
+                        self.monitor.start()
+                    except Exception as e:
+                        self.logger.error(f"Monitor thread failed: {e}")
+
+                self.monitor_thread = threading.Thread(target=start_monitor_thread, daemon=True)
+                self.monitor_thread.start()
+
+                return jsonify({
+                    'success': True,
+                    'message': 'Monitor started successfully',
+                    'status': self.monitor.get_status()
+                })
+
+            except Exception as e:
+                self.logger.error(f"Error starting monitor: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to start monitor: {str(e)}'
+                }), 500
+
+        @self.app.route('/api/monitor/stop', methods=['POST'])
+        def stop_monitor():
+            """Stop the monitoring service"""
+            try:
+                if not self.monitor:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Monitor not configured'
+                    }), 400
+
+                if not self.monitor.is_running:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Monitor is not running'
+                    }), 400
+
+                self.monitor.stop()
+
+                return jsonify({
+                    'success': True,
+                    'message': 'Monitor stopped successfully',
+                    'status': self.monitor.get_status()
+                })
+
+            except Exception as e:
+                self.logger.error(f"Error stopping monitor: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to stop monitor: {str(e)}'
+                }), 500
+
+        @self.app.route('/api/monitor/status', methods=['GET'])
+        def get_monitor_status():
+            """Get current monitoring status"""
+            try:
+                if not self.monitor:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Monitor not configured'
+                    }), 400
+
+                status = self.monitor.get_status()
+                return jsonify({
+                    'success': True,
+                    'status': status
+                })
+
+            except Exception as e:
+                self.logger.error(f"Error getting monitor status: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to get monitor status: {str(e)}'
+                }), 500
 
         @self.app.route('/api/test-cases/extract', methods=['POST'])
         def extract_test_cases():
@@ -243,15 +355,15 @@ class MonitorAPI:
                     'error': f'Internal server error: {str(e)}'
                 }), 500
 
-    def run(self, host='0.0.0.0', port=5000, debug=False):
+    def run(self, host='0.0.0.0', debug=False):
         """Run the Flask application"""
-        self.logger.info(f"Starting Monitor API server on {host}:{port}")
-        self.app.run(host=host, port=port, debug=debug)
+        self.logger.info(f"Starting Monitor API server on {host}:{self.port}")
+        self.app.run(host=host, port=self.port, debug=debug)
 
 
-def create_app():
+def create_app(port=5001):
     """Create and configure the Flask application"""
-    api = MonitorAPI()
+    api = MonitorAPI(port=port)
     return api.app
 
 
@@ -263,5 +375,5 @@ if __name__ == '__main__':
     )
 
     # Create and run the API
-    api = MonitorAPI()
+    api = MonitorAPI(port=5001)
     api.run(debug=True)

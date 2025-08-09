@@ -3,741 +3,1135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADO Story & Test Case Extractor Dashboard</title>
+    <title>EPIC Change Monitor Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.0/index.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8'
+                        }
+                    }
+                }
+            }
         }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .dashboard-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(45deg, #2c3e50, #3498db);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            font-weight: 300;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1em;
-        }
-
-        .main-content {
-            padding: 40px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-            overflow: hidden;
-            transition: transform 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-        }
-
-        .card-header {
-            background: linear-gradient(45deg, #f39c12, #e67e22);
-            color: white;
-            padding: 20px;
-            font-size: 1.3em;
-            font-weight: 500;
-        }
-
-        .card-body {
-            padding: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e6ed;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-        }
-
-        .btn {
-            background: linear-gradient(45deg, #3498db, #2980b9);
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-right: 10px;
-            margin-bottom: 10px;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
-        }
-
-        .btn-success {
-            background: linear-gradient(45deg, #27ae60, #229954);
-        }
-
-        .btn-warning {
-            background: linear-gradient(45deg, #f39c12, #e67e22);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            margin-top: 15px;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            margin-right: 10px;
-            transform: scale(1.2);
-        }
-
-        .results-section {
-            margin-top: 30px;
-        }
-
-        .alert {
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-weight: 500;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .alert-info {
-            background: #cce7ff;
-            color: #004085;
-            border: 1px solid #b6d4fe;
-        }
-
-        .test-case-item {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 15px;
-        }
-
-        .test-case-header {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .test-case-title {
-            font-weight: 600;
-            color: #2c3e50;
-            font-size: 1.1em;
-        }
-
-        .test-case-type {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: 500;
-            text-transform: uppercase;
-        }
-
-        .test-type-positive {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .test-type-negative {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .test-type-edge_case {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .test-case-steps {
-            margin-top: 15px;
-        }
-
-        .test-case-steps h4 {
-            color: #495057;
-            margin-bottom: 8px;
-        }
-
-        .test-case-steps ol {
-            padding-left: 20px;
-        }
-
-        .test-case-steps li {
-            margin-bottom: 5px;
-            line-height: 1.5;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-        }
-
-        .stat-number {
-            font-size: 2em;
-            font-weight: bold;
-            color: #3498db;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            color: #7f8c8d;
-            font-size: 0.9em;
-        }
-    </style>
+    </script>
 </head>
-<body>
-    <div class="dashboard-container">
-        <div class="header">
-            <h1><i class="fas fa-robot"></i> ADO Story & Test Case Extractor</h1>
-            <p>AI-powered extraction of user stories and comprehensive test cases from Azure DevOps requirements</p>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
+    <div x-data="dashboardData()" x-init="init()" :class="darkMode ? 'dark' : ''" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-chart-line text-white text-sm"></i>
+                            </div>
+                            <h1 class="text-xl font-bold text-gray-900 dark:text-white">EPIC Monitor Dashboard</h1>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div :class="monitorStatus.is_running ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'"
+                                 class="px-2 py-1 rounded-full text-xs font-medium">
+                                <i :class="monitorStatus.is_running ? 'fas fa-play' : 'fas fa-stop'" class="mr-1"></i>
+                                <span x-text="monitorStatus.is_running ? 'Running' : 'Stopped'"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-4">
+                        <!-- Modern Dark Theme Toggle -->
+                        <button @click="toggleTheme()"
+                                class="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <i :class="darkMode ? 'fas fa-sun text-yellow-500' : 'fas fa-moon text-gray-600'"
+                               class="text-lg"></i>
+                        </button>
+                        <button @click="refreshData()"
+                                class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                            <i class="fas fa-sync-alt" :class="{'animate-spin': loading}"></i>
+                        </button>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            Last updated: <span x-text="lastUpdated"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Configuration Panel -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8 transition-colors duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        <i class="fas fa-cog text-blue-500 mr-2"></i>
+                        Configuration
+                    </h2>
+                    <button @click="showConfigModal = true"
+                            class="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                        <i class="fas fa-edit mr-2"></i>
+                        Edit Config
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-book text-green-500"></i>
+                            <h3 class="font-medium text-gray-900 dark:text-white">Story Extraction Type</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-300" x-text="config.story_extraction_type || 'User Story'"></p>
+                    </div>
+
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-vial text-orange-500"></i>
+                            <h3 class="font-medium text-gray-900 dark:text-white">Test Case Extraction Type</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-300" x-text="config.test_case_extraction_type || 'Issue'"></p>
+                    </div>
+
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-clock text-purple-500"></i>
+                            <h3 class="font-medium text-gray-900 dark:text-white">Check Interval</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-300" x-text="config.check_interval_minutes ? config.check_interval_minutes + ' minutes' : 'Not set'"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monitor Controls -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8 transition-colors duration-300">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <i class="fas fa-play-circle text-green-500 mr-2"></i>
+                    Monitor Controls
+                </h2>
+
+                <div class="flex flex-wrap gap-3">
+                    <button @click="startMonitor()"
+                            :disabled="monitorStatus.is_running || loading"
+                            :class="monitorStatus.is_running || loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'"
+                            class="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg transition-colors">
+                        <i class="fas fa-play mr-2"></i>
+                        Start Monitor
+                    </button>
+
+                    <button @click="stopMonitor()"
+                            :disabled="!monitorStatus.is_running || loading"
+                            :class="!monitorStatus.is_running || loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700'"
+                            class="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg transition-colors">
+                        <i class="fas fa-stop mr-2"></i>
+                        Stop Monitor
+                    </button>
+
+                    <button @click="checkNow()"
+                            :disabled="loading"
+                            :class="loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'"
+                            class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg transition-colors">
+                        <i class="fas fa-search mr-2" :class="{'animate-spin': loading}"></i>
+                        Check Now
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total EPICs</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="stats.total_epics"></p>
+                        </div>
+                        <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-layer-group text-blue-600 dark:text-blue-300"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Changed EPICs</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="stats.changed_epics"></p>
+                        </div>
+                        <div class="w-10 h-10 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-exclamation-triangle text-orange-600 dark:text-orange-300"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Stories</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="stats.total_stories"></p>
+                        </div>
+                        <div class="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-book text-green-600 dark:text-green-300"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Test Cases</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="stats.total_test_cases"></p>
+                        </div>
+                        <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-vial text-purple-600 dark:text-purple-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Case Extraction Panel -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8 transition-colors duration-300">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <i class="fas fa-vial text-purple-500 mr-2"></i>
+                    Test Case Extraction
+                </h2>
+
+                <div class="space-y-4">
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="flex-1">
+                            <input x-model="testStoryId"
+                                   type="text"
+                                   placeholder="Enter Story ID..."
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <button @click="extractTestCases()"
+                                :disabled="!testStoryId.trim() || extractingTestCases"
+                                class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fas fa-magic mr-2" :class="{'animate-spin': extractingTestCases}"></i>
+                            <span x-text="extractingTestCases ? 'Extracting...' : 'Extract Test Cases'"></span>
+                        </button>
+                        <button @click="uploadTestCases()"
+                                :disabled="!testStoryId.trim() || extractingTestCases || extractedTestCases.length === 0"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fas fa-upload mr-2"></i>
+                            Upload Test Cases
+                        </button>
+                    </div>
+
+                    <!-- Extracted Test Cases Display -->
+                    <div x-show="extractedTestCases.length > 0" class="mt-4">
+                        <h3 class="text-md font-semibold text-gray-900 dark:text-white mb-3">
+                            Extracted Test Cases (<span x-text="extractedTestCases.length"></span>)
+                        </h3>
+                        <div class="space-y-3 max-h-96 overflow-y-auto">
+                            <template x-for="testCase in extractedTestCases" :key="testCase.title">
+                                <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
+                                    <div class="font-medium text-gray-900 dark:text-white" x-text="testCase.title"></div>
+                                    <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                        Type: <span x-text="testCase.test_type || configForm.test_case_extraction_type"></span>
+                                        <span x-show="testCase.uploaded_id" class="ml-2 text-green-600">
+                                            (Uploaded: #<span x-text="testCase.uploaded_id"></span>)
+                                        </span>
+                                    </div>
+                                    <div x-show="testCase.description" class="text-sm text-gray-600 dark:text-gray-300 mt-2" x-text="testCase.description"></div>
+                                    <div x-show="testCase.steps && testCase.steps.length > 0" class="mt-2">
+                                        <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Steps:</div>
+                                        <ol class="text-sm text-gray-600 dark:text-gray-400 pl-4 list-decimal">
+                                            <template x-for="step in testCase.steps" :key="step">
+                                                <li x-text="step"></li>
+                                            </template>
+                                        </ol>
+                                    </div>
+                                    <div x-show="testCase.expected_result" class="text-sm text-gray-600 dark:text-gray-300 mt-2">
+                                        <strong>Expected Result:</strong> <span x-text="testCase.expected_result"></span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EPICs List -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8 transition-colors duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        <i class="fas fa-layer-group text-blue-500 mr-2"></i>
+                        Monitored EPICs
+                    </h2>
+                    <div class="flex items-center space-x-2">
+                        <input x-model="epicFilter"
+                               type="text"
+                               placeholder="Filter EPICs..."
+                               class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <button @click="loadEpics()"
+                                class="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                            <i class="fas fa-refresh"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">EPIC</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Stories</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Last Changed</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                            <template x-for="epic in filteredEpics" :key="epic.id">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <td class="px-4 py-4">
+                                        <div class="flex items-center">
+                                            <div>
+                                                <div class="text-sm font-medium text-gray-900 dark:text-white" x-text="epic.title"></div>
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">ID: <span x-text="epic.id"></span></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <span :class="getStatusColor(epic.state)"
+                                              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                              x-text="epic.state">
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-4 text-sm text-gray-900 dark:text-white">
+                                        <div class="flex items-center space-x-2">
+                                            <span x-text="epic.story_count || 0"></span>
+                                            <i class="fas fa-book text-gray-400"></i>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400" x-text="formatDate(epic.last_changed)"></td>
+                                    <td class="px-4 py-4">
+                                        <div class="flex items-center space-x-2">
+                                            <button @click="viewEpicDetails(epic.id)"
+                                                    class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button @click="extractStoriesFromEpic(epic.id)"
+                                                    class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div x-show="filteredEpics.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-inbox text-4xl mb-4"></i>
+                    <p>No EPICs found matching your criteria</p>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        <i class="fas fa-history text-purple-500 mr-2"></i>
+                        Activity Log
+                    </h2>
+                    <button @click="clearLogs()"
+                            class="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm">
+                        <i class="fas fa-trash mr-1"></i>
+                        Clear
+                    </button>
+                </div>
+
+                <div class="bg-gray-900 rounded-lg p-4 h-64 overflow-y-auto font-mono text-sm">
+                    <div x-show="logs.length === 0" class="text-gray-400 text-center py-8">
+                        No activity logged yet...
+                    </div>
+                    <template x-for="log in logs" :key="log.timestamp">
+                        <div :class="getLogColor(log.level)" class="mb-1">
+                            <span class="text-gray-400" x-text="formatTime(log.timestamp)"></span>
+                            <span x-text="log.message"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </main>
+
+        <!-- Configuration Modal -->
+        <div x-show="showConfigModal"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+             @click.self="showConfigModal = false">
+
+            <div x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 transform scale-100"
+                 x-transition:leave-end="opacity-0 transform scale-95"
+                 class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="fas fa-cog text-blue-500 mr-2"></i>
+                            Monitor Configuration
+                        </h3>
+                        <button @click="showConfigModal = false"
+                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <form @submit.prevent="saveConfiguration()" class="space-y-6">
+                        <!-- Azure DevOps Settings -->
+                        <div>
+                            <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4">Azure DevOps Settings</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Organization URL
+                                    </label>
+                                    <input x-model="configForm.ado_org_url"
+                                           type="url"
+                                           required
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Project Name
+                                    </label>
+                                    <input x-model="configForm.ado_project"
+                                           type="text"
+                                           required
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Personal Access Token
+                                    </label>
+                                    <input x-model="configForm.ado_pat"
+                                           type="password"
+                                           required
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- OpenAI Settings -->
+                        <div>
+                            <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4">OpenAI Settings</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        API Key
+                                    </label>
+                                    <input x-model="configForm.openai_api_key"
+                                           type="password"
+                                           required
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Model
+                                    </label>
+                                    <select x-model="configForm.openai_model"
+                                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                        <option value="gpt-4">GPT-4</option>
+                                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Extraction Settings -->
+                        <div>
+                            <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4">Extraction Settings</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Story Extraction Type
+                                    </label>
+                                    <select x-model="configForm.story_extraction_type"
+                                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                        <option value="User Story">User Story</option>
+                                        <option value="Product Backlog Item">Product Backlog Item</option>
+                                        <option value="Issue">Issue</option>
+                                        <option value="Feature">Feature</option>
+                                    </select>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Work item type for extracted stories</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Test Case Extraction Type
+                                    </label>
+                                    <select x-model="configForm.test_case_extraction_type"
+                                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                        <option value="Test Case">Test Case</option>
+                                        <option value="Issue">Issue</option>
+                                        <option value="Task">Task</option>
+                                    </select>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Work item type for extracted test cases</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Monitor Settings -->
+                        <div>
+                            <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4">Monitor Settings</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Check Interval (minutes)
+                                    </label>
+                                    <input x-model.number="configForm.check_interval_minutes"
+                                           type="number"
+                                           min="1"
+                                           max="1440"
+                                           required
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        EPIC IDs to Monitor
+                                    </label>
+                                    <input x-model="configForm.epic_ids"
+                                           type="text"
+                                           placeholder="123,456,789 (comma-separated)"
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to monitor all EPICs</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                            <button type="button"
+                                    @click="showConfigModal = false"
+                                    class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                    :disabled="savingConfig"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span x-text="savingConfig ? 'Saving...' : 'Save Configuration'"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
 
-        <div class="main-content">
-            <!-- Test Case Extraction Section -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-vial"></i> Test Case Extraction
-                </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="storyId">User Story ID:</label>
-                        <input type="text" id="storyId" class="form-control" placeholder="Enter User Story ID (e.g., 12345)">
-                    </div>
+        <!-- Test Case Manual Entry Modal -->
+        <div x-show="showTestCaseModal"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+             @click.self="showTestCaseModal = false">
 
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="uploadTestCases" checked>
-                        <label for="uploadTestCases">Upload test cases to Azure DevOps as Issues</label>
-                    </div>
-
-                    <div style="margin-top: 20px;">
-                        <button class="btn btn-success" onclick="extractTestCases()">
-                            <i class="fas fa-magic"></i> Extract Test Cases
-                        </button>
-                        <button class="btn btn-warning" onclick="previewTestCases()">
-                            <i class="fas fa-eye"></i> Preview Only
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="fas fa-vial text-purple-500 mr-2"></i>
+                            Manual Test Case Entry
+                        </h3>
+                        <button @click="showTestCaseModal = false"
+                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                            <i class="fas fa-times"></i>
                         </button>
                     </div>
 
-                    <div id="testCaseLoading" class="loading">
-                        <div class="spinner"></div>
-                        <p>Extracting test cases using AI...</p>
-                    </div>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Story ID for Test Cases
+                                </label>
+                                <input x-model="testStoryId"
+                                       type="text"
+                                       placeholder="Enter Story ID..."
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            </div>
+                            <div class="flex items-end space-x-2">
+                                <button @click="extractTestCases()"
+                                        :disabled="!testStoryId.trim() || extractingTestCases"
+                                        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <i class="fas fa-magic mr-2" :class="{'animate-spin': extractingTestCases}"></i>
+                                    <span x-text="extractingTestCases ? 'Extracting...' : 'Extract Test Cases'"></span>
+                                </button>
+                                <button @click="uploadTestCases()"
+                                        :disabled="!testStoryId.trim() || extractingTestCases || extractedTestCases.length === 0"
+                                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <i class="fas fa-upload mr-2"></i>
+                                    Upload Test Cases
+                                </button>
+                            </div>
+                        </div>
 
-                    <div id="testCaseResults" class="results-section"></div>
+                        <!-- Extracted Test Cases Display -->
+                        <div x-show="extractedTestCases.length > 0" class="mt-6">
+                            <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-3">
+                                Extracted Test Cases (<span x-text="extractedTestCases.length"></span>)
+                            </h4>
+                            <div class="space-y-4 max-h-96 overflow-y-auto">
+                                <template x-for="testCase in extractedTestCases" :key="testCase.title">
+                                    <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
+                                        <div class="font-medium text-gray-900 dark:text-white" x-text="testCase.title"></div>
+                                        <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                            Type: <span x-text="testCase.test_type || config.test_case_extraction_type"></span>
+                                            <span x-show="testCase.uploaded_id" class="ml-2 text-green-600">
+                                                (Uploaded: #<span x-text="testCase.uploaded_id"></span>)
+                                            </span>
+                                        </div>
+                                        <div x-show="testCase.description" class="text-sm text-gray-600 dark:text-gray-300 mt-2" x-text="testCase.description"></div>
+                                        <div x-show="testCase.steps && testCase.steps.length > 0" class="mt-2">
+                                            <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Steps:</div>
+                                            <ol class="text-sm text-gray-600 dark:text-gray-400 pl-4 list-decimal">
+                                                <template x-for="step in testCase.steps" :key="step">
+                                                    <li x-text="step"></li>
+                                                </template>
+                                            </ol>
+                                        </div>
+                                        <div x-show="testCase.expected_result" class="text-sm text-gray-600 dark:text-gray-300 mt-2">
+                                            <strong>Expected Result:</strong> <span x-text="testCase.expected_result"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- User Story Extraction Section -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-book"></i> User Story Extraction
-                </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="requirementId">Requirement ID:</label>
-                        <input type="text" id="requirementId" class="form-control" placeholder="Enter Requirement ID (e.g., REQ-001)">
+        <!-- Notifications -->
+        <div x-show="notification.show"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-2"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 translate-y-2"
+             class="fixed top-4 right-4 z-50 max-w-sm">
+
+            <div :class="getNotificationColor(notification.type)"
+                 class="rounded-lg shadow-lg p-4 border">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i :class="getNotificationIcon(notification.type)" class="mr-2"></i>
+                        <div>
+                            <div x-show="notification.title"
+                                 x-text="notification.title"
+                                 class="font-medium text-sm"></div>
+                            <div x-text="notification.message" class="text-sm"></div>
+                        </div>
                     </div>
-
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="uploadStories" checked>
-                        <label for="uploadStories">Upload user stories to Azure DevOps</label>
-                    </div>
-
-                    <div style="margin-top: 20px;">
-                        <button class="btn btn-success" onclick="extractStories()">
-                            <i class="fas fa-magic"></i> Extract Stories
-                        </button>
-                        <button class="btn btn-warning" onclick="previewStories()">
-                            <i class="fas fa-eye"></i> Preview Only
-                        </button>
-                    </div>
-
-                    <div id="storyLoading" class="loading">
-                        <div class="spinner"></div>
-                        <p>Extracting user stories using AI...</p>
-                    </div>
-
-                    <div id="storyResults" class="results-section"></div>
-                </div>
-            </div>
-
-            <!-- Bulk Test Case Extraction Section -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-layer-group"></i> Bulk Test Case Extraction (Epic)
-                </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="epicId">Epic ID:</label>
-                        <input type="text" id="epicId" class="form-control" placeholder="Enter Epic ID (e.g., 54321)">
-                    </div>
-
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="uploadBulkTestCases" checked>
-                        <label for="uploadBulkTestCases">Upload test cases to Azure DevOps as Issues</label>
-                    </div>
-
-                    <div style="margin-top: 20px;">
-                        <button class="btn btn-success" onclick="bulkExtractTestCases()">
-                            <i class="fas fa-magic"></i> Extract Test Cases for All Stories
-                        </button>
-                    </div>
-
-                    <div id="bulkLoading" class="loading">
-                        <div class="spinner"></div>
-                        <p>Extracting test cases for all stories in the epic...</p>
-                    </div>
-
-                    <div id="bulkResults" class="results-section"></div>
+                    <button @click="hideNotification()"
+                            class="ml-4 text-current opacity-70 hover:opacity-100">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Test Case Extraction Functions
-        async function extractTestCases() {
-            const storyId = document.getElementById('storyId').value.trim();
-            const uploadToAdo = document.getElementById('uploadTestCases').checked;
+        function dashboardData() {
+            return {
+                darkMode: false,
+                loading: false,
+                lastUpdated: 'Never',
 
-            if (!storyId) {
-                showAlert('testCaseResults', 'Please enter a Story ID', 'error');
-                return;
-            }
+                // Modals
+                showConfigModal: false,
+                showTestCaseModal: false,
 
-            showLoading('testCaseLoading', true);
-            clearResults('testCaseResults');
+                // Configuration
+                config: {
+                    ado_org_url: '',
+                    ado_project: '',
+                    story_extraction_type: 'User Story',
+                    test_case_extraction_type: 'Issue',
+                    check_interval_minutes: 30,
+                    epic_ids: []
+                },
 
-            try {
-                const response = await fetch('/api/test-cases/extract', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        story_id: storyId,
-                        upload_to_ado: uploadToAdo
-                    })
-                });
+                configForm: {
+                    ado_org_url: '',
+                    ado_project: '',
+                    ado_pat: '',
+                    openai_api_key: '',
+                    openai_model: 'gpt-4',
+                    story_extraction_type: 'User Story',
+                    test_case_extraction_type: 'Issue',
+                    check_interval_minutes: 30,
+                    epic_ids: ''
+                },
 
-                const result = await response.json();
-                showLoading('testCaseLoading', false);
+                savingConfig: false,
 
-                if (result.success) {
-                    displayTestCaseResults(result, 'testCaseResults');
-                } else {
-                    showAlert('testCaseResults', result.error, 'error');
+                // Test Case Extraction
+                testStoryId: '',
+                extractingTestCases: false,
+                extractedTestCases: [],
+
+                // Monitor Status
+                monitorStatus: {
+                    is_running: false,
+                    uptime: 0,
+                    last_check: null
+                },
+
+                // Statistics
+                stats: {
+                    total_epics: 0,
+                    changed_epics: 0,
+                    total_stories: 0,
+                    total_test_cases: 0
+                },
+
+                // EPICs
+                epics: [],
+                epicFilter: '',
+
+                // Logs
+                logs: [],
+
+                // Notifications
+                notification: {
+                    show: false,
+                    type: 'info', // info, success, warning, error
+                    title: '',
+                    message: ''
+                },
+
+                // Computed
+                get filteredEpics() {
+                    if (!this.epicFilter) return this.epics;
+                    const filter = this.epicFilter.toLowerCase();
+                    return this.epics.filter(epic =>
+                        epic.title.toLowerCase().includes(filter) ||
+                        epic.id.toString().includes(filter)
+                    );
+                },
+
+                // Initialization
+                async init() {
+                    // Load theme from localStorage
+                    this.darkMode = localStorage.getItem('theme') === 'dark';
+                    if (this.darkMode) {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
+
+                    await this.loadConfiguration();
+                    await this.loadMonitorStatus();
+                    await this.loadEpics();
+                    await this.loadStats();
+                    this.startPolling();
+                    this.updateLastUpdated();
+                },
+
+                // Theme Management
+                toggleTheme() {
+                    this.darkMode = !this.darkMode;
+                    if (this.darkMode) {
+                        document.documentElement.classList.add('dark');
+                        localStorage.setItem('theme', 'dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                        localStorage.setItem('theme', 'light');
+                    }
+                },
+
+                // Configuration Management
+                async loadConfiguration() {
+                    try {
+                        const response = await fetch('/api/config');
+                        if (response.ok) {
+                            this.config = await response.json();
+                            // Initialize form with current config
+                            Object.keys(this.configForm).forEach(key => {
+                                if (this.config[key] !== undefined) {
+                                    this.configForm[key] = this.config[key];
+                                }
+                            });
+                            this.configForm.epic_ids = this.config.epic_ids ? this.config.epic_ids.join(',') : '';
+                        }
+                    } catch (error) {
+                        console.error('Failed to load configuration:', error);
+                        this.showNotification('Failed to load configuration', 'error');
+                    }
+                },
+
+                async saveConfiguration() {
+                    this.savingConfig = true;
+                    try {
+                        // Process epic_ids
+                        const configToSave = { ...this.configForm };
+                        configToSave.epic_ids = this.configForm.epic_ids
+                            ? this.configForm.epic_ids.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id))
+                            : [];
+
+                        const response = await fetch('/api/config', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(configToSave)
+                        });
+
+                        if (response.ok) {
+                            await this.loadConfiguration();
+                            this.showConfigModal = false;
+                            this.showNotification('Configuration saved successfully', 'success', 'Configuration');
+                        } else {
+                            const error = await response.json();
+                            this.showNotification(error.error || 'Failed to save configuration', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Failed to save configuration:', error);
+                        this.showNotification('Failed to save configuration', 'error');
+                    } finally {
+                        this.savingConfig = false;
+                    }
+                },
+
+                // Monitor Management
+                async loadMonitorStatus() {
+                    try {
+                        const response = await fetch('/api/monitor/status');
+                        if (response.ok) {
+                            this.monitorStatus = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Failed to load monitor status:', error);
+                    }
+                },
+
+                async startMonitor() {
+                    this.loading = true;
+                    try {
+                        const response = await fetch('/api/monitor/start', { method: 'POST' });
+                        if (response.ok) {
+                            await this.loadMonitorStatus();
+                            this.showNotification('Monitor started successfully', 'success', 'Monitor');
+                            this.addLog('info', 'Monitor started');
+                        } else {
+                            const error = await response.json();
+                            this.showNotification(error.error || 'Failed to start monitor', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Failed to start monitor:', error);
+                        this.showNotification('Failed to start monitor', 'error');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async stopMonitor() {
+                    this.loading = true;
+                    try {
+                        const response = await fetch('/api/monitor/stop', { method: 'POST' });
+                        if (response.ok) {
+                            await this.loadMonitorStatus();
+                            this.showNotification('Monitor stopped successfully', 'success', 'Monitor');
+                            this.addLog('info', 'Monitor stopped');
+                        } else {
+                            const error = await response.json();
+                            this.showNotification(error.error || 'Failed to stop monitor', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Failed to stop monitor:', error);
+                        this.showNotification('Failed to stop monitor', 'error');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async checkNow() {
+                    this.loading = true;
+                    try {
+                        const response = await fetch('/api/monitor/check', { method: 'POST' });
+                        if (response.ok) {
+                            const result = await response.json();
+                            this.showNotification(`Check completed. Found ${result.changes_detected} changes.`, 'success', 'Manual Check');
+                            this.addLog('info', `Manual check completed - ${result.changes_detected} changes detected`);
+                            await this.refreshData();
+                        } else {
+                            const error = await response.json();
+                            this.showNotification(error.error || 'Manual check failed', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Manual check failed:', error);
+                        this.showNotification('Manual check failed', 'error');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // Data Management
+                async loadEpics() {
+                    try {
+                        const response = await fetch('/api/epics');
+                        if (response.ok) {
+                            this.epics = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Failed to load EPICs:', error);
+                    }
+                },
+
+                async loadStats() {
+                    try {
+                        const response = await fetch('/api/stats');
+                        if (response.ok) {
+                            this.stats = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Failed to load statistics:', error);
+                    }
+                },
+
+                async refreshData() {
+                    this.loading = true;
+                    try {
+                        await Promise.all([
+                            this.loadMonitorStatus(),
+                            this.loadEpics(),
+                            this.loadStats()
+                        ]);
+                        this.updateLastUpdated();
+                    } catch (error) {
+                        console.error('Failed to refresh data:', error);
+                        this.showNotification('Failed to refresh data', 'error');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // Test Case Extraction
+                async extractTestCases() {
+                    if (!this.testStoryId.trim()) return;
+
+                    this.extractingTestCases = true;
+                    try {
+                        const response = await fetch(`/api/stories/${this.testStoryId.trim()}/test-cases`, {
+                            method: 'POST'
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.extractedTestCases = data.test_cases;
+                            this.showNotification(`Successfully extracted ${data.total_test_cases} test cases for story ${this.testStoryId}`, 'success', 'Test Case Extraction');
+                        } else {
+                            const data = await response.json();
+                            this.showNotification(data.error || 'Failed to extract test cases', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Failed to extract test cases:', error);
+                        this.showNotification('Failed to extract test cases', 'error');
+                    } finally {
+                        this.extractingTestCases = false;
+                    }
+                },
+
+                async uploadTestCases() {
+                    if (this.extractedTestCases.length === 0) return;
+
+                    try {
+                        const response = await fetch(`/api/stories/${this.testStoryId.trim()}/test-cases/upload`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                test_cases: this.extractedTestCases,
+                                work_item_type: this.config.test_case_extraction_type
+                            })
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            // Update test cases with uploaded IDs
+                            data.uploaded_test_cases.forEach((uploaded, index) => {
+                                if (uploaded.success && this.extractedTestCases[index]) {
+                                    this.extractedTestCases[index].uploaded_id = uploaded.id;
+                                }
+                            });
+                            this.showNotification(`Successfully uploaded ${data.successful_uploads} test cases`, 'success', 'Test Case Upload');
+                        } else {
+                            const error = await response.json();
+                            this.showNotification(error.error || 'Failed to upload test cases', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Failed to upload test cases:', error);
+                        this.showNotification('Failed to upload test cases', 'error');
+                    }
+                },
+
+                // EPIC Actions
+                async viewEpicDetails(epicId) {
+                    try {
+                        const response = await fetch(`/api/epics/${epicId}`);
+                        if (response.ok) {
+                            const epic = await response.json();
+                            // Show epic details in a modal or navigate to details page
+                            this.showNotification(`Epic: ${epic.title}`, 'info');
+                        }
+                    } catch (error) {
+                        console.error('Failed to load epic details:', error);
+                        this.showNotification('Failed to load epic details', 'error');
+                    }
+                },
+
+                async extractStoriesFromEpic(epicId) {
+                    try {
+                        const response = await fetch(`/api/epics/${epicId}/extract-stories`, { method: 'POST' });
+                        if (response.ok) {
+                            const result = await response.json();
+                            this.showNotification(`Extracted ${result.extracted_count} stories from epic ${epicId}`, 'success');
+                            await this.loadStats();
+                        } else {
+                            const error = await response.json();
+                            this.showNotification(error.error || 'Failed to extract stories', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Failed to extract stories:', error);
+                        this.showNotification('Failed to extract stories', 'error');
+                    }
+                },
+
+                // Utility Functions
+                getStatusColor(state) {
+                    const colors = {
+                        'Active': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+                        'New': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+                        'Resolved': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+                        'Closed': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+                        'Removed': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                    };
+                    return colors[state] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+                },
+
+                formatDate(dateString) {
+                    if (!dateString) return 'Unknown';
+                    try {
+                        return new Date(dateString).toLocaleString();
+                    } catch {
+                        return 'Invalid date';
+                    }
+                },
+
+                formatTime(timestamp) {
+                    try {
+                        return new Date(timestamp).toLocaleTimeString();
+                    } catch {
+                        return 'Invalid time';
+                    }
+                },
+
+                updateLastUpdated() {
+                    this.lastUpdated = new Date().toLocaleTimeString();
+                },
+
+                // Logging
+                addLog(level, message) {
+                    this.logs.unshift({
+                        timestamp: new Date().toISOString(),
+                        level: level,
+                        message: message
+                    });
+
+                    // Keep only last 100 log entries
+                    if (this.logs.length > 100) {
+                        this.logs = this.logs.slice(0, 100);
+                    }
+                },
+
+                getLogColor(level) {
+                    const colors = {
+                        'info': 'text-blue-300',
+                        'success': 'text-green-300',
+                        'warning': 'text-yellow-300',
+                        'error': 'text-red-300'
+                    };
+                    return colors[level] || 'text-gray-300';
+                },
+
+                clearLogs() {
+                    this.logs = [];
+                },
+
+                // Notifications
+                showNotification(message, type = 'info', title = '') {
+                    this.notification = {
+                        show: true,
+                        type: type,
+                        title: title,
+                        message: message
+                    };
+
+                    // Auto-hide after 5 seconds
+                    setTimeout(() => {
+                        this.hideNotification();
+                    }, 5000);
+                },
+
+                hideNotification() {
+                    this.notification.show = false;
+                },
+
+                getNotificationColor(type) {
+                    const colors = {
+                        'info': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700',
+                        'success': 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-300 dark:border-green-700',
+                        'warning': 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-700',
+                        'error': 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900 dark:text-red-300 dark:border-red-700'
+                    };
+                    return colors[type] || colors['info'];
+                },
+
+                getNotificationIcon(type) {
+                    const icons = {
+                        'info': 'fas fa-info-circle',
+                        'success': 'fas fa-check-circle',
+                        'warning': 'fas fa-exclamation-triangle',
+                        'error': 'fas fa-times-circle'
+                    };
+                    return icons[type] || icons['info'];
+                },
+
+                // Polling
+                startPolling() {
+                    // Poll for status updates every 30 seconds
+                    setInterval(async () => {
+                        await this.loadMonitorStatus();
+                    }, 30000);
+
+                    // Poll for data updates every 60 seconds
+                    setInterval(async () => {
+                        await this.refreshData();
+                    }, 60000);
                 }
-            } catch (error) {
-                showLoading('testCaseLoading', false);
-                showAlert('testCaseResults', 'Network error: ' + error.message, 'error');
             }
         }
-
-        async function previewTestCases() {
-            const storyId = document.getElementById('storyId').value.trim();
-
-            if (!storyId) {
-                showAlert('testCaseResults', 'Please enter a Story ID', 'error');
-                return;
-            }
-
-            showLoading('testCaseLoading', true);
-            clearResults('testCaseResults');
-
-            try {
-                const response = await fetch('/api/test-cases/preview', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        story_id: storyId
-                    })
-                });
-
-                const result = await response.json();
-                showLoading('testCaseLoading', false);
-
-                if (result.success) {
-                    displayTestCaseResults(result, 'testCaseResults');
-                } else {
-                    showAlert('testCaseResults', result.error, 'error');
-                }
-            } catch (error) {
-                showLoading('testCaseLoading', false);
-                showAlert('testCaseResults', 'Network error: ' + error.message, 'error');
-            }
-        }
-
-        // Story Extraction Functions
-        async function extractStories() {
-            const requirementId = document.getElementById('requirementId').value.trim();
-            const uploadToAdo = document.getElementById('uploadStories').checked;
-
-            if (!requirementId) {
-                showAlert('storyResults', 'Please enter a Requirement ID', 'error');
-                return;
-            }
-
-            showLoading('storyLoading', true);
-            clearResults('storyResults');
-
-            try {
-                const response = await fetch('/api/stories/extract', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        requirement_id: requirementId,
-                        upload_to_ado: uploadToAdo
-                    })
-                });
-
-                const result = await response.json();
-                showLoading('storyLoading', false);
-
-                if (result.success) {
-                    displayStoryResults(result, 'storyResults');
-                } else {
-                    showAlert('storyResults', result.error, 'error');
-                }
-            } catch (error) {
-                showLoading('storyLoading', false);
-                showAlert('storyResults', 'Network error: ' + error.message, 'error');
-            }
-        }
-
-        async function previewStories() {
-            const requirementId = document.getElementById('requirementId').value.trim();
-
-            if (!requirementId) {
-                showAlert('storyResults', 'Please enter a Requirement ID', 'error');
-                return;
-            }
-
-            showLoading('storyLoading', true);
-            clearResults('storyResults');
-
-            try {
-                const response = await fetch('/api/stories/preview', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        requirement_id: requirementId
-                    })
-                });
-
-                const result = await response.json();
-                showLoading('storyLoading', false);
-
-                if (result.success) {
-                    displayStoryResults(result, 'storyResults');
-                } else {
-                    showAlert('storyResults', result.error, 'error');
-                }
-            } catch (error) {
-                showLoading('storyLoading', false);
-                showAlert('storyResults', 'Network error: ' + error.message, 'error');
-            }
-        }
-
-        // Bulk Extraction Function
-        async function bulkExtractTestCases() {
-            const epicId = document.getElementById('epicId').value.trim();
-            const uploadToAdo = document.getElementById('uploadBulkTestCases').checked;
-
-            if (!epicId) {
-                showAlert('bulkResults', 'Please enter an Epic ID', 'error');
-                return;
-            }
-
-            showLoading('bulkLoading', true);
-            clearResults('bulkResults');
-
-            try {
-                const response = await fetch('/api/test-cases/bulk-extract', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        epic_id: epicId,
-                        upload_to_ado: uploadToAdo
-                    })
-                });
-
-                const result = await response.json();
-                showLoading('bulkLoading', false);
-
-                if (result.success) {
-                    displayBulkResults(result, 'bulkResults');
-                } else {
-                    showAlert('bulkResults', result.error, 'error');
-                }
-            } catch (error) {
-                showLoading('bulkLoading', false);
-                showAlert('bulkResults', 'Network error: ' + error.message, 'error');
-            }
-        }
-
-        // Display Functions
-        function displayTestCaseResults(result, containerId) {
-            const container = document.getElementById(containerId);
-
-            let html = `
-                <div class="alert alert-success">
-                    <strong>✅ Success!</strong> Extracted ${result.total_test_cases} test cases for "${result.story_title}" (ID: ${result.story_id})
-                    ${result.uploaded_to_ado ? '<br><strong>📤 Uploaded to Azure DevOps as Issues</strong>' : ''}
-                    ${result.preview_mode ? '<br><strong>👁️ Preview Mode - Not uploaded to Azure DevOps</strong>' : ''}
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-number">${result.total_test_cases}</div>
-                        <div class="stat-label">Total Test Cases</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${result.test_cases.filter(tc => tc.test_type === 'positive').length}</div>
-                        <div class="stat-label">Positive Tests</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${result.test_cases.filter(tc => tc.test_type === 'negative').length}</div>
-                        <div class="stat-label">Negative Tests</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${result.test_cases.filter(tc => tc.test_type === 'edge_case').length}</div>
-                        <div class="stat-label">Edge Cases</div>
-                    </div>
-                </div>
-            `;
-
-            result.test_cases.forEach((testCase, index) => {
-                html += `
-                    <div class="test-case-item">
-                        <div class="test-case-header">
-                            <div class="test-case-title">${index + 1}. ${testCase.title}</div>
-                            <div class="test-case-type test-type-${testCase.test_type}">${testCase.test_type.replace('_', ' ')}</div>
-                        </div>
-                        <p><strong>Description:</strong> ${testCase.description}</p>
-
-                        <div class="test-case-steps">
-                            <h4>Test Steps:</h4>
-                            <ol>
-                                ${testCase.steps.map(step => `<li>${step}</li>`).join('')}
-                            </ol>
-                        </div>
-
-                        <p><strong>Expected Result:</strong> ${testCase.expected_result}</p>
-                        ${testCase.prerequisites ? `<p><strong>Prerequisites:</strong> ${testCase.prerequisites}</p>` : ''}
-                        ${testCase.test_data ? `<p><strong>Test Data:</strong> ${testCase.test_data}</p>` : ''}
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        function displayStoryResults(result, containerId) {
-            const container = document.getElementById(containerId);
-
-            let html = `
-                <div class="alert alert-success">
-                    <strong>✅ Success!</strong> Extracted ${result.total_stories} user stories from "${result.requirement_title}" (ID: ${result.requirement_id})
-                    ${result.uploaded_to_ado ? '<br><strong>📤 Uploaded to Azure DevOps</strong>' : ''}
-                    ${result.preview_mode ? '<br><strong>👁️ Preview Mode - Not uploaded to Azure DevOps</strong>' : ''}
-                </div>
-            `;
-
-            result.stories.forEach((story, index) => {
-                html += `
-                    <div class="test-case-item">
-                        <div class="test-case-title">${index + 1}. ${story.heading}</div>
-                        <p><strong>Description:</strong> ${story.description}</p>
-
-                        <div class="test-case-steps">
-                            <h4>Acceptance Criteria:</h4>
-                            <ol>
-                                ${story.acceptance_criteria.map(criteria => `<li>${criteria}</li>`).join('')}
-                            </ol>
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        function displayBulkResults(result, containerId) {
-            const container = document.getElementById(containerId);
-
-            let html = `
-                <div class="alert alert-success">
-                    <strong>✅ Success!</strong> Processed ${result.total_stories} stories in Epic ${result.epic_id}
-                    <br><strong>📊 Results:</strong> ${result.successful_extractions} successful extractions, ${result.total_test_cases} total test cases
-                    ${result.uploaded_to_ado ? '<br><strong>📤 Uploaded to Azure DevOps as Issues</strong>' : ''}
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-number">${result.total_stories}</div>
-                        <div class="stat-label">Total Stories</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${result.successful_extractions}</div>
-                        <div class="stat-label">Successful</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">${result.total_test_cases}</div>
-                        <div class="stat-label">Test Cases</div>
-                    </div>
-                </div>
-            `;
-
-            result.story_results.forEach((storyResult, index) => {
-                const statusClass = storyResult.success ? 'alert-success' : 'alert-error';
-                html += `
-                    <div class="alert ${statusClass}">
-                        <strong>Story ${storyResult.story_id}:</strong> ${storyResult.story_title}
-                        <br><strong>Status:</strong> ${storyResult.success ? `✅ Success - ${storyResult.test_case_count} test cases` : `❌ Failed - ${storyResult.error}`}
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        // Utility Functions
-        function showAlert(containerId, message, type) {
-            const container = document.getElementById(containerId);
-            const alertClass = type === 'error' ? 'alert-error' : 'alert-info';
-            container.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
-        }
-
-        function showLoading(loadingId, show) {
-            const loading = document.getElementById(loadingId);
-            loading.style.display = show ? 'block' : 'none';
-        }
-
-        function clearResults(containerId) {
-            document.getElementById(containerId).innerHTML = '';
-        }
-
-        // Initialize dashboard
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check API health
-            fetch('/api/health')
-                .then(response => response.json())
-                .then(data => {
-                    console.log('API Status:', data.status);
-                })
-                .catch(error => {
-                    console.error('API connection failed:', error);
-                });
-        });
     </script>
 </body>
 </html>

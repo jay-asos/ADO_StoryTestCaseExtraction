@@ -398,7 +398,7 @@ class EpicChangeMonitor:
         """Main monitoring loop"""
         self.logger.info("Starting EPIC monitoring loop")
         try:
-            while True:
+            while self.is_running:
                 try:
                     # Auto-detect new Epics at the start of each cycle
                     self.update_monitored_epics()
