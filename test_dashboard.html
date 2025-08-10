@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration Test Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div x-data="configTest()" x-init="loadConfig()" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200 p-4">
+            <h1 class="text-2xl font-bold text-gray-900">Configuration Test Dashboard</h1>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Configuration Display Panel -->
+            <div class="bg-white rounded-lg shadow border p-6 mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">
+                        <i class="fas fa-cog text-blue-500 mr-2"></i>
+                        Current Configuration
+                    </h2>
+                    <button @click="loadConfig()" 
+                            class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-refresh mr-2"></i>
+                        Reload
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" x-show="config">
+                    <!-- File Path Info -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-folder text-blue-500"></i>
+                            <h3 class="font-medium text-gray-900">Configuration File</h3>
+                        </div>
+                        <p class="text-xs text-gray-600 break-all" x-text="config?.env_file_path || 'Not found'" title="Azure DevOps & OpenAI Keys location"></p>
+                        <div class="flex items-center space-x-1 mt-1">
+                            <span :class="config?.env_file_writable ? 'text-green-500' : 'text-red-500'" class="text-xs">
+                                <i :class="config?.env_file_writable ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle'" class="mr-1"></i>
+                                <span x-text="config?.env_file_writable ? 'Writable' : 'Read-only'"></span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Organization -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-building text-green-500"></i>
+                            <h3 class="font-medium text-gray-900">Organization</h3>
+                        </div>
+                        <p class="text-sm text-gray-600" x-text="config?.ado_organization || 'Not set'"></p>
+                    </div>
+
+                    <!-- Project -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-project-diagram text-orange-500"></i>
+                            <h3 class="font-medium text-gray-900">Project</h3>
+                        </div>
+                        <p class="text-sm text-gray-600" x-text="config?.ado_project || 'Not set'"></p>
+                    </div>
+
+                    <!-- PAT (masked) -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-key text-purple-500"></i>
+                            <h3 class="font-medium text-gray-900">Personal Access Token</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 font-mono" x-text="config?.ado_pat || 'Not set'"></p>
+                    </div>
+                </div>
+
+                <!-- Raw Config Display -->
+                <div class="mt-6">
+                    <h3 class="text-md font-semibold text-gray-900 mb-2">Raw Configuration Data:</h3>
+                    <pre class="bg-gray-900 text-green-400 p-4 rounded-lg text-sm overflow-x-auto" x-text="JSON.stringify(config, null, 2)"></pre>
+                </div>
+            </div>
+
+            <!-- Configuration Update Form -->
+            <div class="bg-white rounded-lg shadow border p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-edit text-blue-500 mr-2"></i>
+                    Update Configuration
+                </h2>
+
+                <form @submit.prevent="updateConfig()" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Organization <span class="text-red-500">*</span>
+                            </label>
+                            <input x-model="form.ado_organization" 
+                                   type="text" 
+                                   required 
+                                   placeholder="e.g., papai0709"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Project Name <span class="text-red-500">*</span>
+                            </label>
+                            <input x-model="form.ado_project" 
+                                   type="text" 
+                                   required 
+                                   placeholder="e.g., Practice"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                OpenAI Model
+                            </label>
+                            <select x-model="form.openai_model" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="gpt-4">GPT-4</option>
+                                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Story Extraction Type
+                            </label>
+                            <select x-model="form.story_extraction_type" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="User Story">User Story</option>
+                                <option value="Product Backlog Item">Product Backlog Item</option>
+                                <option value="Issue">Issue</option>
+                                <option value="Task">Task</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" 
+                                @click="resetForm()"
+                                class="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">
+                            Reset
+                        </button>
+                        <button type="submit" 
+                                :disabled="updating"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                            <span x-text="updating ? 'Updating...' : 'Update Configuration'"></span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Update Result -->
+                <div x-show="updateResult" class="mt-4 p-4 rounded-lg" 
+                     :class="updateResult?.success ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'">
+                    <div x-text="updateResult?.message"></div>
+                    <div x-show="updateResult?.updated_keys?.length > 0" class="mt-2">
+                        <strong>Updated keys:</strong> <span x-text="updateResult?.updated_keys?.join(', ')"></span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function configTest() {
+            return {
+                config: null,
+                form: {
+                    ado_organization: '',
+                    ado_project: '',
+                    openai_model: 'gpt-4',
+                    story_extraction_type: 'User Story',
+                    test_case_extraction_type: 'Issue'
+                },
+                updating: false,
+                updateResult: null,
+
+                async loadConfig() {
+                    try {
+                        const response = await fetch('/api/config');
+                        if (response.ok) {
+                            this.config = await response.json();
+                            // Populate form with current values (excluding sensitive fields that are masked)
+                            this.form.ado_organization = this.config.ado_organization || '';
+                            this.form.ado_project = this.config.ado_project || '';
+                            this.form.openai_model = this.config.openai_model || 'gpt-4';
+                            this.form.story_extraction_type = this.config.story_extraction_type || 'User Story';
+                            this.form.test_case_extraction_type = this.config.test_case_extraction_type || 'Issue';
+                            
+                            console.log('Config loaded:', this.config);
+                            console.log('Form populated:', this.form);
+                        } else {
+                            console.error('Failed to load config');
+                        }
+                    } catch (error) {
+                        console.error('Error loading config:', error);
+                    }
+                },
+
+                async updateConfig() {
+                    this.updating = true;
+                    this.updateResult = null;
+                    
+                    try {
+                        const response = await fetch('/api/config', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.form)
+                        });
+
+                        const result = await response.json();
+                        this.updateResult = result;
+
+                        if (response.ok) {
+                            console.log('Update successful:', result);
+                            // Reload config to see changes
+                            setTimeout(() => this.loadConfig(), 1000);
+                        } else {
+                            console.error('Update failed:', result);
+                        }
+                    } catch (error) {
+                        console.error('Error updating config:', error);
+                        this.updateResult = {
+                            success: false,
+                            message: 'Network error: ' + error.message
+                        };
+                    } finally {
+                        this.updating = false;
+                    }
+                },
+
+                resetForm() {
+                    // Reset to current config values
+                    this.loadConfig();
+                    this.updateResult = null;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

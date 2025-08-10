@@ -1,12 +1,10 @@
 {
-  "poll_interval_seconds": 30,
+  "poll_interval_seconds": 1800,
+  "epic_ids": [],
   "auto_sync": true,
   "auto_extract_new_epics": true,
-  "story_extraction_type": "Task",
-  "test_case_extraction_type": "Issue",
-  "skip_duplicate_check": false,
-  "retry_attempts": 3,
-  "retry_delay_seconds": 60,
   "log_level": "INFO",
-  "epic_ids": []
+  "max_concurrent_syncs": 3,
+  "retry_attempts": 3,
+  "retry_delay_seconds": 60
 }

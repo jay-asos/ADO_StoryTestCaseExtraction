@@ -85,7 +85,21 @@
                     </button>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-folder text-blue-500"></i>
+                            <h3 class="font-medium text-gray-900 dark:text-white">Configuration File</h3>
+                        </div>
+                        <p class="text-xs text-gray-600 dark:text-gray-300" x-text="config.env_file_path || 'Not found'" title="Azure DevOps & OpenAI Keys location"></p>
+                        <div class="flex items-center space-x-1 mt-1">
+                            <span :class="config.env_file_writable ? 'text-green-500' : 'text-red-500'" class="text-xs">
+                                <i :class="config.env_file_writable ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle'" class="mr-1"></i>
+                                <span x-text="config.env_file_writable ? 'Writable' : 'Read-only'"></span>
+                            </span>
+                        </div>
+                    </div>
+
                     <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                         <div class="flex items-center space-x-2 mb-2">
                             <i class="fas fa-book text-green-500"></i>
@@ -287,7 +301,6 @@
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Stories</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Last Changed</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
@@ -314,18 +327,6 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400" x-text="formatDate(epic.last_changed)"></td>
-                                    <td class="px-4 py-4">
-                                        <div class="flex items-center space-x-2">
-                                            <button @click="viewEpicDetails(epic.id)"
-                                                    class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button @click="extractStoriesFromEpic(epic.id)"
-                                                    class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
-                                                <i class="fas fa-download"></i>
-                                            </button>
-                                        </div>
-                                    </td>
                                 </tr>
                             </template>
                         </tbody>
@@ -345,11 +346,19 @@
                         <i class="fas fa-history text-purple-500 mr-2"></i>
                         Activity Log
                     </h2>
-                    <button @click="clearLogs()"
-                            class="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm">
-                        <i class="fas fa-trash mr-1"></i>
-                        Clear
-                    </button>
+                    <div class="flex items-center space-x-2">
+                        <button @click="refreshLogs()"
+                                :disabled="refreshingLogs"
+                                class="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fas fa-sync-alt mr-1" :class="{'animate-spin': refreshingLogs}"></i>
+                            <span x-text="refreshingLogs ? 'Refreshing...' : 'Refresh'"></span>
+                        </button>
+                        <button @click="clearLogs()"
+                                class="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm">
+                            <i class="fas fa-trash mr-1"></i>
+                            Clear
+                        </button>
+                    </div>
                 </div>
 
                 <div class="bg-gray-900 rounded-lg p-4 h-64 overflow-y-auto font-mono text-sm">
@@ -404,30 +413,41 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Organization URL
+                                        Organization <span class="text-red-500">*</span>
                                     </label>
-                                    <input x-model="configForm.ado_org_url"
-                                           type="url"
+                                    <input x-model="configForm.ado_organization"
+                                           type="text"
                                            required
+                                           placeholder="e.g., papai0709"
                                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Your Azure DevOps organization name</p>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Project Name
+                                        Project Name <span class="text-red-500">*</span>
                                     </label>
                                     <input x-model="configForm.ado_project"
                                            type="text"
                                            required
+                                           placeholder="e.g., Practice"
                                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Your Azure DevOps project name</p>
                                 </div>
-                                <div>
+                                <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Personal Access Token
                                     </label>
-                                    <input x-model="configForm.ado_pat"
-                                           type="password"
-                                           required
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    <div class="relative">
+                                        <input x-model="configForm.ado_pat"
+                                               :type="showAdoPat ? 'text' : 'password'"
+                                               placeholder="Enter new PAT to update (currently hidden for security)"
+                                               class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                        <button type="button" @click="showAdoPat = !showAdoPat"
+                                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                            <i :class="showAdoPat ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                        </button>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to keep current token. Only provide if updating.</p>
                                 </div>
                             </div>
                         </div>
@@ -440,10 +460,17 @@
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         API Key
                                     </label>
-                                    <input x-model="configForm.openai_api_key"
-                                           type="password"
-                                           required
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    <div class="relative">
+                                        <input x-model="configForm.openai_api_key"
+                                               :type="showOpenAiKey ? 'text' : 'password'"
+                                               placeholder="Enter new API key to update (currently hidden for security)"
+                                               class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                        <button type="button" @click="showOpenAiKey = !showOpenAiKey"
+                                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                            <i :class="showOpenAiKey ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                        </button>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to keep current key. Only provide if updating.</p>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -676,7 +703,7 @@
                 },
 
                 configForm: {
-                    ado_org_url: '',
+                    ado_organization: '',
                     ado_project: '',
                     ado_pat: '',
                     openai_api_key: '',
@@ -686,6 +713,10 @@
                     check_interval_minutes: 30,
                     epic_ids: ''
                 },
+                
+                // Form state
+                showAdoPat: false,
+                showOpenAiKey: false,
 
                 savingConfig: false,
 
@@ -715,6 +746,7 @@
 
                 // Logs
                 logs: [],
+                refreshingLogs: false,
 
                 // Notifications
                 notification: {
@@ -770,13 +802,33 @@
                         const response = await fetch('/api/config');
                         if (response.ok) {
                             this.config = await response.json();
-                            // Initialize form with current config
-                            Object.keys(this.configForm).forEach(key => {
-                                if (this.config[key] !== undefined) {
-                                    this.configForm[key] = this.config[key];
-                                }
-                            });
+                            
+                            // Initialize form with current config - explicit mapping
+                            this.configForm.ado_organization = this.config.ado_organization || '';
+                            this.configForm.ado_project = this.config.ado_project || '';
+                            
+                            // Handle sensitive fields - show placeholder for masked values, empty for editing
+                            if (this.config.ado_pat && this.config.ado_pat.startsWith('*')) {
+                                this.configForm.ado_pat = '';  // Empty for new input
+                            } else {
+                                this.configForm.ado_pat = this.config.ado_pat || '';
+                            }
+                            
+                            if (this.config.openai_api_key && this.config.openai_api_key.startsWith('*')) {
+                                this.configForm.openai_api_key = '';  // Empty for new input
+                            } else {
+                                this.configForm.openai_api_key = this.config.openai_api_key || '';
+                            }
+                            
+                            // Handle other fields
+                            this.configForm.openai_model = this.config.openai_model || 'gpt-4';
+                            this.configForm.story_extraction_type = this.config.story_extraction_type || 'User Story';
+                            this.configForm.test_case_extraction_type = this.config.test_case_extraction_type || 'Issue';
+                            this.configForm.check_interval_minutes = this.config.check_interval_minutes || 30;
                             this.configForm.epic_ids = this.config.epic_ids ? this.config.epic_ids.join(',') : '';
+                            
+                            console.log('Configuration loaded:', this.config);
+                            console.log('Form populated:', this.configForm);
                         }
                     } catch (error) {
                         console.error('Failed to load configuration:', error);
@@ -1025,7 +1077,8 @@
                         'New': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
                         'Resolved': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
                         'Closed': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-                        'Removed': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                        'Removed': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+                        'Unknown': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
                     };
                     return colors[state] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
                 },
@@ -1075,8 +1128,50 @@
                     return colors[level] || 'text-gray-300';
                 },
 
-                clearLogs() {
+                async refreshLogs() {
+                    this.refreshingLogs = true;
+                    try {
+                        const response = await fetch('/api/logs?limit=100');
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.success) {
+                                this.logs = data.logs;
+                                this.showNotification(`Refreshed ${data.total_entries} log entries from server`, 'success', 'Logs');
+                            } else {
+                                this.showNotification(data.error || 'Failed to refresh logs', 'error');
+                            }
+                        } else {
+                            this.showNotification('Failed to fetch logs from server', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Failed to refresh logs:', error);
+                        this.showNotification('Failed to refresh logs', 'error');
+                    } finally {
+                        this.refreshingLogs = false;
+                    }
+                },
+
+                async clearLogs() {
+                    // Clear local logs immediately
                     this.logs = [];
+                    
+                    // Also clear server logs
+                    try {
+                        const response = await fetch('/api/logs/clear', { method: 'POST' });
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.success) {
+                                this.showNotification('Logs cleared successfully on server', 'success', 'Logs');
+                            } else {
+                                this.showNotification(data.error || 'Failed to clear server logs', 'warning');
+                            }
+                        } else {
+                            this.showNotification('Failed to clear server logs', 'warning');
+                        }
+                    } catch (error) {
+                        console.error('Failed to clear server logs:', error);
+                        this.showNotification('Failed to clear server logs', 'warning');
+                    }
                 },
 
                 // Notifications

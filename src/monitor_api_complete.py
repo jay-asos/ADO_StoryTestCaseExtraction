@@ -5,8 +5,8 @@ Provides REST API endpoints for the web dashboard
 
 import json
 import logging
-import os
 import threading
+import time
 from datetime import datetime
 from typing import Dict, Any, List
 from flask import Flask, render_template, request, jsonify, Response
@@ -15,6 +15,7 @@ from flask_cors import CORS
 from src.agent import StoryExtractionAgent
 from src.models import TestCaseExtractionResult, StoryExtractionResult
 from src.monitor import EpicChangeMonitor, MonitorConfig
+from src.env_utils import EnvFileManager, get_masked_value, is_env_file_writable
 from config.settings import Settings
 
 
@@ -29,6 +30,9 @@ class MonitorAPI:
         self.agent = StoryExtractionAgent()
         self.settings = Settings()
         self.logger = logging.getLogger(__name__)
+        
+        # Initialize environment file manager
+        self.env_manager = EnvFileManager('.env')
 
         # Create monitor instance, loading config from file if none provided
         self.monitor = None
@@ -48,6 +52,57 @@ class MonitorAPI:
         # Setup routes
         self._setup_routes()
 
+    def _tail_file(self, f, n):
+        """Efficiently read the last n lines from a file object opened in binary mode"""
+        try:
+            # Get file size
+            f.seek(0, 2)  # Go to end of file
+            file_size = f.tell()
+            
+            if file_size == 0:
+                return []
+            
+            # Start from the end and work backwards
+            lines_found = []
+            buffer_size = min(8192, file_size)  # Read in 8KB chunks
+            position = file_size
+            
+            while len(lines_found) < n and position > 0:
+                # Calculate read position
+                read_size = min(buffer_size, position)
+                position -= read_size
+                f.seek(position)
+                
+                # Read chunk
+                chunk = f.read(read_size)
+                if isinstance(chunk, bytes):
+                    chunk = chunk.decode('utf-8', errors='ignore')
+                
+                # Split into lines and add to our collection
+                chunk_lines = chunk.split('\n')
+                
+                # If we're not at the beginning of file, the first line might be partial
+                if position > 0 and len(lines_found) > 0:
+                    # Combine with the first line we already have
+                    lines_found[0] = chunk_lines[-1] + lines_found[0]
+                    chunk_lines = chunk_lines[:-1]
+                
+                # Add lines in reverse order (since we're reading backwards)
+                lines_found = chunk_lines[::-1] + lines_found
+                
+                # Remove empty lines from the beginning/end
+                while lines_found and not lines_found[0].strip():
+                    lines_found.pop(0)
+                while lines_found and not lines_found[-1].strip():
+                    lines_found.pop()
+            
+            # Return the last n lines
+            return lines_found[-n:] if len(lines_found) > n else lines_found
+            
+        except Exception as e:
+            self.logger.error(f"Error in _tail_file: {e}")
+            return []
+
     def _setup_routes(self):
         """Setup Flask routes"""
 
@@ -62,7 +117,8 @@ class MonitorAPI:
             return jsonify({
                 'status': 'healthy',
                 'timestamp': datetime.now().isoformat(),
-                'service': 'ADO Story Extractor API'
+                'service': 'ADO Story Extractor API',
+                'monitor_running': self.monitor.is_running if self.monitor else False
             })
 
         # Monitor control endpoints
@@ -80,7 +136,7 @@ class MonitorAPI:
                     return jsonify({
                         'success': False,
                         'error': 'Monitor is already running'
-                    }, 400)
+                    }), 400
 
                 # Start monitor in a separate thread to avoid blocking the API
                 def start_monitor_thread():
@@ -177,10 +233,23 @@ class MonitorAPI:
                             except:
                                 pass
 
+                            # Determine monitoring state
+                            monitor_state = "Unknown"
+                            if epic_state.consecutive_errors > 0:
+                                monitor_state = f"Error (retries: {epic_state.consecutive_errors})"
+                            elif epic_state.last_snapshot is not None:
+                                if epic_state.stories_extracted if hasattr(epic_state, 'stories_extracted') else False:
+                                    monitor_state = "Monitored (stories extracted)"
+                                else:
+                                    monitor_state = "Monitored"
+                            else:
+                                monitor_state = "Initializing"
+
                             epics_data.append({
                                 'id': epic_id,
                                 'title': epic_info.get('fields', {}).get('System.Title', f'Epic {epic_id}'),
-                                'state': epic_info.get('fields', {}).get('System.State', 'Unknown'),
+                                'state': monitor_state,
+                                'ado_state': epic_info.get('fields', {}).get('System.State', 'Unknown'),  # Keep ADO state separately
                                 'story_count': story_count,
                                 'last_changed': epic_state.last_check.isoformat() if epic_state.last_check else None,
                                 'consecutive_errors': epic_state.consecutive_errors,
@@ -190,10 +259,23 @@ class MonitorAPI:
                     except Exception as e:
                         self.logger.error(f"Error fetching details for EPIC {epic_id}: {e}")
                         # Still include the EPIC even if we can't get details
+                        # Determine monitoring state for error case
+                        monitor_state = "Unknown"
+                        if epic_state.consecutive_errors > 0:
+                            monitor_state = f"Error (retries: {epic_state.consecutive_errors})"
+                        elif epic_state.last_snapshot is not None:
+                            if epic_state.stories_extracted if hasattr(epic_state, 'stories_extracted') else False:
+                                monitor_state = "Monitored (stories extracted)"
+                            else:
+                                monitor_state = "Monitored"
+                        else:
+                            monitor_state = "Initializing"
+
                         epics_data.append({
                             'id': epic_id,
                             'title': f'Epic {epic_id}',
-                            'state': 'Unknown',
+                            'state': monitor_state,
+                            'ado_state': 'Unknown',
                             'story_count': 0,
                             'last_changed': epic_state.last_check.isoformat() if epic_state.last_check else None,
                             'consecutive_errors': epic_state.consecutive_errors,
@@ -274,18 +356,27 @@ class MonitorAPI:
                 if not self.monitor:
                     return jsonify({'error': 'Monitor not configured'}), 400
 
+                # Get current env values for display
+                env_vars = self.env_manager.read_env_file()
+                
                 config_dict = {
-                    'ado_org_url': self.settings.ado_organization,
-                    'ado_project': self.settings.ado_project,
-                    'ado_pat': '***hidden***',  # Don't expose the actual PAT
-                    'openai_api_key': '***hidden***',  # Don't expose the actual API key
-                    'openai_model': getattr(self.settings, 'openai_model', 'gpt-4'),
-                    'story_extraction_type': getattr(self.settings, 'story_extraction_type', 'User Story'),
-                    'test_case_extraction_type': getattr(self.settings, 'test_case_extraction_type', 'Issue'),
+                    'ado_org_url': f"https://dev.azure.com/{Settings.ADO_ORGANIZATION}" if Settings.ADO_ORGANIZATION else '',
+                    'ado_organization': Settings.ADO_ORGANIZATION or '',
+                    'ado_project': Settings.ADO_PROJECT or '',
+                    'ado_pat': get_masked_value(Settings.ADO_PAT or ''),  # Masked but shows structure
+                    'openai_api_key': get_masked_value(Settings.OPENAI_API_KEY or ''),  # Masked but shows structure
+                    'openai_model': getattr(Settings, 'OPENAI_MODEL', 'gpt-4'),
+                    'story_extraction_type': getattr(Settings, 'STORY_EXTRACTION_TYPE', 'User Story'),
+                    'test_case_extraction_type': getattr(Settings, 'TEST_CASE_EXTRACTION_TYPE', 'Issue'),
                     'check_interval_minutes': self.monitor.config.poll_interval_seconds // 60 if self.monitor.config.poll_interval_seconds else 5,
                     'epic_ids': list(self.monitor.monitored_epics.keys()) if self.monitor.monitored_epics else [],
                     'auto_sync': self.monitor.config.auto_sync if hasattr(self.monitor.config, 'auto_sync') else True,
-                    'auto_extract_new_epics': self.monitor.config.auto_extract_new_epics if hasattr(self.monitor.config, 'auto_extract_new_epics') else True
+                    'auto_extract_new_epics': self.monitor.config.auto_extract_new_epics if hasattr(self.monitor.config, 'auto_extract_new_epics') else True,
+                    
+                    # Add file path information
+                    'env_file_path': self.env_manager.get_env_file_path(),
+                    'env_file_directory': self.env_manager.get_env_file_directory(),
+                    'env_file_writable': is_env_file_writable('.env')
                 }
 
                 return jsonify(config_dict)
@@ -296,7 +387,7 @@ class MonitorAPI:
 
         @self.app.route('/api/config', methods=['PUT'])
         def update_config():
-            """Update configuration"""
+            """Update configuration and .env file"""
             try:
                 if not self.monitor:
                     return jsonify({'error': 'Monitor not configured'}), 400
@@ -304,6 +395,50 @@ class MonitorAPI:
                 data = request.get_json()
                 if not data:
                     return jsonify({'error': 'No configuration data provided'}), 400
+
+                # Prepare environment variables updates
+                env_updates = {}
+                
+                # Handle Azure DevOps settings - these are required
+                if 'ado_organization' in data:
+                    if not data['ado_organization'].strip():
+                        return jsonify({'error': 'Organization is required'}), 400
+                    env_updates['ADO_ORGANIZATION'] = data['ado_organization'].strip()
+                
+                if 'ado_project' in data:
+                    if not data['ado_project'].strip():
+                        return jsonify({'error': 'Project Name is required'}), 400
+                    env_updates['ADO_PROJECT'] = data['ado_project'].strip()
+                
+                # Handle sensitive fields - only update if provided and not masked
+                if 'ado_pat' in data and data['ado_pat'] and not data['ado_pat'].startswith('*'):
+                    env_updates['ADO_PAT'] = data['ado_pat'].strip()
+                
+                if 'openai_api_key' in data and data['openai_api_key'] and not data['openai_api_key'].startswith('*'):
+                    env_updates['OPENAI_API_KEY'] = data['openai_api_key'].strip()
+                
+                # Handle other OpenAI settings
+                if 'openai_model' in data:
+                    env_updates['OPENAI_MODEL'] = data['openai_model']
+                
+                # Handle work item types
+                if 'story_extraction_type' in data:
+                    env_updates['ADO_STORY_EXTRACTION_TYPE'] = data['story_extraction_type']
+                
+                if 'test_case_extraction_type' in data:
+                    env_updates['ADO_TEST_CASE_EXTRACTION_TYPE'] = data['test_case_extraction_type']
+
+                # Update .env file if we have environment updates
+                env_update_success = True
+                if env_updates:
+                    env_update_success = self.env_manager.update_env_variables(env_updates)
+                    if env_update_success:
+                        # Reload settings to pick up changes
+                        Settings.reload_config()
+                        self.logger.info(f"Updated .env file with: {list(env_updates.keys())}")
+                    else:
+                        self.logger.error("Failed to update .env file")
+                        return jsonify({'error': 'Failed to update environment file'}), 500
 
                 # Update monitor configuration
                 if 'check_interval_minutes' in data:
@@ -330,7 +465,7 @@ class MonitorAPI:
                     for epic_id in new_epics - current_epics:
                         self.monitor.add_epic(str(epic_id))
 
-                # Save configuration to file
+                # Save monitor configuration to file
                 try:
                     config_data = {
                         'poll_interval_seconds': self.monitor.config.poll_interval_seconds,
@@ -346,13 +481,14 @@ class MonitorAPI:
                     with open('monitor_config.json', 'w') as f:
                         json.dump(config_data, f, indent=2)
                     
-                    self.logger.info("Configuration updated successfully")
+                    self.logger.info("Monitor configuration updated successfully")
                 except Exception as e:
-                    self.logger.error(f"Failed to save configuration: {e}")
+                    self.logger.error(f"Failed to save monitor configuration: {e}")
 
                 return jsonify({
                     'success': True,
-                    'message': 'Configuration updated successfully'
+                    'message': 'Configuration updated successfully',
+                    'env_updated': bool(env_updates and env_update_success)
                 })
 
             except Exception as e:
@@ -380,197 +516,6 @@ class MonitorAPI:
             except Exception as e:
                 self.logger.error(f"Error in force check: {str(e)}")
                 return jsonify({'error': f'Force check failed: {str(e)}'}), 500
-
-        @self.app.route('/api/stories/<story_id>/test-cases', methods=['POST'])
-        def extract_test_cases_for_story(story_id):
-            """Extract test cases for a specific story"""
-            try:
-                # Extract test cases using the agent
-                result = self.agent.extract_test_cases_for_story(story_id)
-                
-                return jsonify({
-                    'success': result.extraction_successful,
-                    'story_id': result.story_id,
-                    'story_title': result.story_title,
-                    'test_cases': [tc.dict() for tc in result.test_cases],
-                    'total_test_cases': len(result.test_cases),
-                    'error': result.error_message if not result.extraction_successful else None
-                })
-
-            except Exception as e:
-                self.logger.error(f"Error extracting test cases for story {story_id}: {str(e)}")
-                return jsonify({
-                    'success': False,
-                    'error': f'Failed to extract test cases: {str(e)}'
-                }), 500
-
-        @self.app.route('/api/stories/<story_id>/test-cases/upload', methods=['POST'])
-        def upload_test_cases_for_story(story_id):
-            """Upload test cases for a specific story to Azure DevOps"""
-            try:
-                data = request.get_json()
-                test_cases = data.get('test_cases', [])
-                work_item_type = data.get('work_item_type', 'Issue')
-                
-                if not test_cases:
-                    return jsonify({
-                        'success': False,
-                        'error': 'No test cases provided for upload'
-                    }), 400
-
-                # Upload test cases to ADO
-                uploaded_test_cases = []
-                successful_uploads = 0
-                
-                for i, test_case in enumerate(test_cases):
-                    try:
-                        # Create the test case in ADO as a child of the story
-                        work_item_data = {
-                            'System.Title': test_case.get('title', f'Test Case {i+1}'),
-                            'System.Description': test_case.get('description', ''),
-                            'System.WorkItemType': work_item_type,
-                        }
-                        
-                        # Add test case specific fields if available
-                        if test_case.get('steps'):
-                            steps_html = '<ol>' + ''.join(f'<li>{step}</li>' for step in test_case['steps']) + '</ol>'
-                            work_item_data['System.Description'] += f'<br/><strong>Test Steps:</strong><br/>{steps_html}'
-                        
-                        if test_case.get('expected_result'):
-                            work_item_data['System.Description'] += f'<br/><strong>Expected Result:</strong><br/>{test_case["expected_result"]}'
-                        
-                        # Create the work item
-                        created_item = self.agent.ado_client.create_work_item(
-                            work_item_type=work_item_type,
-                            fields=work_item_data,
-                            parent_id=int(story_id)
-                        )
-                        
-                        if created_item and 'id' in created_item:
-                            uploaded_test_cases.append({
-                                'success': True,
-                                'id': created_item['id'],
-                                'title': test_case.get('title', f'Test Case {i+1}')
-                            })
-                            successful_uploads += 1
-                        else:
-                            uploaded_test_cases.append({
-                                'success': False,
-                                'error': 'Failed to create work item',
-                                'title': test_case.get('title', f'Test Case {i+1}')
-                            })
-                    except Exception as e:
-                        self.logger.error(f"Exception during test case upload for story {story_id}: {str(e)}")
-                        uploaded_test_cases.append({
-                            'success': False,
-                            'error': str(e),
-                            'title': test_case.get('title', f'Test Case {i+1}')
-                        })
-                
-                return jsonify({
-                    'success': successful_uploads > 0,
-                    'story_id': story_id,
-                    'uploaded_test_cases': uploaded_test_cases,
-                    'successful_uploads': successful_uploads,
-                    'total_test_cases': len(test_cases)
-                })
-
-            except Exception as e:
-                self.logger.error(f"Error uploading test cases for story {story_id}: {str(e)}")
-                return jsonify({
-                    'success': False,
-                    'error': f'Failed to upload test cases: {str(e)}'
-                }), 500
-
-        @self.app.route('/api/logs', methods=['GET'])
-        def get_logs():
-            """Get recent log entries"""
-            try:
-                lines = int(request.args.get('lines', 50))
-                lines = min(lines, 1000)  # Cap at 1000 lines
-                
-                log_file = 'logs/epic_monitor.log'
-                if not os.path.exists(log_file):
-                    return jsonify([])
-                
-                # Read the last N lines from the log file
-                logs = []
-                try:
-                    with open(log_file, 'r') as f:
-                        all_lines = f.readlines()
-                        recent_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
-                        
-                        for line in recent_lines:
-                            line = line.strip()
-                            if line:
-                                # Parse log line format: "2025-08-09 07:12:03,405 - MonitorAPI - INFO - Message"
-                                try:
-                                    parts = line.split(' - ', 3)
-                                    if len(parts) >= 4:
-                                        timestamp_str = parts[0]
-                                        component = parts[1]
-                                        level = parts[2].lower()
-                                        message = parts[3]
-                                        
-                                        # Convert timestamp to ISO format
-                                        try:
-                                            from datetime import datetime
-                                            timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S,%f')
-                                            iso_timestamp = timestamp.isoformat()
-                                        except:
-                                            iso_timestamp = timestamp_str
-                                        
-                                        logs.append({
-                                            'timestamp': iso_timestamp,
-                                            'level': level,
-                                            'component': component,
-                                            'message': message
-                                        })
-                                    else:
-                                        # Fallback for malformed lines
-                                        logs.append({
-                                            'timestamp': datetime.now().isoformat(),
-                                            'level': 'info',
-                                            'component': 'System',
-                                            'message': line
-                                        })
-                                except Exception as e:
-                                    # If parsing fails, add as a raw message
-                                    logs.append({
-                                        'timestamp': datetime.now().isoformat(),
-                                        'level': 'info',
-                                        'component': 'System',
-                                        'message': line
-                                    })
-                except Exception as e:
-                    self.logger.error(f"Error reading log file: {e}")
-                    return jsonify([])
-                
-                return jsonify(logs)
-                
-            except Exception as e:
-                self.logger.error(f"Error getting logs: {str(e)}")
-                return jsonify([])
-
-        @self.app.route('/api/logs/clear', methods=['POST'])
-        def clear_logs_display():
-            """Clear logs from UI display only (preserves actual log files)"""
-            try:
-                # This endpoint is for UI-only log clearing
-                # We don't actually delete the log files, just return success
-                # The frontend will clear its display
-                
-                return jsonify({
-                    'success': True,
-                    'message': 'Log display cleared (files preserved)'
-                })
-                
-            except Exception as e:
-                self.logger.error(f"Error clearing log display: {str(e)}")
-                return jsonify({
-                    'success': False,
-                    'error': f'Failed to clear log display: {str(e)}'
-                }), 500
         
         @self.app.route('/api/test-cases/extract', methods=['POST'])
         def extract_test_cases():
@@ -768,6 +713,252 @@ class MonitorAPI:
                     'success': False,
                     'error': f'Internal server error: {str(e)}'
                 }), 500
+        
+        @self.app.route('/api/stories/<story_id>/test-cases', methods=['POST'])
+        def extract_test_cases_for_story(story_id):
+            """Extract test cases for a specific story"""
+            try:
+                # Extract test cases using the agent
+                result = self.agent.extract_test_cases_for_story(story_id)
+                
+                return jsonify({
+                    'success': result.extraction_successful,
+                    'story_id': result.story_id,
+                    'story_title': result.story_title,
+                    'test_cases': [tc.dict() for tc in result.test_cases],
+                    'total_test_cases': len(result.test_cases),
+                    'error': result.error_message if not result.extraction_successful else None
+                })
+
+            except Exception as e:
+                self.logger.error(f"Error extracting test cases for story {story_id}: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to extract test cases: {str(e)}'
+                }), 500
+
+        @self.app.route('/api/logs', methods=['GET'])
+        def get_logs():
+            """Get recent log entries from the monitor log file - optimized for large files"""
+            try:
+                import os
+                from datetime import datetime
+                
+                log_file_path = 'logs/epic_monitor.log'
+                
+                # Check if log file exists
+                if not os.path.exists(log_file_path):
+                    return jsonify({
+                        'success': True,
+                        'logs': [],
+                        'total_entries': 0,
+                        'message': 'No log file found'
+                    })
+                
+                # Get the number of lines to return (default 100, max 500 for performance)
+                limit = request.args.get('limit', 100, type=int)
+                limit = min(max(limit, 10), 500)  # Reduced max from 1000 to 500 for performance
+                
+                # Use efficient tail reading for large files
+                logs = []
+                try:
+                    # Get file size first to avoid reading huge files entirely
+                    file_size = os.path.getsize(log_file_path)
+                    
+                    # If file is too large (>10MB), read from end using seek
+                    if file_size > 10 * 1024 * 1024:  # 10MB threshold
+                        with open(log_file_path, 'rb') as f:
+                            # Start from end and read backwards to find last N lines
+                            lines = self._tail_file(f, limit)
+                    else:
+                        # For smaller files, read normally
+                        with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                            all_lines = f.readlines()
+                            lines = all_lines[-limit:] if len(all_lines) > limit else all_lines
+                    
+                    # Parse log entries efficiently with timeout protection
+                    parse_count = 0
+                    max_parse_time = 2.0  # Max 2 seconds for parsing
+                    start_parse = time.time()
+                    
+                    for line in lines:
+                        # Timeout protection - don't spend too long parsing
+                        if time.time() - start_parse > max_parse_time:
+                            self.logger.warning(f"Log parsing timeout after {parse_count} entries")
+                            break
+                            
+                        line = line.strip() if isinstance(line, str) else line.decode('utf-8', errors='ignore').strip()
+                        if line:
+                            # Quick parsing with minimal string operations
+                            try:
+                                # Fast split - only split what we need
+                                if ' - ' in line:
+                                    parts = line.split(' - ', 3)
+                                    if len(parts) >= 4:
+                                        timestamp_str, logger_name, level, message = parts
+                                        logs.append({
+                                            'timestamp': timestamp_str,  # Don't parse timestamp - just pass as string
+                                            'level': level.lower() if level else 'info',
+                                            'message': message[:500]  # Truncate long messages
+                                        })
+                                    else:
+                                        logs.append({
+                                            'timestamp': 'unknown',
+                                            'level': 'info',
+                                            'message': line[:500]
+                                        })
+                                else:
+                                    logs.append({
+                                        'timestamp': 'unknown',
+                                        'level': 'info', 
+                                        'message': line[:500]
+                                    })
+                            except Exception:
+                                # On any parsing error, just add the raw line
+                                logs.append({
+                                    'timestamp': 'unknown',
+                                    'level': 'info',
+                                    'message': str(line)[:500]
+                                })
+                        
+                        parse_count += 1
+                        
+                        # Limit total entries processed to prevent memory issues
+                        if parse_count >= limit:
+                            break
+                
+                except Exception as io_error:
+                    self.logger.error(f"Error reading log file: {str(io_error)}")
+                    return jsonify({
+                        'success': True,  # Return success with empty logs rather than error
+                        'logs': [],
+                        'total_entries': 0,
+                        'error': f'Could not read log file: {str(io_error)}'
+                    })
+                
+                return jsonify({
+                    'success': True,
+                    'logs': logs,
+                    'total_entries': len(logs),
+                    'limit': limit
+                })
+                
+            except Exception as e:
+                self.logger.error(f"Error in logs endpoint: {str(e)}")
+                return jsonify({
+                    'success': True,  # Return success to prevent UI errors
+                    'logs': [],
+                    'total_entries': 0,
+                    'error': f'Logs temporarily unavailable: {str(e)}'
+                }), 200  # Return 200 instead of 500 to prevent UI errors
+
+        @self.app.route('/api/logs/clear', methods=['POST'])
+        def clear_logs():
+            """Clear the log file"""
+            try:
+                import os
+                log_file_path = 'logs/epic_monitor.log'
+                
+                if os.path.exists(log_file_path):
+                    # Clear the log file by opening it in write mode
+                    with open(log_file_path, 'w') as f:
+                        pass
+                    
+                    self.logger.info("Log file cleared via API request")
+                    return jsonify({
+                        'success': True,
+                        'message': 'Log file cleared successfully'
+                    })
+                else:
+                    return jsonify({
+                        'success': True,
+                        'message': 'No log file to clear'
+                    })
+                    
+            except Exception as e:
+                self.logger.error(f"Error clearing logs: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to clear logs: {str(e)}'
+                }), 500
+
+        @self.app.route('/api/stories/<story_id>/test-cases/upload', methods=['POST'])
+        def upload_test_cases_for_story(story_id):
+            """Upload test cases for a specific story to Azure DevOps"""
+            try:
+                data = request.get_json()
+                test_cases = data.get('test_cases', [])
+                work_item_type = data.get('work_item_type', 'Issue')
+                
+                if not test_cases:
+                    return jsonify({
+                        'success': False,
+                        'error': 'No test cases provided for upload'
+                    }), 400
+
+                # Upload test cases to ADO
+                uploaded_test_cases = []
+                successful_uploads = 0
+                
+                for i, test_case in enumerate(test_cases):
+                    try:
+                        # Create the test case in ADO as a child of the story
+                        work_item_data = {
+                            'System.Title': test_case.get('title', f'Test Case {i+1}'),
+                            'System.Description': test_case.get('description', ''),
+                            'System.WorkItemType': work_item_type,
+                        }
+                        
+                        # Add test case specific fields if available
+                        if test_case.get('steps'):
+                            steps_html = '<ol>' + ''.join(f'<li>{step}</li>' for step in test_case['steps']) + '</ol>'
+                            work_item_data['System.Description'] += f'<br/><strong>Test Steps:</strong><br/>{steps_html}'
+                        
+                        if test_case.get('expected_result'):
+                            work_item_data['System.Description'] += f'<br/><strong>Expected Result:</strong><br/>{test_case["expected_result"]}'
+                        
+                        # Create the work item
+                        created_item = self.agent.ado_client.create_work_item(
+                            work_item_type=work_item_type,
+                            fields=work_item_data,
+                            parent_id=int(story_id)
+                        )
+                        
+                        if created_item and 'id' in created_item:
+                            uploaded_test_cases.append({
+                                'success': True,
+                                'id': created_item['id'],
+                                'title': test_case.get('title', f'Test Case {i+1}')
+                            })
+                            successful_uploads += 1
+                        else:
+                            uploaded_test_cases.append({
+                                'success': False,
+                                'error': 'Failed to create work item',
+                                'title': test_case.get('title', f'Test Case {i+1}')
+                            })
+                    except Exception as e:
+                        self.logger.error(f"Exception during test case upload for story {story_id}: {str(e)}")
+                        uploaded_test_cases.append({
+                            'success': False,
+                            'error': str(e),
+                            'title': test_case.get('title', f'Test Case {i+1}')
+                        })
+                
+                return jsonify({
+                    'success': successful_uploads > 0,
+                    'story_id': story_id,
+                    'uploaded_test_cases': uploaded_test_cases,
+                    'successful_uploads': successful_uploads,
+                    'total_test_cases': len(test_cases)
+                })
+
+            except Exception as e:
+                self.logger.error(f"Error uploading test cases for story {story_id}: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to upload test cases: {str(e)}'
+                }), 500
 
     def run(self, host='0.0.0.0', debug=False):
         """Run the Flask application"""
@@ -789,5 +980,5 @@ if __name__ == '__main__':
     )
 
     # Create and run the API
-    api = MonitorAPI(port=5001)
+    api = MonitorAPI(port=8080)
     api.run(debug=True)

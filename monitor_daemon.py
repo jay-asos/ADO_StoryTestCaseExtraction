@@ -61,10 +61,10 @@ def run_api_mode(config: MonitorConfig, host: str, port: int, debug: bool):
     print(f"🔍 Health Check: http://{host}:{port}/api/health")
     print("=" * 60)
     
-    api = MonitorAPI(config)
+    api = MonitorAPI(config, port=port)
     
     try:
-        api.run(host=host, port=port, debug=debug)
+        api.run(host=host, debug=debug)
     except KeyboardInterrupt:
         print("\n🛑 Received interrupt signal, shutting down...")
         if api.monitor:
