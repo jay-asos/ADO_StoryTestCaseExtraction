@@ -38,6 +38,9 @@ class MonitorConfig:
     story_extraction_type: str = "User Story"  # Can be "User Story" or "Task"
     test_case_extraction_type: str = "Issue"   # Can be "Issue" or "Test Case"
     skip_duplicate_check: bool = False  # Option to skip duplicate checking
+    # Enhanced configuration options
+    extraction_cooldown_hours: int = 24  # Cooldown period before re-extraction (0 to disable)
+    enable_content_hash_comparison: bool = True  # Use hash-based change detection
 
 
 @dataclass
@@ -593,6 +596,7 @@ class EpicChangeMonitor:
             'is_running': self.is_running,
             'config': asdict(self.config),
             'monitored_epics': {},
+            'statistics': self.get_monitoring_statistics(),
             'last_update': datetime.now().isoformat()
         }
         
@@ -601,10 +605,42 @@ class EpicChangeMonitor:
                 'last_check': state.last_check.isoformat(),
                 'consecutive_errors': state.consecutive_errors,
                 'has_snapshot': state.last_snapshot is not None,
-                'last_sync_result': state.last_sync_result
+                'stories_extracted': state.stories_extracted,
+                'last_sync_result': state.last_sync_result,
+                'extracted_stories_count': len(state.extracted_stories) if state.extracted_stories else 0
             }
         
         return status
+
+    def get_monitoring_statistics(self) -> Dict:
+        """Get detailed monitoring statistics"""
+        stats = {
+            'total_epics_monitored': len(self.monitored_epics),
+            'epics_with_stories_extracted': len(self.processed_epics),
+            'epics_with_errors': 0,
+            'epics_with_snapshots': 0,
+            'total_extracted_stories': 0,
+            'successful_syncs': 0,
+            'failed_syncs': 0
+        }
+        
+        for epic_id, state in self.monitored_epics.items():
+            if state.consecutive_errors > 0:
+                stats['epics_with_errors'] += 1
+            
+            if state.last_snapshot:
+                stats['epics_with_snapshots'] += 1
+            
+            if state.extracted_stories:
+                stats['total_extracted_stories'] += len(state.extracted_stories)
+            
+            if state.last_sync_result:
+                if state.last_sync_result.get('success', False):
+                    stats['successful_syncs'] += 1
+                else:
+                    stats['failed_syncs'] += 1
+        
+        return stats
     
     def force_check(self, epic_id: Optional[str] = None) -> Dict:
         """Force a check for changes (optionally for specific EPIC)"""
@@ -685,32 +721,44 @@ class EpicChangeMonitor:
                 self._save_snapshot(epic_id, current_snapshot)
                 return True
 
-            # Compare snapshots to detect changes
+            # Compare snapshots using content hash for precise change detection
             previous_snapshot = epic_state.last_snapshot
+            current_hash = self._calculate_content_hash(current_snapshot)
+            previous_hash = self._calculate_content_hash(previous_snapshot)
+
+            # Use hash comparison first for efficiency
+            if current_hash and previous_hash and current_hash == previous_hash:
+                self.logger.debug(f"EPIC {epic_id} - No changes detected (hash comparison)")
+                return False
+
+            # Fallback to detailed comparison if hashes differ or are unavailable
+            changes_detected = False
+            change_details = []
 
             # Check for title changes
-            title_changed = (
-                current_snapshot.get('title', '') != previous_snapshot.get('title', '')
-            )
+            if current_snapshot.get('title', '') != previous_snapshot.get('title', ''):
+                changes_detected = True
+                change_details.append(f"Title changed: '{previous_snapshot.get('title', '')}' -> '{current_snapshot.get('title', '')}'")
 
             # Check for description changes
-            description_changed = (
-                current_snapshot.get('description', '') != previous_snapshot.get('description', '')
-            )
+            if current_snapshot.get('description', '') != previous_snapshot.get('description', ''):
+                changes_detected = True
+                change_details.append("Description changed")
 
             # Check for state changes
-            state_changed = (
-                current_snapshot.get('state', '') != previous_snapshot.get('state', '')
-            )
+            if current_snapshot.get('state', '') != previous_snapshot.get('state', ''):
+                changes_detected = True
+                change_details.append(f"State changed: '{previous_snapshot.get('state', '')}' -> '{current_snapshot.get('state', '')}'")
 
-            if title_changed or description_changed or state_changed:
+            # Check for priority changes
+            if current_snapshot.get('priority', '') != previous_snapshot.get('priority', ''):
+                changes_detected = True
+                change_details.append(f"Priority changed: '{previous_snapshot.get('priority', '')}' -> '{current_snapshot.get('priority', '')}'")
+
+            if changes_detected:
                 self.logger.info(f"EPIC {epic_id} - Changes detected:")
-                if title_changed:
-                    self.logger.info(f"  Title changed: '{previous_snapshot.get('title', '')}' -> '{current_snapshot.get('title', '')}'")
-                if description_changed:
-                    self.logger.info(f"  Description changed")
-                if state_changed:
-                    self.logger.info(f"  State changed: '{previous_snapshot.get('state', '')}' -> '{current_snapshot.get('state', '')}'")
+                for detail in change_details:
+                    self.logger.info(f"  {detail}")
 
                 # Update stored snapshot
                 epic_state.last_snapshot = current_snapshot
@@ -735,6 +783,12 @@ class EpicChangeMonitor:
             self.logger.info(f"Stories already extracted for EPIC {epic_id}, skipping extraction")
             return False
 
+        # Check cooldown period if configured
+        if hasattr(self.config, 'extraction_cooldown_hours') and self.config.extraction_cooldown_hours > 0:
+            if not self._check_cooldown_period(epic_id, self.config.extraction_cooldown_hours):
+                self.logger.info(f"EPIC {epic_id} is in cooldown period, skipping extraction")
+                return False
+
         # Check if the EPIC has changes that warrant story extraction
         if self.config.skip_duplicate_check or epic_id not in self.processed_epics:
             self.logger.info(f"EPIC {epic_id} has changes, proceeding with story extraction")
@@ -742,6 +796,66 @@ class EpicChangeMonitor:
         else:
             self.logger.info(f"EPIC {epic_id} has no changes or duplicates, skipping story extraction")
             return False
+
+    def reset_epic_processed_state(self, epic_id: str) -> bool:
+        """Reset the processed state of an EPIC to allow re-extraction if needed"""
+        try:
+            if epic_id in self.processed_epics:
+                self.processed_epics.remove(epic_id)
+                self._save_processed_epics()
+                
+            if epic_id in self.monitored_epics:
+                self.monitored_epics[epic_id].stories_extracted = False
+                
+            self.logger.info(f"Reset processed state for EPIC {epic_id}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to reset processed state for EPIC {epic_id}: {e}")
+            return False
+
+    def _calculate_content_hash(self, snapshot: Dict) -> str:
+        """Calculate a hash of EPIC content for more precise change detection"""
+        try:
+            import hashlib
+            # Create a stable string representation of the content
+            content_parts = [
+                snapshot.get('title', ''),
+                snapshot.get('description', ''),
+                snapshot.get('state', ''),
+                snapshot.get('priority', ''),
+                snapshot.get('area_path', ''),
+                snapshot.get('iteration_path', '')
+            ]
+            content = '|'.join(str(part) for part in content_parts)
+            return hashlib.md5(content.encode('utf-8')).hexdigest()
+        except Exception as e:
+            self.logger.error(f"Error calculating content hash: {e}")
+            return ""
+
+    def _check_cooldown_period(self, epic_id: str, hours: int = 24) -> bool:
+        """Check if enough time has passed since last story extraction"""
+        try:
+            state = self.monitored_epics.get(epic_id)
+            if not state or not state.last_sync_result:
+                return True
+            
+            last_sync_str = state.last_sync_result.get('timestamp')
+            if not last_sync_str:
+                return True
+                
+            last_sync = datetime.fromisoformat(last_sync_str)
+            time_diff = (datetime.now() - last_sync).total_seconds()
+            cooldown_seconds = hours * 3600
+            
+            if time_diff < cooldown_seconds:
+                remaining_hours = (cooldown_seconds - time_diff) / 3600
+                self.logger.debug(f"EPIC {epic_id} in cooldown: {remaining_hours:.1f} hours remaining")
+                return False
+                
+            return True
+        except Exception as e:
+            self.logger.error(f"Error checking cooldown period for EPIC {epic_id}: {e}")
+            return True  # Default to allowing extraction on error
 
 
 def load_config_from_file(config_file: str) -> MonitorConfig:
@@ -765,7 +879,11 @@ def create_default_config(config_file: str = "monitor_config.json"):
         epic_ids=["12345", "67890"],  # Example EPIC IDs
         auto_sync=True,
         retry_attempts=3,
-        retry_delay_seconds=60
+        retry_delay_seconds=60,
+        auto_extract_new_epics=True,
+        skip_duplicate_check=False,
+        extraction_cooldown_hours=24,
+        enable_content_hash_comparison=True
     )
 
     with open(config_file, 'w') as f:
