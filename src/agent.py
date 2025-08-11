@@ -617,7 +617,7 @@ class StoryExtractionAgent:
     def get_epic_snapshot(self, epic_id: str) -> Optional[Dict[str, str]]:
         """Get a snapshot of the current EPIC for change tracking"""
         try:
-            numeric_id = epic_id  # No numeric parsing
+            numeric_id = int(epic_id)  # Convert to integer for ADO API
             snapshot = self.ado_client.detect_changes_in_epic(numeric_id)
             
             if snapshot:

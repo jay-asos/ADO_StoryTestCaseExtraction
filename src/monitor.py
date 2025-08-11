@@ -312,10 +312,7 @@ class EpicChangeMonitor:
 
         # Check if epic has existing stories in ADO
         try:
-            existing_ado_stories = self.agent.ado_client.get_work_items_by_parent(
-                parent_id=int(epic_id),
-                work_item_type=self.config.story_extraction_type
-            )
+            existing_ado_stories = self.agent.ado_client.get_child_stories(int(epic_id))
             if existing_ado_stories:
                 self.logger.info(f"Epic {epic_id} already has {len(existing_ado_stories)} stories in ADO. Marking as processed.")
                 self.processed_epics.add(epic_id)

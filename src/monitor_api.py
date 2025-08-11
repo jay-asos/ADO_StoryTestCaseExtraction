@@ -275,7 +275,7 @@ class MonitorAPI:
                     return jsonify({'error': 'Monitor not configured'}), 400
 
                 config_dict = {
-                    'ado_org_url': self.settings.ado_organization,
+                    'ado_organization': self.settings.ado_organization,
                     'ado_project': self.settings.ado_project,
                     'ado_pat': '***hidden***',  # Don't expose the actual PAT
                     'openai_api_key': '***hidden***',  # Don't expose the actual API key

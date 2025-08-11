@@ -1,0 +1,26 @@
+2025-08-11 07:02:14,256 - EnhancedEpicChangeMonitor - INFO - Added EPIC 151 to enhanced monitoring and will check for changes immediately.
+2025-08-11 07:02:14,504 - EnhancedEpicChangeMonitor - INFO - EPIC 151 is new, proceeding with initial story extraction
+2025-08-11 07:02:15,048 - EnhancedEpicChangeMonitor - INFO - Added EPIC 151 to enhanced monitoring and will check for changes immediately.
+2025-08-11 07:02:15,313 - EnhancedEpicChangeMonitor - INFO - EPIC 151 is new, proceeding with initial story extraction
+2025-08-11 07:02:15,864 - EnhancedEpicChangeMonitor - INFO - Added EPIC 151 to enhanced monitoring and will check for changes immediately.
+2025-08-11 07:02:16,110 - EnhancedEpicChangeMonitor - INFO - EPIC 151 is new, proceeding with initial story extraction
+2025-08-11 07:04:44,578 - EnhancedEpicChangeMonitor - INFO - Added EPIC 151 to enhanced monitoring and will check for changes immediately.
+2025-08-11 07:04:44,830 - EnhancedEpicChangeMonitor - INFO - EPIC 151 is new, proceeding with initial story extraction
+2025-08-11 07:04:44,957 - EnhancedEpicChangeMonitor - INFO - Forcing re-extraction for EPIC 151 (manual override)
+2025-08-11 07:04:44,957 - EnhancedEpicChangeMonitor - INFO - Synchronizing EPIC 151 (change-based) (attempt 1)
+2025-08-11 07:04:44,957 - EnhancedEpicChangeMonitor - INFO - Performing incremental sync for EPIC 151
+2025-08-11 07:05:37,630 - EnhancedEpicChangeMonitor - INFO - Successfully synchronized EPIC 151 (change-based)
+2025-08-11 07:05:37,630 - EnhancedEpicChangeMonitor - INFO -   Created: 5 stories
+2025-08-11 07:05:37,630 - EnhancedEpicChangeMonitor - INFO -   Updated: 0 stories
+2025-08-11 07:05:37,630 - EnhancedEpicChangeMonitor - INFO -   Unchanged: 3 stories
+2025-08-11 07:05:37,631 - EnhancedEpicChangeMonitor - INFO - Manual re-extraction successful for EPIC 151
+2025-08-11 07:12:17,605 - EnhancedEpicChangeMonitor - INFO - Added EPIC 151 to enhanced monitoring and will check for changes immediately.
+2025-08-11 07:12:17,851 - EnhancedEpicChangeMonitor - INFO - EPIC 151 changes not significant enough (significance: 0.00, threshold: 0.4), skipping extraction
+2025-08-11 07:12:17,976 - EnhancedEpicChangeMonitor - INFO - Forcing re-extraction for EPIC 151 (manual override)
+2025-08-11 07:12:17,976 - EnhancedEpicChangeMonitor - INFO - Synchronizing EPIC 151 (change-based) (attempt 1)
+2025-08-11 07:12:17,977 - EnhancedEpicChangeMonitor - INFO - Performing incremental sync for EPIC 151
+2025-08-11 07:12:25,476 - EnhancedEpicChangeMonitor - INFO - Successfully synchronized EPIC 151 (change-based)
+2025-08-11 07:12:25,476 - EnhancedEpicChangeMonitor - INFO -   Created: 0 stories
+2025-08-11 07:12:25,476 - EnhancedEpicChangeMonitor - INFO -   Updated: 5 stories
+2025-08-11 07:12:25,476 - EnhancedEpicChangeMonitor - INFO -   Unchanged: 3 stories
+2025-08-11 07:12:25,476 - EnhancedEpicChangeMonitor - INFO - Manual re-extraction successful for EPIC 151

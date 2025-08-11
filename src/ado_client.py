@@ -178,14 +178,16 @@ class ADOClient:
             fields = work_item.fields
             
             # Calculate a hash of the title and description for change detection
-            content_hash = hashlib.sha256((fields["System.Title"] + fields["System.Description"]).encode()).hexdigest()
+            title = fields.get("System.Title", "")
+            description = fields.get("System.Description", "")
+            content_hash = hashlib.sha256((title + description).encode()).hexdigest()
             
             return RequirementSnapshot(
                 id=work_item.id,
-                title=fields["System.Title"],
-                description=fields["System.Description"],
-                state=fields["System.State"],
-                last_modified=datetime.strptime(fields["System.ChangedDate"], "%Y-%m-%dT%H:%M:%S.%fZ"),
+                title=title,
+                description=description,
+                state=fields.get("System.State", ""),
+                last_modified=datetime.strptime(fields.get("System.ChangedDate", "2000-01-01T00:00:00.000Z"), "%Y-%m-%dT%H:%M:%S.%fZ"),
                 content_hash=content_hash
             )
             
@@ -233,6 +235,38 @@ class ADOClient:
             return child_ids
         except Exception as e:
             raise Exception(f"Failed to get child stories for requirement {requirement_id}: {str(e)}")
+
+    def get_child_work_items(self, parent_id: int) -> List[Dict[str, Any]]:
+        """Get all child work items for a parent work item"""
+        try:
+            work_item = self.wit_client.get_work_item(
+                id=parent_id,
+                expand="Relations"
+            )
+            child_work_items = []
+            if work_item.relations:
+                child_ids = []
+                for relation in work_item.relations:
+                    if relation.rel == "System.LinkTypes.Hierarchy-Forward":
+                        url_parts = relation.url.split('/')
+                        child_id = int(url_parts[-1])
+                        child_ids.append(child_id)
+                
+                if child_ids:
+                    children = self.wit_client.get_work_items(
+                        ids=child_ids,
+                        fields=["System.Id", "System.Title", "System.WorkItemType", "System.State"]
+                    )
+                    for child in children:
+                        child_work_items.append({
+                            'id': child.id,
+                            'title': child.fields.get('System.Title', ''),
+                            'type': child.fields.get('System.WorkItemType', ''),
+                            'state': child.fields.get('System.State', '')
+                        })
+            return child_work_items
+        except Exception as e:
+            raise Exception(f"Failed to get child work items for parent {parent_id}: {str(e)}")
 
     def get_requirement_by_id(self, requirement_id) -> Optional[Requirement]:
         """Get a single requirement by numeric ID or by title if not numeric"""
@@ -559,6 +593,17 @@ class ADOClient:
             'Low': 3
         }
         return priority_mapping.get(priority_text, 2)
+
+    def get_work_item(self, work_item_id: int):
+        """Get a work item by ID (compatibility method for monitor)"""
+        try:
+            work_item = self.wit_client.get_work_item(
+                id=work_item_id,
+                fields=["System.Id", "System.Title", "System.Description", "System.WorkItemType", "System.State"]
+            )
+            return work_item
+        except Exception as e:
+            raise Exception(f"Failed to get work item {work_item_id}: {str(e)}")
 
     def get_work_item_by_id(self, work_item_id: str):
         """Get a work item by ID with work item type information"""

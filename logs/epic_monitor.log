@@ -319,3 +319,188 @@
 2025-08-09 14:22:58,747 - EpicChangeMonitor - ERROR - Failed to fetch all Epics: Failed to get requirements: Error occurred in request., ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
 2025-08-09 14:39:49,058 - EpicChangeMonitor - ERROR - Failed to fetch all Epics: Failed to get requirements: Error occurred in request., ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
 2025-08-09 14:54:42,773 - EpicChangeMonitor - ERROR - Failed to fetch all Epics: Failed to get requirements: Error occurred in request., ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2025-08-10 08:53:28,173 - EpicChangeMonitor - INFO - Starting EPIC Change Monitor
+2025-08-10 08:53:28,176 - EpicChangeMonitor - INFO - Scanning for all existing EPICs in Azure DevOps...
+2025-08-10 08:53:29,856 - EpicChangeMonitor - INFO - Found 5 EPICs in Azure DevOps
+2025-08-10 08:53:29,856 - EpicChangeMonitor - INFO - Adding existing EPIC 28 to monitoring
+2025-08-10 08:53:29,991 - EpicChangeMonitor - INFO - Added EPIC 28 to monitoring and will check for changes immediately.
+2025-08-10 08:53:29,992 - EpicChangeMonitor - INFO - Epic 28 already has stories extracted. Skipping to prevent duplicates.
+2025-08-10 08:53:29,992 - EpicChangeMonitor - INFO - Adding existing EPIC 66 to monitoring
+2025-08-10 08:53:30,116 - EpicChangeMonitor - INFO - Added EPIC 66 to monitoring and will check for changes immediately.
+2025-08-10 08:53:30,117 - EpicChangeMonitor - INFO - Epic 66 already has stories extracted. Skipping to prevent duplicates.
+2025-08-10 08:53:30,117 - EpicChangeMonitor - INFO - Adding existing EPIC 74 to monitoring
+2025-08-10 08:53:30,243 - EpicChangeMonitor - INFO - Added EPIC 74 to monitoring and will check for changes immediately.
+2025-08-10 08:53:30,243 - EpicChangeMonitor - INFO - Epic 74 already has stories extracted. Skipping to prevent duplicates.
+2025-08-10 08:53:30,244 - EpicChangeMonitor - INFO - Adding existing EPIC 121 to monitoring
+2025-08-10 08:53:30,369 - EpicChangeMonitor - INFO - Added EPIC 121 to monitoring and will check for changes immediately.
+2025-08-10 08:53:30,369 - EpicChangeMonitor - INFO - Epic 121 already has stories extracted. Skipping to prevent duplicates.
+2025-08-10 08:53:30,369 - EpicChangeMonitor - INFO - Adding existing EPIC 133 to monitoring
+2025-08-10 08:53:30,499 - EpicChangeMonitor - INFO - Added EPIC 133 to monitoring and will check for changes immediately.
+2025-08-10 08:53:30,499 - EpicChangeMonitor - INFO - Epic 133 already has stories extracted. Skipping to prevent duplicates.
+2025-08-10 08:53:30,499 - EpicChangeMonitor - INFO - Added 5 new EPICs to monitoring
+2025-08-10 08:53:30,499 - EpicChangeMonitor - INFO - Total EPICs being monitored: 5
+2025-08-10 08:53:30,499 - EpicChangeMonitor - INFO - Monitoring 5 EPICs
+2025-08-10 08:53:30,500 - EpicChangeMonitor - INFO - Poll interval: 1800 seconds
+2025-08-10 08:53:30,500 - EpicChangeMonitor - INFO - Auto-sync enabled: True
+2025-08-10 08:53:30,500 - EpicChangeMonitor - INFO - Auto-extract new epics: True
+2025-08-10 08:53:30,500 - EpicChangeMonitor - INFO - Not in main thread, skipping signal handler setup
+2025-08-10 08:53:30,501 - EpicChangeMonitor - INFO - Starting EPIC monitoring loop
+2025-08-10 08:53:44,436 - EpicChangeMonitor - INFO - Epic 28 already has stories extracted. Skipping to prevent duplicates.
+2025-08-10 08:53:44,436 - EpicChangeMonitor - INFO - Epic 66 already has stories extracted. Skipping to prevent duplicates.
+2025-08-10 08:53:44,436 - EpicChangeMonitor - INFO - Epic 74 already has stories extracted. Skipping to prevent duplicates.
+2025-08-10 08:53:44,436 - EpicChangeMonitor - INFO - Epic 121 already has stories extracted. Skipping to prevent duplicates.
+2025-08-10 08:53:44,436 - EpicChangeMonitor - INFO - Epic 133 already has stories extracted. Skipping to prevent duplicates.
+2025-08-10 08:53:51,052 - EpicChangeMonitor - INFO - Saving snapshots before shutdown
+2025-08-10 08:53:51,059 - EpicChangeMonitor - INFO - Stopping EPIC Change Monitor
+2025-08-10 08:53:51,060 - EpicChangeMonitor - INFO - EPIC Change Monitor stopped
+2025-08-11 06:34:03,783 - EpicChangeMonitor - INFO - Starting EPIC Change Monitor
+2025-08-11 06:34:03,784 - EpicChangeMonitor - INFO - Scanning for all existing EPICs in Azure DevOps...
+2025-08-11 06:34:04,835 - EpicChangeMonitor - INFO - Found 5 EPICs in Azure DevOps
+2025-08-11 06:34:04,836 - EpicChangeMonitor - INFO - Adding existing EPIC 28 to monitoring
+2025-08-11 06:34:04,961 - EpicChangeMonitor - INFO - Added EPIC 28 to monitoring and will check for changes immediately.
+2025-08-11 06:34:04,961 - EpicChangeMonitor - INFO - Epic 28 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:34:04,961 - EpicChangeMonitor - INFO - Adding existing EPIC 66 to monitoring
+2025-08-11 06:34:05,081 - EpicChangeMonitor - INFO - Added EPIC 66 to monitoring and will check for changes immediately.
+2025-08-11 06:34:05,081 - EpicChangeMonitor - INFO - Epic 66 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:34:05,081 - EpicChangeMonitor - INFO - Adding existing EPIC 74 to monitoring
+2025-08-11 06:34:05,201 - EpicChangeMonitor - INFO - Added EPIC 74 to monitoring and will check for changes immediately.
+2025-08-11 06:34:05,201 - EpicChangeMonitor - INFO - Epic 74 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:34:05,202 - EpicChangeMonitor - INFO - Adding existing EPIC 121 to monitoring
+2025-08-11 06:34:05,326 - EpicChangeMonitor - INFO - Added EPIC 121 to monitoring and will check for changes immediately.
+2025-08-11 06:34:05,327 - EpicChangeMonitor - INFO - Epic 121 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:34:05,327 - EpicChangeMonitor - INFO - Adding existing EPIC 133 to monitoring
+2025-08-11 06:34:05,451 - EpicChangeMonitor - INFO - Added EPIC 133 to monitoring and will check for changes immediately.
+2025-08-11 06:34:05,451 - EpicChangeMonitor - INFO - Epic 133 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:34:05,451 - EpicChangeMonitor - INFO - Added 5 new EPICs to monitoring
+2025-08-11 06:34:05,451 - EpicChangeMonitor - INFO - Total EPICs being monitored: 5
+2025-08-11 06:34:05,451 - EpicChangeMonitor - INFO - Monitoring 5 EPICs
+2025-08-11 06:34:05,451 - EpicChangeMonitor - INFO - Poll interval: 1800 seconds
+2025-08-11 06:34:05,452 - EpicChangeMonitor - INFO - Auto-sync enabled: True
+2025-08-11 06:34:05,452 - EpicChangeMonitor - INFO - Auto-extract new epics: True
+2025-08-11 06:34:05,452 - EpicChangeMonitor - INFO - Not in main thread, skipping signal handler setup
+2025-08-11 06:34:05,453 - EpicChangeMonitor - INFO - Starting EPIC monitoring loop
+2025-08-11 06:38:01,717 - EpicChangeMonitor - INFO - Auto-detect: Adding new Epic 121 to monitoring.
+2025-08-11 06:38:01,842 - EpicChangeMonitor - INFO - Added EPIC 121 to monitoring and will check for changes immediately.
+2025-08-11 06:38:01,842 - EpicChangeMonitor - INFO - Epic 121 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:38:01,842 - EpicChangeMonitor - INFO - Epic 121 has already been processed. Skipping story extraction.
+2025-08-11 06:38:01,842 - EpicChangeMonitor - INFO - Auto-detect: Adding new Epic 74 to monitoring.
+2025-08-11 06:38:01,966 - EpicChangeMonitor - INFO - Added EPIC 74 to monitoring and will check for changes immediately.
+2025-08-11 06:38:01,966 - EpicChangeMonitor - INFO - Epic 74 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:38:01,966 - EpicChangeMonitor - INFO - Epic 74 has already been processed. Skipping story extraction.
+2025-08-11 06:38:01,967 - EpicChangeMonitor - INFO - Auto-detect: Adding new Epic 28 to monitoring.
+2025-08-11 06:38:02,090 - EpicChangeMonitor - INFO - Added EPIC 28 to monitoring and will check for changes immediately.
+2025-08-11 06:38:02,090 - EpicChangeMonitor - INFO - Epic 28 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:38:02,090 - EpicChangeMonitor - INFO - Epic 28 has already been processed. Skipping story extraction.
+2025-08-11 06:38:02,091 - EpicChangeMonitor - INFO - Auto-detect: Adding new Epic 66 to monitoring.
+2025-08-11 06:38:02,212 - EpicChangeMonitor - INFO - Added EPIC 66 to monitoring and will check for changes immediately.
+2025-08-11 06:38:02,213 - EpicChangeMonitor - INFO - Epic 66 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:38:02,213 - EpicChangeMonitor - INFO - Epic 66 has already been processed. Skipping story extraction.
+2025-08-11 06:38:02,213 - EpicChangeMonitor - INFO - Auto-detect: Adding new Epic 151 to monitoring.
+2025-08-11 06:38:02,340 - EpicChangeMonitor - INFO - Added EPIC 151 to monitoring and will check for changes immediately.
+2025-08-11 06:38:02,341 - EpicChangeMonitor - ERROR - Error checking existing stories for Epic 151: 'ADOClient' object has no attribute 'get_work_items_by_parent'
+2025-08-11 06:38:02,341 - EpicChangeMonitor - INFO - Immediately synchronizing new EPIC 151 after detection.
+2025-08-11 06:38:02,341 - EpicChangeMonitor - INFO - Synchronizing EPIC 151 (attempt 1)
+2025-08-11 06:38:34,939 - EpicChangeMonitor - INFO - Successfully synchronized EPIC 151
+2025-08-11 06:38:34,939 - EpicChangeMonitor - INFO -   Created: 3 stories
+2025-08-11 06:38:34,939 - EpicChangeMonitor - INFO -   Updated: 0 stories
+2025-08-11 06:38:34,939 - EpicChangeMonitor - INFO -   Unchanged: 0 stories
+2025-08-11 06:38:34,939 - EpicChangeMonitor - INFO - Epic 151 has already been processed. Skipping story extraction.
+2025-08-11 06:38:34,939 - EpicChangeMonitor - INFO - Auto-detect: Adding new Epic 133 to monitoring.
+2025-08-11 06:38:35,066 - EpicChangeMonitor - INFO - Added EPIC 133 to monitoring and will check for changes immediately.
+2025-08-11 06:38:35,066 - EpicChangeMonitor - INFO - Epic 133 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:38:35,067 - EpicChangeMonitor - INFO - Epic 133 has already been processed. Skipping story extraction.
+2025-08-11 06:47:59,390 - EpicChangeMonitor - INFO - Added EPIC 151 to monitoring and will check for changes immediately.
+2025-08-11 06:47:59,391 - EpicChangeMonitor - INFO - Epic 151 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:47:59,391 - EpicChangeMonitor - INFO - EPIC 151 has no changes or duplicates, skipping story extraction
+2025-08-11 06:48:27,109 - EpicChangeMonitor - INFO - Added EPIC 151 to monitoring and will check for changes immediately.
+2025-08-11 06:48:27,110 - EpicChangeMonitor - ERROR - Error checking existing stories for Epic 151: 'ADOClient' object has no attribute 'get_work_items_by_parent'
+2025-08-11 06:48:27,110 - EpicChangeMonitor - INFO - Immediately synchronizing new EPIC 151 after detection.
+2025-08-11 06:48:27,110 - EpicChangeMonitor - INFO - Synchronizing EPIC 151 (attempt 1)
+2025-08-11 06:48:33,503 - EpicChangeMonitor - INFO - Successfully synchronized EPIC 151
+2025-08-11 06:48:33,503 - EpicChangeMonitor - INFO -   Created: 0 stories
+2025-08-11 06:48:33,503 - EpicChangeMonitor - INFO -   Updated: 3 stories
+2025-08-11 06:48:33,503 - EpicChangeMonitor - INFO -   Unchanged: 0 stories
+2025-08-11 06:48:33,503 - EpicChangeMonitor - INFO - EPIC 151 has changes, proceeding with story extraction
+2025-08-11 06:48:33,927 - EpicChangeMonitor - INFO - Added EPIC 151 to monitoring and will check for changes immediately.
+2025-08-11 06:48:33,927 - EpicChangeMonitor - INFO - Epic 151 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:48:33,928 - EpicChangeMonitor - INFO - EPIC 151 has no changes or duplicates, skipping story extraction
+2025-08-11 06:48:33,928 - EpicChangeMonitor - INFO - Epic 151 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:51:58,935 - EpicChangeMonitor - INFO - Added EPIC 151 to monitoring and will check for changes immediately.
+2025-08-11 06:51:59,051 - EpicChangeMonitor - INFO - Epic 151 already has 3 stories in ADO. Marking as processed.
+2025-08-11 06:51:59,172 - EpicChangeMonitor - INFO - Stories already extracted for EPIC 151, skipping extraction
+2025-08-11 06:51:59,287 - EpicChangeMonitor - INFO - Epic 151 already has 3 stories in ADO. Marking as processed.
+2025-08-11 06:53:17,782 - EpicChangeMonitor - INFO - Added EPIC 151 to monitoring and will check for changes immediately.
+2025-08-11 06:53:17,783 - EpicChangeMonitor - INFO - Epic 151 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:53:17,904 - EpicChangeMonitor - INFO - EPIC 151 has no changes or duplicates, skipping story extraction
+2025-08-11 06:53:17,905 - EpicChangeMonitor - INFO - Epic 151 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 06:53:18,550 - EpicChangeMonitor - INFO - Added EPIC 151 to monitoring and will check for changes immediately.
+2025-08-11 06:53:18,670 - EpicChangeMonitor - INFO - Epic 151 already has 3 stories in ADO. Marking as processed.
+2025-08-11 06:53:18,793 - EpicChangeMonitor - INFO - Stories already extracted for EPIC 151, skipping extraction
+2025-08-11 06:53:18,930 - EpicChangeMonitor - INFO - Epic 151 already has 3 stories in ADO. Marking as processed.
+2025-08-11 06:53:19,368 - EpicChangeMonitor - INFO - Added EPIC 28 to monitoring and will check for changes immediately.
+2025-08-11 06:53:19,490 - EpicChangeMonitor - INFO - Epic 28 already has 21 stories in ADO. Marking as processed.
+2025-08-11 06:53:19,492 - EpicChangeMonitor - INFO - Stories already extracted for EPIC 28, skipping extraction
+2025-08-11 07:08:07,318 - EpicChangeMonitor - INFO - Saving snapshots before shutdown
+2025-08-11 07:08:07,320 - EpicChangeMonitor - INFO - Stopping EPIC Change Monitor
+2025-08-11 07:08:07,320 - EpicChangeMonitor - INFO - EPIC Change Monitor stopped
+2025-08-11 07:08:20,491 - EpicChangeMonitor - INFO - Starting EPIC Change Monitor
+2025-08-11 07:08:20,494 - EpicChangeMonitor - INFO - Scanning for all existing EPICs in Azure DevOps...
+2025-08-11 07:08:21,042 - EpicChangeMonitor - INFO - Found 6 EPICs in Azure DevOps
+2025-08-11 07:08:21,042 - EpicChangeMonitor - INFO - Adding existing EPIC 28 to monitoring
+2025-08-11 07:08:21,178 - EpicChangeMonitor - INFO - Added EPIC 28 to monitoring and will check for changes immediately.
+2025-08-11 07:08:21,179 - EpicChangeMonitor - INFO - Epic 28 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 07:08:21,179 - EpicChangeMonitor - INFO - Adding existing EPIC 66 to monitoring
+2025-08-11 07:08:21,302 - EpicChangeMonitor - INFO - Added EPIC 66 to monitoring and will check for changes immediately.
+2025-08-11 07:08:21,302 - EpicChangeMonitor - INFO - Epic 66 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 07:08:21,302 - EpicChangeMonitor - INFO - Adding existing EPIC 74 to monitoring
+2025-08-11 07:08:21,427 - EpicChangeMonitor - INFO - Added EPIC 74 to monitoring and will check for changes immediately.
+2025-08-11 07:08:21,427 - EpicChangeMonitor - INFO - Epic 74 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 07:08:21,428 - EpicChangeMonitor - INFO - Adding existing EPIC 121 to monitoring
+2025-08-11 07:08:21,556 - EpicChangeMonitor - INFO - Added EPIC 121 to monitoring and will check for changes immediately.
+2025-08-11 07:08:21,556 - EpicChangeMonitor - INFO - Epic 121 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 07:08:21,557 - EpicChangeMonitor - INFO - Adding existing EPIC 133 to monitoring
+2025-08-11 07:08:21,683 - EpicChangeMonitor - INFO - Added EPIC 133 to monitoring and will check for changes immediately.
+2025-08-11 07:08:21,683 - EpicChangeMonitor - INFO - Epic 133 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 07:08:21,683 - EpicChangeMonitor - INFO - Adding existing EPIC 151 to monitoring
+2025-08-11 07:08:21,810 - EpicChangeMonitor - INFO - Added EPIC 151 to monitoring and will check for changes immediately.
+2025-08-11 07:08:21,929 - EpicChangeMonitor - INFO - Epic 151 already has 8 stories in ADO. Marking as processed.
+2025-08-11 07:08:21,930 - EpicChangeMonitor - INFO - Added 6 new EPICs to monitoring
+2025-08-11 07:08:21,930 - EpicChangeMonitor - INFO - Total EPICs being monitored: 6
+2025-08-11 07:08:21,930 - EpicChangeMonitor - INFO - Monitoring 6 EPICs
+2025-08-11 07:08:21,930 - EpicChangeMonitor - INFO - Poll interval: 1800 seconds
+2025-08-11 07:08:21,931 - EpicChangeMonitor - INFO - Auto-sync enabled: True
+2025-08-11 07:08:21,931 - EpicChangeMonitor - INFO - Auto-extract new epics: True
+2025-08-11 07:08:21,931 - EpicChangeMonitor - INFO - Not in main thread, skipping signal handler setup
+2025-08-11 07:08:21,932 - EpicChangeMonitor - INFO - Starting EPIC monitoring loop
+2025-08-11 07:09:49,984 - EpicChangeMonitor - INFO - Saving snapshots before shutdown
+2025-08-11 07:09:49,987 - EpicChangeMonitor - INFO - Stopping EPIC Change Monitor
+2025-08-11 07:09:49,987 - EpicChangeMonitor - INFO - EPIC Change Monitor stopped
+2025-08-11 07:16:16,335 - EpicChangeMonitor - INFO - Starting EPIC Change Monitor
+2025-08-11 07:16:16,335 - EpicChangeMonitor - INFO - Scanning for all existing EPICs in Azure DevOps...
+2025-08-11 07:16:16,907 - EpicChangeMonitor - INFO - Found 6 EPICs in Azure DevOps
+2025-08-11 07:16:16,907 - EpicChangeMonitor - INFO - Adding existing EPIC 28 to monitoring
+2025-08-11 07:16:17,043 - EpicChangeMonitor - INFO - Added EPIC 28 to monitoring and will check for changes immediately.
+2025-08-11 07:16:17,043 - EpicChangeMonitor - INFO - Epic 28 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 07:16:17,043 - EpicChangeMonitor - INFO - Adding existing EPIC 66 to monitoring
+2025-08-11 07:16:17,166 - EpicChangeMonitor - INFO - Added EPIC 66 to monitoring and will check for changes immediately.
+2025-08-11 07:16:17,166 - EpicChangeMonitor - INFO - Epic 66 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 07:16:17,166 - EpicChangeMonitor - INFO - Adding existing EPIC 74 to monitoring
+2025-08-11 07:16:17,292 - EpicChangeMonitor - INFO - Added EPIC 74 to monitoring and will check for changes immediately.
+2025-08-11 07:16:17,292 - EpicChangeMonitor - INFO - Epic 74 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 07:16:17,292 - EpicChangeMonitor - INFO - Adding existing EPIC 121 to monitoring
+2025-08-11 07:16:17,423 - EpicChangeMonitor - INFO - Added EPIC 121 to monitoring and will check for changes immediately.
+2025-08-11 07:16:17,423 - EpicChangeMonitor - INFO - Epic 121 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 07:16:17,423 - EpicChangeMonitor - INFO - Adding existing EPIC 133 to monitoring
+2025-08-11 07:16:17,545 - EpicChangeMonitor - INFO - Added EPIC 133 to monitoring and will check for changes immediately.
+2025-08-11 07:16:17,546 - EpicChangeMonitor - INFO - Epic 133 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 07:16:17,546 - EpicChangeMonitor - INFO - Adding existing EPIC 151 to monitoring
+2025-08-11 07:16:17,668 - EpicChangeMonitor - INFO - Added EPIC 151 to monitoring and will check for changes immediately.
+2025-08-11 07:16:17,668 - EpicChangeMonitor - INFO - Epic 151 already has stories extracted. Skipping to prevent duplicates.
+2025-08-11 07:16:17,668 - EpicChangeMonitor - INFO - Added 6 new EPICs to monitoring
+2025-08-11 07:16:17,668 - EpicChangeMonitor - INFO - Total EPICs being monitored: 6
+2025-08-11 07:16:17,668 - EpicChangeMonitor - INFO - Monitoring 6 EPICs
+2025-08-11 07:16:17,668 - EpicChangeMonitor - INFO - Poll interval: 1800 seconds
+2025-08-11 07:16:17,669 - EpicChangeMonitor - INFO - Auto-sync enabled: True
+2025-08-11 07:16:17,669 - EpicChangeMonitor - INFO - Auto-extract new epics: True
+2025-08-11 07:16:17,669 - EpicChangeMonitor - INFO - Not in main thread, skipping signal handler setup
+2025-08-11 07:16:17,670 - EpicChangeMonitor - INFO - Starting EPIC monitoring loop
