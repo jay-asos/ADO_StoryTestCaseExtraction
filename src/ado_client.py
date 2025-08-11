@@ -507,9 +507,26 @@ class ADOClient:
             print(f"[ERROR] Error in create_test_case_as_test_case: {str(e)}")
             raise
 
-    def create_work_item(self, work_item_type: str, title: str, description: str, additional_fields: Optional[Dict[str, Any]] = None) -> int:
-        """Generic method to create any type of work item"""
+    def create_work_item(self, work_item_type: str, title: str = None, description: str = None, additional_fields: Optional[Dict[str, Any]] = None, fields: Optional[Dict[str, Any]] = None, parent_id: Optional[int] = None) -> Dict[str, Any]:
+        """Generic method to create any type of work item
+        
+        Supports both old interface (title, description, additional_fields) and new interface (fields, parent_id)
+        """
         try:
+            # Handle new interface with fields parameter
+            if fields is not None:
+                title = fields.get('System.Title', title)
+                description = fields.get('System.Description', description)
+                # Use fields as additional_fields, excluding System.Title and System.Description
+                additional_fields = {k: v for k, v in fields.items() 
+                                   if k not in ['System.Title', 'System.Description']}
+            
+            # Default values if not provided
+            if title is None:
+                title = "New Work Item"
+            if description is None:
+                description = ""
+            
             print(f"[DEBUG] Creating {work_item_type} work item: {title}")
 
             # Prepare the basic document
@@ -546,12 +563,27 @@ class ADOClient:
                     type=work_item_type
                 )
                 print(f"[DEBUG] Successfully created {work_item_type} with ID: {work_item.id}")
-                return work_item.id
             except Exception as e:
                 print(f"[ERROR] Failed to create {work_item_type}: {str(e)}")
                 print(f"[DEBUG] Project: {self.project}")
                 print(f"[DEBUG] Type: {work_item_type}")
                 raise Exception(f"Failed to create {work_item_type}: {str(e)}")
+
+            # Create parent-child relationship if parent_id is provided
+            if parent_id:
+                try:
+                    print(f"[DEBUG] Creating parent-child link between {parent_id} and {work_item.id}")
+                    self._create_parent_child_link(parent_id, work_item.id)
+                except Exception as e:
+                    print(f"[WARNING] Failed to create parent-child link: {str(e)}")
+                    # Don't raise here, as the work item was created successfully
+
+            # Return work item data in the expected format
+            return {
+                'id': work_item.id,
+                'fields': work_item.fields if hasattr(work_item, 'fields') else {},
+                'url': work_item.url if hasattr(work_item, 'url') else ''
+            }
 
         except Exception as e:
             print(f"[ERROR] Error in create_work_item: {str(e)}")
