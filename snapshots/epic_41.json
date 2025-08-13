@@ -1,6 +1,0 @@
-{
-  "content_hash": "b9e9ac7ecd76d9c7da3da3dad1e6bf77a5514a24c411172ee513b351dc53f770",
-  "last_modified": "2025-07-31T12:37:27.663000",
-  "title": "Derive, store & publish ExternalOrderBookedV1 when ExternalOrderBookedExtendedV1 is persisted",
-  "state": "To Do"
-}
