@@ -128,6 +128,10 @@ working_*.py
 verify_*.py
 simple_*.py
 
+# But keep important test files (override the above pattern)
+!test_enhanced_monitor_features.py
+!tests/
+
 # Temporary files
 *.tmp
 *.temp
