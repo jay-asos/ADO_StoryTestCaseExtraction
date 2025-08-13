@@ -1,6 +1,13 @@
 {
   "poll_interval_seconds": 1800,
-  "epic_ids": [],
+  "epic_ids": [
+    28,
+    66,
+    74,
+    121,
+    133,
+    151
+  ],
   "auto_sync": true,
   "auto_extract_new_epics": true,
   "log_level": "INFO",

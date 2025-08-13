@@ -71,18 +71,157 @@
 
         <!-- Main Content -->
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Platform Capabilities Overview -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-750 rounded-xl shadow-sm border border-blue-200 dark:border-gray-600 p-6 mb-8 transition-colors duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-magic text-white"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Platform Capabilities</h2>
+                    </div>
+                    <button @click="showCapabilitiesDetail = !showCapabilitiesDetail"
+                            class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium">
+                        <i :class="showCapabilitiesDetail ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="mr-1"></i>
+                        <span x-text="showCapabilitiesDetail ? 'Hide Details' : 'Show Details'"></span>
+                    </button>
+                </div>
+
+                <!-- Quick Overview -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-sync-alt text-blue-600 text-lg"></i>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Auto Monitoring</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Real-time EPIC change detection</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-robot text-green-600 text-lg"></i>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">AI Story Generation</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Auto-create user stories from EPICs</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-vial text-purple-600 text-lg"></i>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Test Case Extraction</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Generate test cases from stories</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Capabilities -->
+                <div x-show="showCapabilitiesDetail" x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform scale-95"
+                     x-transition:enter-end="opacity-100 transform scale-100"
+                     class="space-y-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Monitoring Features -->
+                        <div class="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm">
+                            <h3 class="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                                <i class="fas fa-search text-blue-600 mr-2"></i>
+                                Monitoring Features
+                            </h3>
+                            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Auto-discover new EPICs in Azure DevOps</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Content-based change detection (title, description, state)</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Duplicate prevention with cooldown periods</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Real-time status monitoring & alerts</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Configurable polling intervals (1-60 minutes)</li>
+                            </ul>
+                        </div>
+
+                        <!-- AI & Automation -->
+                        <div class="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm">
+                            <h3 class="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                                <i class="fas fa-brain text-purple-600 mr-2"></i>
+                                AI & Automation
+                            </h3>
+                            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>OpenAI GPT-4 powered story generation</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Intelligent test case extraction from stories</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Context-aware content analysis</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Auto-upload to Azure DevOps work items</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Customizable work item types (Story/Task/Issue)</li>
+                            </ul>
+                        </div>
+
+                        <!-- Integration & Security -->
+                        <div class="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm">
+                            <h3 class="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                                <i class="fas fa-shield-alt text-green-600 mr-2"></i>
+                                Integration & Security
+                            </h3>
+                            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Azure DevOps REST API integration</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Secure PAT (Personal Access Token) authentication</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Environment-based configuration</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Comprehensive logging & error handling</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Dark/Light theme with persistent settings</li>
+                            </ul>
+                        </div>
+
+                        <!-- Advanced Features -->
+                        <div class="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm">
+                            <h3 class="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                                <i class="fas fa-cogs text-orange-600 mr-2"></i>
+                                Advanced Features
+                            </h3>
+                            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Content hash-based change detection</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Processed state management & reset capabilities</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Detailed monitoring statistics & analytics</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Snapshot-based version control</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Concurrent processing with configurable limits</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Configuration Panel -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8 transition-colors duration-300">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                        <i class="fas fa-cog text-blue-500 mr-2"></i>
-                        Configuration
-                    </h2>
+                    <div class="flex items-center space-x-3">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="fas fa-cog text-blue-500 mr-2"></i>
+                            Configuration
+                        </h2>
+                        <div class="group relative">
+                            <i class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help"></i>
+                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                Configure Azure DevOps connection and AI settings
+                            </div>
+                        </div>
+                    </div>
                     <button @click="showConfigModal = true"
                             class="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
                         <i class="fas fa-edit mr-2"></i>
                         Edit Config
                     </button>
+                </div>
+
+                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-lightbulb text-blue-600 mt-0.5"></i>
+                        <div class="text-sm text-blue-800 dark:text-blue-200">
+                            <strong>💡 Configuration Tips:</strong>
+                            <ul class="mt-2 space-y-1 list-disc list-inside">
+                                <li>Ensure your .env file contains valid ADO_PAT and OPENAI_API_KEY</li>
+                                <li>Use shorter check intervals (1-5 min) for active development</li>
+                                <li>Set story type to "Task" if your project uses Tasks instead of User Stories</li>
+                                <li>Test configuration changes with "Check Now" before starting the monitor</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -128,10 +267,40 @@
 
             <!-- Monitor Controls -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8 transition-colors duration-300">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    <i class="fas fa-play-circle text-green-500 mr-2"></i>
-                    Monitor Controls
-                </h2>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="fas fa-play-circle text-green-500 mr-2"></i>
+                            Monitor Controls
+                        </h2>
+                        <div class="group relative">
+                            <i class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help"></i>
+                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                Control the EPIC monitoring service and trigger manual checks
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-clock"></i>
+                        <span>Next check in: <span x-text="nextCheckCountdown || 'N/A'"></span></span>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-exclamation-triangle text-amber-600 mt-0.5"></i>
+                        <div class="text-sm text-amber-800 dark:text-amber-200">
+                            <strong>⚠️ Monitor Operation Tips:</strong>
+                            <ul class="mt-2 space-y-1 list-disc list-inside">
+                                <li><strong>Start Monitor:</strong> Begins automatic EPIC scanning and story generation</li>
+                                <li><strong>Check Now:</strong> Performs immediate scan without starting continuous monitoring</li>
+                                <li><strong>Stop Monitor:</strong> Safely stops monitoring while preserving current state</li>
+                                <li>Monitor state is preserved between browser sessions</li>
+                                <li>Use "Check Now" to test configuration before starting continuous monitoring</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="flex flex-wrap gap-3">
                     <button @click="startMonitor()"
@@ -140,6 +309,7 @@
                             class="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg transition-colors">
                         <i class="fas fa-play mr-2"></i>
                         Start Monitor
+                        <span class="ml-2 text-xs bg-green-700 px-2 py-1 rounded-full">Continuous</span>
                     </button>
 
                     <button @click="stopMonitor()"
@@ -156,75 +326,211 @@
                             class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg transition-colors">
                         <i class="fas fa-search mr-2" :class="{'animate-spin': loading}"></i>
                         Check Now
+                        <span class="ml-2 text-xs bg-blue-700 px-2 py-1 rounded-full">One-time</span>
                     </button>
+
+                    <button @click="showMonitorLogs = !showMonitorLogs"
+                            class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-list-alt mr-2"></i>
+                        <span x-text="showMonitorLogs ? 'Hide Logs' : 'Show Logs'"></span>
+                    </button>
+                </div>
+
+                <!-- Monitor Logs -->
+                <div x-show="showMonitorLogs" x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform scale-95"
+                     x-transition:enter-end="opacity-100 transform scale-100"
+                     class="mt-4 bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                    <h3 class="font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+                        <i class="fas fa-terminal mr-2"></i>
+                        Recent Activity
+                    </h3>
+                    <div class="max-h-48 overflow-y-auto text-sm text-gray-600 dark:text-gray-300 font-mono space-y-1">
+                        <template x-for="log in monitorLogs" :key="log.timestamp">
+                            <div class="flex items-start space-x-2">
+                                <span class="text-gray-400 text-xs whitespace-nowrap" x-text="log.timestamp"></span>
+                                <span :class="log.level === 'ERROR' ? 'text-red-500' : log.level === 'WARNING' ? 'text-yellow-500' : 'text-gray-600 dark:text-gray-300'" 
+                                      x-text="log.message"></span>
+                            </div>
+                        </template>
+                        <div x-show="monitorLogs.length === 0" class="text-gray-400 text-center py-4">
+                            No recent activity. Start monitoring to see logs.
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Statistics Cards -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        <i class="fas fa-chart-bar text-blue-500 mr-2"></i>
+                        Real-time Statistics
+                    </h2>
+                    <div class="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
+                        <div class="group relative">
+                            <i class="fas fa-info-circle hover:text-blue-500 cursor-help"></i>
+                            <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                Statistics update automatically every 30 seconds
+                            </div>
+                        </div>
+                        <span>Auto-refresh: <i class="fas fa-sync-alt animate-spin text-green-500"></i></span>
+                    </div>
+                </div>
+
+                <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-chart-line text-green-600 mt-0.5"></i>
+                        <div class="text-sm text-green-800 dark:text-green-200">
+                            <strong>📊 Statistics Insights:</strong>
+                            <ul class="mt-2 space-y-1 list-disc list-inside">
+                                <li><strong>Total EPICs:</strong> All EPICs being monitored across your Azure DevOps project</li>
+                                <li><strong>Changed EPICs:</strong> EPICs with detected changes that triggered story generation</li>
+                                <li><strong>Total Stories:</strong> User stories/tasks automatically generated from EPICs</li>
+                                <li><strong>Test Cases:</strong> Test cases extracted from generated stories</li>
+                                <li>Click on any card to view detailed breakdown and trends</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300 hover:shadow-md cursor-pointer transform hover:scale-105 transition-transform"
+                     @click="showStatsDetail('epics')">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total EPICs</p>
                             <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="stats.total_epics"></p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                <span x-text="stats.epics_with_stories_extracted || 0"></span> processed
+                            </p>
                         </div>
                         <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
                             <i class="fas fa-layer-group text-blue-600 dark:text-blue-300"></i>
                         </div>
                     </div>
+                    <div class="mt-2">
+                        <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                                 :style="`width: ${stats.total_epics ? (stats.epics_with_stories_extracted / stats.total_epics) * 100 : 0}%`"></div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300 hover:shadow-md cursor-pointer transform hover:scale-105 transition-transform"
+                     @click="showStatsDetail('changes')">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Changed EPICs</p>
                             <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="stats.changed_epics"></p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                Last 24 hours
+                            </p>
                         </div>
                         <div class="w-10 h-10 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
                             <i class="fas fa-exclamation-triangle text-orange-600 dark:text-orange-300"></i>
                         </div>
                     </div>
+                    <div class="mt-2 text-xs" :class="stats.changed_epics > 0 ? 'text-orange-600' : 'text-gray-500'">
+                        <i class="fas fa-pulse mr-1"></i>
+                        <span x-text="stats.changed_epics > 0 ? 'Active changes detected' : 'No recent changes'"></span>
+                    </div>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300 hover:shadow-md cursor-pointer transform hover:scale-105 transition-transform"
+                     @click="showStatsDetail('stories')">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Stories</p>
                             <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="stats.total_stories"></p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                <span x-text="stats.successful_syncs || 0"></span> successful syncs
+                            </p>
                         </div>
                         <div class="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
                             <i class="fas fa-book text-green-600 dark:text-green-300"></i>
                         </div>
                     </div>
+                    <div class="mt-2 text-xs text-green-600 dark:text-green-400">
+                        <i class="fas fa-robot mr-1"></i>
+                        AI Generated
+                    </div>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300 hover:shadow-md cursor-pointer transform hover:scale-105 transition-transform"
+                     @click="showStatsDetail('testcases')">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Test Cases</p>
                             <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="stats.total_test_cases"></p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                From <span x-text="stats.total_stories || 0"></span> stories
+                            </p>
                         </div>
                         <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
                             <i class="fas fa-vial text-purple-600 dark:text-purple-300"></i>
                         </div>
+                    </div>
+                    <div class="mt-2 text-xs text-purple-600 dark:text-purple-400">
+                        <i class="fas fa-magic mr-1"></i>
+                        Ready for QA
                     </div>
                 </div>
             </div>
 
             <!-- Test Case Extraction Panel -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8 transition-colors duration-300">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    <i class="fas fa-vial text-purple-500 mr-2"></i>
-                    Test Case Extraction
-                </h2>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="fas fa-vial text-purple-500 mr-2"></i>
+                            Test Case Extraction
+                        </h2>
+                        <div class="group relative">
+                            <i class="fas fa-info-circle text-gray-400 hover:text-purple-500 cursor-help"></i>
+                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                Extract comprehensive test cases from any user story using AI
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 text-sm">
+                        <div class="flex items-center space-x-1 text-green-600 dark:text-green-400">
+                            <i class="fas fa-robot"></i>
+                            <span>AI Powered</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-4">
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-magic text-purple-600 mt-0.5"></i>
+                        <div class="text-sm text-purple-800 dark:text-purple-200">
+                            <strong>🔬 Test Case Extraction Features:</strong>
+                            <ul class="mt-2 space-y-1 list-disc list-inside">
+                                <li><strong>AI Analysis:</strong> GPT-4 analyzes user story content to generate comprehensive test cases</li>
+                                <li><strong>Test Types:</strong> Generates positive, negative, edge case, and integration tests</li>
+                                <li><strong>Step-by-Step:</strong> Creates detailed test steps with expected results</li>
+                                <li><strong>Azure DevOps:</strong> Automatically uploads as Test Case or Issue work items</li>
+                                <li><strong>Batch Processing:</strong> Extract multiple test cases at once from story descriptions</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="space-y-4">
                     <div class="flex flex-col sm:flex-row gap-3">
                         <div class="flex-1">
-                            <input x-model="testStoryId"
-                                   type="text"
-                                   placeholder="Enter Story ID..."
-                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <div class="relative">
+                                <input x-model="testStoryId"
+                                       type="text"
+                                       placeholder="Enter Story ID (e.g., 12345) or Story Title..."
+                                       class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            </div>
+                            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                💡 Tip: You can enter either a Work Item ID or search by title keywords
+                            </div>
                         </div>
                         <button @click="extractTestCases()"
                                 :disabled="!testStoryId.trim() || extractingTestCases"
@@ -236,8 +542,48 @@
                                 :disabled="!testStoryId.trim() || extractingTestCases || extractedTestCases.length === 0"
                                 class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                             <i class="fas fa-upload mr-2"></i>
-                            Upload Test Cases
+                            Upload to ADO
+                            <span x-show="extractedTestCases.length > 0" class="ml-1 bg-green-700 px-2 py-0.5 rounded-full text-xs" x-text="extractedTestCases.length"></span>
                         </button>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="flex flex-wrap gap-2">
+                        <button @click="testStoryId = 'recent'" 
+                                class="text-xs px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600">
+                            <i class="fas fa-history mr-1"></i>Use Recent Story
+                        </button>
+                        <button @click="showTestCaseTemplates = !showTestCaseTemplates" 
+                                class="text-xs px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600">
+                            <i class="fas fa-template mr-1"></i>View Templates
+                        </button>
+                        <button @click="testStoryId = ''" 
+                                class="text-xs px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600">
+                            <i class="fas fa-times mr-1"></i>Clear
+                        </button>
+                    </div>
+
+                    <!-- Test Case Templates -->
+                    <div x-show="showTestCaseTemplates" x-transition class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <h3 class="font-medium text-gray-900 dark:text-white mb-3">Test Case Generation Templates:</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div class="bg-white dark:bg-gray-600 rounded p-3">
+                                <h4 class="font-medium text-blue-600 dark:text-blue-400 mb-1">🔍 Functional Testing</h4>
+                                <p class="text-gray-600 dark:text-gray-300 text-xs">Tests core functionality, user flows, input validation</p>
+                            </div>
+                            <div class="bg-white dark:bg-gray-600 rounded p-3">
+                                <h4 class="font-medium text-orange-600 dark:text-orange-400 mb-1">⚡ Edge Cases</h4>
+                                <p class="text-gray-600 dark:text-gray-300 text-xs">Boundary conditions, error handling, invalid inputs</p>
+                            </div>
+                            <div class="bg-white dark:bg-gray-600 rounded p-3">
+                                <h4 class="font-medium text-green-600 dark:text-green-400 mb-1">🔗 Integration</h4>
+                                <p class="text-gray-600 dark:text-gray-300 text-xs">API interactions, data flow, system connections</p>
+                            </div>
+                            <div class="bg-white dark:bg-gray-600 rounded p-3">
+                                <h4 class="font-medium text-purple-600 dark:text-purple-400 mb-1">👥 User Experience</h4>
+                                <p class="text-gray-600 dark:text-gray-300 text-xs">UI/UX flows, accessibility, responsiveness</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Extracted Test Cases Display -->
@@ -277,19 +623,73 @@
             <!-- EPICs List -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8 transition-colors duration-300">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                        <i class="fas fa-layer-group text-blue-500 mr-2"></i>
-                        Monitored EPICs
-                    </h2>
+                    <div class="flex items-center space-x-3">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="fas fa-layer-group text-blue-500 mr-2"></i>
+                            Monitored EPICs
+                        </h2>
+                        <div class="group relative">
+                            <i class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help"></i>
+                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                View all EPICs being monitored and their current status
+                            </div>
+                        </div>
+                    </div>
                     <div class="flex items-center space-x-2">
                         <input x-model="epicFilter"
                                type="text"
-                               placeholder="Filter EPICs..."
-                               class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                               placeholder="Filter EPICs by title, ID, or status..."
+                               class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white w-64">
                         <button @click="loadEpics()"
                                 class="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                            <i class="fas fa-refresh"></i>
+                            <i class="fas fa-refresh" :class="{'animate-spin': loading}"></i>
                         </button>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            <span x-text="filteredEpics.length"></span> of <span x-text="epics.length"></span> EPICs
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-4">
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-layer-group text-indigo-600 mt-0.5"></i>
+                        <div class="text-sm text-indigo-800 dark:text-indigo-200">
+                            <strong>📋 EPIC Management Features:</strong>
+                            <ul class="mt-2 space-y-1 list-disc list-inside">
+                                <li><strong>Status Indicators:</strong> 🟢 Processed (stories generated), 🟡 Changed (needs processing), 🔴 Error, ⚪ New</li>
+                                <li><strong>Change Detection:</strong> Monitors title, description, state, and priority changes</li>
+                                <li><strong>Story Count:</strong> Shows number of generated stories per EPIC</li>
+                                <li><strong>Last Sync:</strong> When the EPIC was last processed by the AI system</li>
+                                <li><strong>Actions:</strong> Force sync, reset processing state, view generated stories</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EPIC Status Legend -->
+                <div class="flex flex-wrap gap-4 mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div class="text-sm">
+                        <strong class="text-gray-700 dark:text-gray-300">Status Legend:</strong>
+                    </div>
+                    <div class="flex items-center space-x-1 text-sm">
+                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Processed</span>
+                    </div>
+                    <div class="flex items-center space-x-1 text-sm">
+                        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Changed</span>
+                    </div>
+                    <div class="flex items-center space-x-1 text-sm">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Error</span>
+                    </div>
+                    <div class="flex items-center space-x-1 text-sm">
+                        <div class="w-3 h-3 bg-gray-400 rounded-full"></div>
+                        <span class="text-gray-600 dark:text-gray-400">New</span>
+                    </div>
+                    <div class="flex items-center space-x-1 text-sm">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Processing</span>
                     </div>
                 </div>
 
@@ -340,7 +740,7 @@
             </div>
 
             <!-- Activity Log -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+            <div class="hidden bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
                         <i class="fas fa-history text-purple-500 mr-2"></i>
@@ -687,6 +1087,12 @@
                 darkMode: false,
                 loading: false,
                 lastUpdated: 'Never',
+                nextCheckCountdown: null,
+
+                // UI State
+                showCapabilitiesDetail: false,
+                showTestCaseTemplates: false,
+                showMonitorLogs: false,
 
                 // Modals
                 showConfigModal: false,
@@ -699,7 +1105,9 @@
                     story_extraction_type: 'User Story',
                     test_case_extraction_type: 'Issue',
                     check_interval_minutes: 30,
-                    epic_ids: []
+                    epic_ids: [],
+                    env_file_path: '',
+                    env_file_writable: true
                 },
 
                 configForm: {
@@ -732,17 +1140,23 @@
                     last_check: null
                 },
 
-                // Statistics
+                // Enhanced Statistics
                 stats: {
                     total_epics: 0,
                     changed_epics: 0,
                     total_stories: 0,
-                    total_test_cases: 0
+                    total_test_cases: 0,
+                    epics_with_stories_extracted: 0,
+                    successful_syncs: 0,
+                    failed_syncs: 0
                 },
 
                 // EPICs
                 epics: [],
                 epicFilter: '',
+
+                // Monitor Logs
+                monitorLogs: [],
 
                 // Logs
                 logs: [],
@@ -1213,17 +1627,74 @@
                     return icons[type] || icons['info'];
                 },
 
+                // Enhanced Features
+                showStatsDetail(type) {
+                    let message = '';
+                    switch(type) {
+                        case 'epics':
+                            message = `Total EPICs: ${this.stats.total_epics}\n` +
+                                     `With Stories: ${this.stats.epics_with_stories_extracted}\n` +
+                                     `Processing Rate: ${this.stats.total_epics ? Math.round((this.stats.epics_with_stories_extracted / this.stats.total_epics) * 100) : 0}%`;
+                            break;
+                        case 'changes':
+                            message = `Changed EPICs in last 24h: ${this.stats.changed_epics}\n` +
+                                     `Detection Method: Content hash + field comparison\n` +
+                                     `Auto-sync: ${this.monitorStatus.is_running ? 'Enabled' : 'Disabled'}`;
+                            break;
+                        case 'stories':
+                            message = `Total Stories Generated: ${this.stats.total_stories}\n` +
+                                     `Successful Syncs: ${this.stats.successful_syncs}\n` +
+                                     `Failed Syncs: ${this.stats.failed_syncs}\n` +
+                                     `Success Rate: ${(this.stats.successful_syncs + this.stats.failed_syncs) ? Math.round((this.stats.successful_syncs / (this.stats.successful_syncs + this.stats.failed_syncs)) * 100) : 0}%`;
+                            break;
+                        case 'testcases':
+                            message = `Total Test Cases: ${this.stats.total_test_cases}\n` +
+                                     `Generated from ${this.stats.total_stories} stories\n` +
+                                     `AI Model: GPT-4\n` +
+                                     `Avg per Story: ${this.stats.total_stories ? Math.round(this.stats.total_test_cases / this.stats.total_stories * 10) / 10 : 0}`;
+                            break;
+                    }
+                    this.showNotification(message, 'info', 'Statistics Details');
+                },
+
+                updateNextCheckCountdown() {
+                    if (!this.monitorStatus.is_running) {
+                        this.nextCheckCountdown = 'N/A';
+                        return;
+                    }
+                    
+                    // This would need to be implemented based on your backend API
+                    // For now, showing a placeholder
+                    const minutes = this.config.check_interval_minutes || 30;
+                    this.nextCheckCountdown = `~${minutes} min`;
+                },
+
+                loadMonitorLogs() {
+                    // Mock logs for demonstration
+                    // In a real implementation, this would fetch from an API endpoint
+                    this.monitorLogs = [
+                        { timestamp: new Date().toLocaleTimeString(), level: 'INFO', message: 'Monitor started successfully' },
+                        { timestamp: new Date(Date.now() - 60000).toLocaleTimeString(), level: 'INFO', message: 'Found 15 EPICs to monitor' },
+                        { timestamp: new Date(Date.now() - 120000).toLocaleTimeString(), level: 'WARNING', message: 'EPIC 123 - Title changed' },
+                        { timestamp: new Date(Date.now() - 180000).toLocaleTimeString(), level: 'INFO', message: 'Generated 3 stories for EPIC 123' }
+                    ];
+                },
+
                 // Polling
                 startPolling() {
                     // Poll for status updates every 30 seconds
                     setInterval(async () => {
                         await this.loadMonitorStatus();
+                        this.updateNextCheckCountdown();
                     }, 30000);
 
                     // Poll for data updates every 60 seconds
                     setInterval(async () => {
                         await this.refreshData();
                     }, 60000);
+
+                    // Load monitor logs initially
+                    this.loadMonitorLogs();
                 }
             }
         }
