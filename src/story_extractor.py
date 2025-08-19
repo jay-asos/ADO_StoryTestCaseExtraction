@@ -6,7 +6,7 @@ from openai import OpenAI
 from openai import RateLimitError
 
 from config.settings import Settings
-from src.models import Requirement, StoryExtractionResult
+from src.models import Requirement, StoryExtractionResult, UserStory
 from src.models_enhanced import EnhancedUserStory
 from src.enhanced_story_creator import EnhancedStoryCreator
 
@@ -22,7 +22,7 @@ class StoryExtractor:
         """Extract enhanced user stories from a requirement using AI, avoiding duplicates"""
         try:
             stories = self._analyze_requirement_with_ai(requirement)
-            # Filter out duplicates
+            # Filter out duplicates and convert EnhancedUserStory to UserStory
             filtered_stories = []
             existing_stories = existing_stories or []
             for story in stories:
@@ -32,7 +32,21 @@ class StoryExtractor:
                     story.acceptance_criteria == es.get('acceptance_criteria')
                     for es in existing_stories
                 ):
-                    filtered_stories.append(story)
+                    # Convert EnhancedUserStory to UserStory
+                    if isinstance(story, EnhancedUserStory):
+                        # Handle case where acceptance_criteria might be a string
+                        if isinstance(story.acceptance_criteria, str):
+                            acceptance_criteria = [story.acceptance_criteria]
+                        else:
+                            acceptance_criteria = list(story.acceptance_criteria)
+
+                        user_story = UserStory(
+                            heading=story.heading,
+                            description=story.description,
+                            acceptance_criteria=acceptance_criteria,
+                            test_cases=[]  # Empty list since test cases are generated later
+                        )
+                        filtered_stories.append(user_story)
             return StoryExtractionResult(
                 requirement_id=str(requirement.id),
                 requirement_title=requirement.title,
@@ -81,9 +95,21 @@ class StoryExtractor:
                             - Business requirement 2
                             ```
                             
-                            Format acceptance criteria as array of strings, each following:
+                            Format acceptance criteria as an array of strings, each following Given/When/Then format:
                             ```
-                            Feature Name Given: [context] When: [action] Then: [expected result] And: [additional conditions]
+                            Given [initial context/state]
+                            When [action/trigger occurs]
+                            Then [expected outcome]
+                            And [additional outcomes if any]
+                            ```
+
+                            Example acceptance criteria:
+                            ```
+                            "Given the user is on the login page
+                            When they enter valid credentials and click login
+                            Then they should be redirected to the dashboard
+                            And their username should be displayed in the header"
+                            ```
                             ```
                             
                             Return your response as valid JSON only, with no additional text."""

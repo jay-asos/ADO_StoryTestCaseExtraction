@@ -27,7 +27,8 @@ class MonitorAPI:
         self.port = port
 
         self.agent = StoryExtractionAgent()
-        self.settings = Settings()
+        Settings.validate()  # Validate settings first
+        self.settings = Settings  # Use the class itself, not an instance
         self.logger = logging.getLogger(__name__)
 
         # Create monitor instance, loading config from file if none provided
@@ -275,8 +276,8 @@ class MonitorAPI:
                     return jsonify({'error': 'Monitor not configured'}), 400
 
                 config_dict = {
-                    'ado_organization': self.settings.ado_organization,
-                    'ado_project': self.settings.ado_project,
+                    'ado_organization': self.settings.ADO_ORGANIZATION,
+                    'ado_project': self.settings.ADO_PROJECT,
                     'ado_pat': '***hidden***',  # Don't expose the actual PAT
                     'openai_api_key': '***hidden***',  # Don't expose the actual API key
                     'openai_model': getattr(self.settings, 'openai_model', 'gpt-4'),

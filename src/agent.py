@@ -91,7 +91,14 @@ class StoryExtractionAgent:
         for story in stories:
             try:
                 story_data = story.to_ado_format()
-                story_id = self.ado_client.create_user_story(story_data, parent_id)
+                result = self.ado_client.create_user_story(story_data, parent_id)
+                
+                # Ensure we got a valid ID
+                if not isinstance(result, int):
+                    self.logger.error(f"Story upload did not return a valid integer ID for '{story.heading}'")
+                    continue
+                    
+                story_id = result
                 uploaded_ids.append(story_id)
                 self.logger.info(f"Created user story {story_id}: {story.heading}")
                 

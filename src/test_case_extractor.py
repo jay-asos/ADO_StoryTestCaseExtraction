@@ -76,11 +76,12 @@ Your task is to analyze user stories and generate detailed test cases that cover
 - Data validation and business rule testing
 
 For each test case, provide:
-- A clear, descriptive title
-- Test type (positive, negative, edge_case)
-- Detailed test steps
-- Expected results
-- Any prerequisites or test data needed
+1. A clear, descriptive title that indicates what is being tested
+2. Test type (must be one of: positive, negative, edge_case)
+3. A brief description of the test objective
+4. Detailed test steps (numbered list of specific actions)
+5. Clear expected result (complete sentence ending with a period)
+6. Prerequisites (environment, data, or system state needed)
 
 Format your response as JSON with the following structure:
 {
@@ -155,12 +156,25 @@ Generate test cases that thoroughly validate this user story, including positive
                 if isinstance(prerequisites, str):
                     prerequisites = [prerequisites] if prerequisites else []
 
+                # Format test steps as numbered steps if they're not already
+                formatted_steps = []
+                for i, step in enumerate(steps, 1):
+                    if not step.strip().startswith(str(i)):
+                        formatted_steps.append(f"{i}. {step}")
+                    else:
+                        formatted_steps.append(step)
+
+                # Ensure expected result is a complete sentence
+                expected_result = tc_data.get("expected_result", "")
+                if not expected_result.endswith('.'):
+                    expected_result += '.'
+
                 test_case = TestCase(
                     title=tc_data.get("title", "Untitled Test Case"),
                     description=tc_data.get("description", ""),
                     test_type=tc_data.get("test_type", "positive"),
-                    test_steps=steps,
-                    expected_result=tc_data.get("expected_result", ""),
+                    test_steps=formatted_steps,
+                    expected_result=expected_result,
                     preconditions=prerequisites,
                     priority=tc_data.get("priority", "Medium"),
                     parent_story_id=None

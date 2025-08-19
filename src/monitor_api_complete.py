@@ -39,10 +39,10 @@ class MonitorAPI:
         self.monitor_thread = None
         if config is None:
             try:
-                with open('monitor_config.json', 'r') as f:
+                with open('monitor_config_enhanced.json', 'r') as f:
                     config_data = json.load(f)
                     config = MonitorConfig(**config_data)
-                    self.logger.info("Loaded monitor configuration from monitor_config.json")
+                    self.logger.info("Loaded monitor configuration from monitor_config_enhanced.json")
             except Exception as e:
                 self.logger.error(f"Failed to load monitor configuration: {str(e)}")
                 raise RuntimeError("Monitor configuration is required. Please provide a valid configuration.")

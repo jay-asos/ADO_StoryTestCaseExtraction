@@ -1,7 +1,8 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
 from pydantic import BaseModel, Field
 import os
+from src.models_enhanced import EnhancedUserStory
 
 OPENAI_RETRY_DELAY = int(os.getenv('OPENAI_RETRY_DELAY', 5))
 
@@ -89,7 +90,7 @@ class StoryExtractionResult(BaseModel):
     """Result of story extraction from a requirement"""
     requirement_id: str  # Changed to str to handle both numeric and text IDs
     requirement_title: str
-    stories: List[UserStory]
+    stories: List[Union[UserStory, EnhancedUserStory]]  # Allow both types of story objects
     extraction_successful: bool = True
     error_message: Optional[str] = None
 
