@@ -281,8 +281,8 @@ class MonitorAPI:
                     'ado_pat': '***hidden***',  # Don't expose the actual PAT
                     'openai_api_key': '***hidden***',  # Don't expose the actual API key
                     'openai_model': getattr(self.settings, 'openai_model', 'gpt-4'),
-                    'story_extraction_type': getattr(self.settings, 'story_extraction_type', 'User Story'),
-                    'test_case_extraction_type': getattr(self.settings, 'test_case_extraction_type', 'Issue'),
+                    'story_extraction_type': self.settings.STORY_EXTRACTION_TYPE,
+                    'test_case_extraction_type': self.settings.TEST_CASE_EXTRACTION_TYPE,
                     'check_interval_minutes': self.monitor.config.poll_interval_seconds // 60 if self.monitor.config.poll_interval_seconds else 5,
                     'epic_ids': list(self.monitor.monitored_epics.keys()) if self.monitor.monitored_epics else [],
                     'auto_sync': self.monitor.config.auto_sync if hasattr(self.monitor.config, 'auto_sync') else True,
@@ -333,10 +333,17 @@ class MonitorAPI:
 
                 # Save configuration to file
                 try:
+                    # Update settings if provided
+                    if 'test_case_extraction_type' in data:
+                        os.environ['ADO_TEST_CASE_EXTRACTION_TYPE'] = data['test_case_extraction_type']
+                        Settings.TEST_CASE_EXTRACTION_TYPE = data['test_case_extraction_type']
+                        self.logger.info(f"Updated test case extraction type to: {data['test_case_extraction_type']}")
+                    
                     config_data = {
                         'poll_interval_seconds': self.monitor.config.poll_interval_seconds,
                         'epic_ids': data.get('epic_ids', []),
                         'auto_sync': self.monitor.config.auto_sync,
+                        'test_case_extraction_type': Settings.TEST_CASE_EXTRACTION_TYPE,
                         'auto_extract_new_epics': getattr(self.monitor.config, 'auto_extract_new_epics', True),
                         'log_level': getattr(self.monitor.config, 'log_level', 'INFO'),
                         'max_concurrent_syncs': getattr(self.monitor.config, 'max_concurrent_syncs', 3),

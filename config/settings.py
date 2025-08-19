@@ -47,6 +47,12 @@ class Settings:
         """Validate required settings are present"""
         print("[CONFIG] Validating settings...")
         missing = []
+        
+        # Validate and print test case type
+        print(f"[CONFIG] TEST_CASE_EXTRACTION_TYPE: {cls.TEST_CASE_EXTRACTION_TYPE}")
+        if cls.TEST_CASE_EXTRACTION_TYPE not in ['Issue', 'Test Case']:
+            print(f"[WARNING] Invalid TEST_CASE_EXTRACTION_TYPE: {cls.TEST_CASE_EXTRACTION_TYPE}. Using default: Test Case")
+            cls.TEST_CASE_EXTRACTION_TYPE = 'Test Case'
 
         # Check Azure DevOps settings
         if not cls.ADO_ORGANIZATION:
