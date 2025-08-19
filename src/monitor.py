@@ -18,6 +18,8 @@ import requests
 
 from src.agent import StoryExtractionAgent
 from src.models import EpicSyncResult
+from src.enhanced_story_creator import EnhancedStoryCreator
+from src.models_enhanced import EnhancedUserStory
 
 
 @dataclass
@@ -61,6 +63,7 @@ class EpicChangeMonitor:
     def __init__(self, config: MonitorConfig):
         self.config = config
         self.agent = StoryExtractionAgent()
+        self.story_creator = EnhancedStoryCreator()  # Add enhanced story creator
         self.logger = self._setup_logger()
         self.is_running = False
         self.monitored_epics: Dict[str, EpicMonitorState] = {}

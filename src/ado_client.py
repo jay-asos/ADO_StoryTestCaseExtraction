@@ -3,7 +3,7 @@ import json
 import hashlib
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-import requests
+from config.settings import Settings
 from azure.devops.v7_1.work_item_tracking import WorkItemTrackingClient
 from msrest.authentication import BasicAuthentication
 
@@ -88,59 +88,40 @@ class ADOClient:
                   f"Check if your PAT is valid, has correct permissions, and if the organization/project/ID are correct.")
             return None
 
-    def create_user_story(self, story_data: Dict[str, Any], parent_requirement_id: int) -> int:
-        """Create a user story using the configured work item type and link it to a parent requirement"""
+    def create_user_story(self, story_data: Dict[str, Any], parent_requirement_id: Optional[int] = None, item_type: Optional[str] = None) -> Any:
+        """Create a user story with the specified type"""
         try:
-            print(f"[DEBUG] Attempting to create story as {Settings.STORY_EXTRACTION_TYPE} for parent {parent_requirement_id}")
-            # Prepare work item data - ensure we're using System.Title and System.Description
-            document = [
-                {
-                    "op": "add",
-                    "path": "/fields/System.Title",
-                    "value": story_data.get("System.Title", "New User Story")
-                },
-                {
-                    "op": "add",
-                    "path": "/fields/System.Description",
-                    "value": story_data.get("System.Description", "")
-                }
-            ]
-
-            # Add any additional fields from story_data
+            print(f"[DEBUG] Creating {story_data}")
+            
+            # Prepare document for create
+            document = []
             for field, value in story_data.items():
-                if field not in ["System.Title", "System.Description"]:
-                    document.append({
-                        "op": "add",
-                        "path": f"/fields/{field}",
-                        "value": value
-                    })
-
+                document.append({
+                    "op": "add",
+                    "path": f"/fields/{field}",
+                    "value": value
+                })
+            
             print(f"[DEBUG] Document prepared for Azure DevOps: {document}")
-
-            # Create the work item using the configured story extraction type
-            try:
-                work_item = self.wit_client.create_work_item(
-                    document=document,
-                    project=self.project,
-                    type=Settings.STORY_EXTRACTION_TYPE
-                )
-                print(f"[DEBUG] Successfully created {Settings.STORY_EXTRACTION_TYPE} with ID: {work_item.id}")
-            except Exception as e:
-                print(f"[ERROR] Failed to create {Settings.STORY_EXTRACTION_TYPE}: {str(e)}")
-                print(f"[DEBUG] Project: {self.project}")
-                print(f"[DEBUG] Type: {Settings.STORY_EXTRACTION_TYPE}")
-                raise Exception(f"Failed to create {Settings.STORY_EXTRACTION_TYPE}: {str(e)}")
-
-            # Create parent-child relationship if parent_requirement_id is provided
+            
+            # Create the work item
+            work_item = self.wit_client.create_work_item(
+                document=document,
+                project=self.project,
+                type=item_type or Settings.STORY_EXTRACTION_TYPE or "Task"  # Use provided type, fallback to config, then Task
+            )
+            
+            print(f"[DEBUG] Successfully created work item with ID: {work_item.id}")
+            
+            # Create parent-child relationship if needed
             if parent_requirement_id:
                 try:
-                    print(f"[DEBUG] Creating parent-child link between {parent_requirement_id} and {work_item.id}")
+                    print(f"[DEBUG] Creating parent-child link for {work_item.id}")
                     self._create_parent_child_link(parent_requirement_id, work_item.id)
                 except Exception as e:
                     print(f"[WARNING] Failed to create parent-child link: {str(e)}")
-                    # Don't raise here, as the story was created successfully
-
-            return work_item.id
+                    
+            return work_item
             
         except Exception as e:
             print(f"[ERROR] Error in create_user_story: {str(e)}")

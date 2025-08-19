@@ -5,6 +5,8 @@ from src.ado_client import ADOClient
 from src.story_extractor import StoryExtractor
 from src.test_case_extractor import TestCaseExtractor
 from src.models import Requirement, StoryExtractionResult, UserStory, ChangeDetectionResult, EpicSyncResult, TestCaseExtractionResult
+from src.enhanced_story_creator import EnhancedStoryCreator
+from src.models_enhanced import EnhancedUserStory
 from config.settings import Settings
 
 class StoryExtractionAgent:
@@ -14,6 +16,7 @@ class StoryExtractionAgent:
         self.ado_client = ADOClient()
         self.story_extractor = StoryExtractor()
         self.test_case_extractor = TestCaseExtractor()
+        self.story_creator = EnhancedStoryCreator()  # Add enhanced story creator
         self.logger = self._setup_logger()
     
     def process_requirement_by_id(self, requirement_id: str, upload_to_ado: bool = True) -> StoryExtractionResult:
@@ -234,13 +237,15 @@ class StoryExtractionAgent:
                     error_message=error_msg
                 )
 
-            # Convert work item to UserStory object
-            user_story = UserStory(
+            # Convert work item to EnhancedUserStory object
+            description = work_item.fields.get("System.Description", "")
+            acceptance_criteria = self._extract_acceptance_criteria_from_description(description)
+            
+            # Create enhanced user story with complexity analysis
+            user_story = self.story_creator.create_enhanced_story(
                 heading=work_item.fields.get("System.Title", ""),
-                description=work_item.fields.get("System.Description", ""),
-                acceptance_criteria=self._extract_acceptance_criteria_from_description(
-                    work_item.fields.get("System.Description", "")
-                )
+                description=description,
+                acceptance_criteria=acceptance_criteria
             )
 
             print(f"[AGENT] Found user story: {user_story.heading}")
@@ -375,14 +380,16 @@ class StoryExtractionAgent:
             if not story_work_item:
                 return {"error": f"User story {story_id} not found"}
             
-            # Convert ADO work item to UserStory model
+            # Convert ADO work item to EnhancedUserStory model
             fields = story_work_item.fields
-            user_story = UserStory(
+            description = fields.get("System.Description", "")
+            acceptance_criteria = self._extract_acceptance_criteria_from_description(description)
+            
+            # Create enhanced user story with complexity analysis
+            user_story = self.story_creator.create_enhanced_story(
                 heading=fields.get("System.Title", ""),
-                description=fields.get("System.Description", ""),
-                acceptance_criteria=self._extract_acceptance_criteria_from_description(
-                    fields.get("System.Description", "")
-                )
+                description=description,
+                acceptance_criteria=acceptance_criteria
             )
             
             # Fetch test cases associated with the user story

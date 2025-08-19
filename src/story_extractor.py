@@ -6,17 +6,20 @@ from openai import OpenAI
 from openai import RateLimitError
 
 from config.settings import Settings
-from src.models import UserStory, Requirement, StoryExtractionResult
+from src.models import Requirement, StoryExtractionResult
+from src.models_enhanced import EnhancedUserStory
+from src.enhanced_story_creator import EnhancedStoryCreator
 
 class StoryExtractor:
-    """AI-powered extractor that analyzes requirements and creates user stories"""
+    """AI-powered extractor that analyzes requirements and creates enhanced user stories"""
     
     def __init__(self):
         Settings.validate()
         self.client = OpenAI(api_key=Settings.OPENAI_API_KEY)
+        self.story_creator = EnhancedStoryCreator()
     
     def extract_stories(self, requirement: Requirement, existing_stories: List[dict] = None) -> StoryExtractionResult:
-        """Extract user stories from a requirement using AI, avoiding duplicates"""
+        """Extract enhanced user stories from a requirement using AI, avoiding duplicates"""
         try:
             stories = self._analyze_requirement_with_ai(requirement)
             # Filter out duplicates
@@ -45,8 +48,8 @@ class StoryExtractor:
                 error_message=str(e)
             )
     
-    def _analyze_requirement_with_ai(self, requirement: Requirement) -> List[UserStory]:
-        """Use OpenAI to analyze requirement and extract user stories with retry logic"""
+    def _analyze_requirement_with_ai(self, requirement: Requirement) -> List[EnhancedUserStory]:
+        """Use OpenAI to analyze requirement and extract enhanced user stories with retry logic"""
         
         prompt = self._build_extraction_prompt(requirement)
         retries = Settings.OPENAI_MAX_RETRIES
@@ -62,8 +65,26 @@ class StoryExtractor:
                             "content": """You are an expert business analyst specialized in breaking down requirements into user stories. 
                             You should extract actionable user stories from requirements, ensuring each story follows the standard format:
                             - Clear, concise heading
-                            - Detailed description following 'As a [user], I want [goal] so that [benefit]' format when possible
-                            - Specific, testable acceptance criteria
+                            - Detailed description following 'As a [user], I want [goal] so that [benefit]' format, including both Technical Context and Business Requirements sections
+                            - Specific, testable acceptance criteria in Given/When/Then format
+                            
+                            Format your description with clear sections:
+                            ```
+                            As a [user], I want [goal] so that [benefit]
+                            
+                            Technical Context:
+                            - Technical requirement 1
+                            - Technical requirement 2
+                            
+                            Business Requirements:
+                            - Business requirement 1
+                            - Business requirement 2
+                            ```
+                            
+                            Format acceptance criteria as array of strings, each following:
+                            ```
+                            Feature Name Given: [context] When: [action] Then: [expected result] And: [additional conditions]
+                            ```
                             
                             Return your response as valid JSON only, with no additional text."""
                         },
@@ -81,13 +102,16 @@ class StoryExtractor:
                 # Parse JSON response
                 stories_data = json.loads(content)
                 
-                # Convert to UserStory objects
+                # Convert to EnhancedUserStory objects
                 stories = []
                 for story_data in stories_data.get("stories", []):
-                    story = UserStory(
+                    # Create an enhanced story with complexity analysis
+                    story = self.story_creator.create_enhanced_story(
                         heading=story_data["heading"],
                         description=story_data["description"],
-                        acceptance_criteria=story_data["acceptance_criteria"]
+                        acceptance_criteria=story_data.get("acceptance_criteria", [])
+                        if isinstance(story_data.get("acceptance_criteria"), list)
+                        else story_data.get("acceptance_criteria", "").split("\n")
                     )
                     stories.append(story)
                 
@@ -141,8 +165,8 @@ Please analyze the following requirement and extract user stories from it.
 Return only valid JSON, no additional text.
 """
     
-    def validate_stories(self, stories: List[UserStory]) -> List[str]:
-        """Validate extracted stories and return any issues found"""
+    def validate_stories(self, stories: List[EnhancedUserStory]) -> List[str]:
+        """Validate a list of enhanced user stories"""
         issues = []
         
         for i, story in enumerate(stories):
