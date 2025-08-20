@@ -323,7 +323,7 @@ class ADOClient:
                 {
                     "op": "add",
                     "path": "/fields/System.Title",
-                    "value": test_case_data.get("title", "New Test Case")
+                    "value": test_case_data.get("title", "")
                 },
                 {
                     "op": "add",
