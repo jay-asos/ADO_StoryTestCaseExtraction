@@ -22,7 +22,10 @@ class Settings:
     STORY_EXTRACTION_TYPE = os.getenv('ADO_STORY_EXTRACTION_TYPE', 'User Story')
 
     # Test case extraction work item type (Issue or Test Case)
-    TEST_CASE_EXTRACTION_TYPE = os.getenv('ADO_TEST_CASE_EXTRACTION_TYPE', 'Issue')
+    TEST_CASE_EXTRACTION_TYPE = os.getenv('ADO_TEST_CASE_EXTRACTION_TYPE', 'Test Case')
+    
+    # Test case extraction settings
+    AUTO_TEST_CASE_EXTRACTION = os.getenv('ADO_AUTO_TEST_CASE_EXTRACTION', 'true').lower() == 'true'
 
     # OpenAI settings
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -104,6 +107,7 @@ class Settings:
         cls.USER_STORY_TYPE = os.getenv('ADO_USER_STORY_TYPE', 'User Story')
         cls.STORY_EXTRACTION_TYPE = os.getenv('ADO_STORY_EXTRACTION_TYPE', 'User Story')
         cls.TEST_CASE_EXTRACTION_TYPE = os.getenv('ADO_TEST_CASE_EXTRACTION_TYPE', 'Issue')
+        cls.AUTO_TEST_CASE_EXTRACTION = os.getenv('ADO_AUTO_TEST_CASE_EXTRACTION', 'true').lower() == 'true'
         
         # OpenAI settings
         cls.OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -127,6 +131,7 @@ class Settings:
             'ADO_USER_STORY_TYPE': cls.USER_STORY_TYPE,
             'ADO_STORY_EXTRACTION_TYPE': cls.STORY_EXTRACTION_TYPE,
             'ADO_TEST_CASE_EXTRACTION_TYPE': cls.TEST_CASE_EXTRACTION_TYPE,
+            'ADO_AUTO_TEST_CASE_EXTRACTION': str(cls.AUTO_TEST_CASE_EXTRACTION).lower(),
             'ADO_ORGANIZATION': cls.ADO_ORGANIZATION,
             'ADO_PROJECT': cls.ADO_PROJECT,
             'OPENAI_MAX_RETRIES': cls.OPENAI_MAX_RETRIES,
@@ -165,6 +170,7 @@ class Settings:
         print(f"  ADO_USER_STORY_TYPE: {cls.USER_STORY_TYPE}")
         print(f"  ADO_STORY_EXTRACTION_TYPE: {cls.STORY_EXTRACTION_TYPE}")  
         print(f"  ADO_TEST_CASE_EXTRACTION_TYPE: {cls.TEST_CASE_EXTRACTION_TYPE}")
+        print(f"  ADO_AUTO_TEST_CASE_EXTRACTION: {cls.AUTO_TEST_CASE_EXTRACTION}")
         print(f"  ADO_ORGANIZATION: {cls.ADO_ORGANIZATION}")
         print(f"  ADO_PROJECT: {cls.ADO_PROJECT}")
         print("="*50)

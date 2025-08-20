@@ -102,12 +102,16 @@ class StoryExtractionAgent:
                 uploaded_ids.append(story_id)
                 self.logger.info(f"Created user story {story_id}: {story.heading}")
                 
-                # Extract and upload test cases for this story
-                try:
-                    self._extract_and_upload_test_cases(story, str(story_id))
-                except Exception as test_case_error:
-                    self.logger.error(f"Failed to create test cases for story {story_id}: {str(test_case_error)}")
-                    # Continue with next story even if test case creation fails
+                # Extract and upload test cases for this story if auto-extraction is enabled
+                if Settings.AUTO_TEST_CASE_EXTRACTION:
+                    self.logger.info(f"Auto test case extraction enabled - extracting test cases for story {story_id}")
+                    try:
+                        self._extract_and_upload_test_cases(story, str(story_id))
+                    except Exception as test_case_error:
+                        self.logger.error(f"Failed to create test cases for story {story_id}: {str(test_case_error)}")
+                        # Continue with next story even if test case creation fails
+                else:
+                    self.logger.info(f"Auto test case extraction disabled - skipping test cases for story {story_id}")
                 
             except Exception as e:
                 self.logger.error(f"Failed to create user story '{story.heading}': {str(e)}")

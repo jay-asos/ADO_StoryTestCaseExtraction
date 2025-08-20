@@ -21,7 +21,35 @@ from config.settings import Settings
 class MonitorAPI:
     """Flask-based API for monitoring and controlling the story extraction process"""
 
+    def _update_env_file(self, key: str, value: str):
+        """Update a value in the .env file"""
+        env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+        if not os.path.exists(env_path):
+            return
+            
+        # Read current content
+        with open(env_path, 'r') as f:
+            lines = f.readlines()
+        
+        # Update or add the key-value pair
+        key_found = False
+        for i, line in enumerate(lines):
+            if line.startswith(f'{key}='):
+                lines[i] = f'{key}={value}\n'
+                key_found = True
+                break
+        
+        if not key_found:
+            lines.append(f'{key}={value}\n')
+        
+        # Write back to file
+        with open(env_path, 'w') as f:
+            f.writelines(lines)
+
     def __init__(self, config: MonitorConfig = None, port: int = 5001):
+        # Force reload settings from .env file at startup
+        Settings.reload_config()
+        
         self.app = Flask(__name__, template_folder='../templates', static_folder='../static')
         CORS(self.app)
         self.port = port
@@ -280,13 +308,22 @@ class MonitorAPI:
                     'ado_project': self.settings.ADO_PROJECT,
                     'ado_pat': '***hidden***',  # Don't expose the actual PAT
                     'openai_api_key': '***hidden***',  # Don't expose the actual API key
-                    'openai_model': getattr(self.settings, 'openai_model', 'gpt-4'),
+                    'openai_model': self.settings.OPENAI_MODEL,
+                    'openai_max_retries': self.settings.OPENAI_MAX_RETRIES,
+                    'openai_retry_delay': self.settings.OPENAI_RETRY_DELAY,
+                    'requirement_type': self.settings.REQUIREMENT_TYPE,
+                    'user_story_type': self.settings.USER_STORY_TYPE,
                     'story_extraction_type': self.settings.STORY_EXTRACTION_TYPE,
                     'test_case_extraction_type': self.settings.TEST_CASE_EXTRACTION_TYPE,
+                    'auto_test_case_extraction': self.settings.AUTO_TEST_CASE_EXTRACTION,
                     'check_interval_minutes': self.monitor.config.poll_interval_seconds // 60 if self.monitor.config.poll_interval_seconds else 5,
                     'epic_ids': list(self.monitor.monitored_epics.keys()) if self.monitor.monitored_epics else [],
                     'auto_sync': self.monitor.config.auto_sync if hasattr(self.monitor.config, 'auto_sync') else True,
-                    'auto_extract_new_epics': self.monitor.config.auto_extract_new_epics if hasattr(self.monitor.config, 'auto_extract_new_epics') else True
+                    'auto_extract_new_epics': self.monitor.config.auto_extract_new_epics if hasattr(self.monitor.config, 'auto_extract_new_epics') else True,
+                    'log_level': getattr(self.monitor.config, 'log_level', 'INFO'),
+                    'max_concurrent_syncs': getattr(self.monitor.config, 'max_concurrent_syncs', 3),
+                    'retry_attempts': getattr(self.monitor.config, 'retry_attempts', 3),
+                    'retry_delay_seconds': getattr(self.monitor.config, 'retry_delay_seconds', 60)
                 }
 
                 return jsonify(config_dict)
@@ -333,17 +370,53 @@ class MonitorAPI:
 
                 # Save configuration to file
                 try:
-                    # Update settings if provided
-                    if 'test_case_extraction_type' in data:
-                        os.environ['ADO_TEST_CASE_EXTRACTION_TYPE'] = data['test_case_extraction_type']
-                        Settings.TEST_CASE_EXTRACTION_TYPE = data['test_case_extraction_type']
-                        self.logger.info(f"Updated test case extraction type to: {data['test_case_extraction_type']}")
+                    # Dictionary mapping config keys to their environment variable names
+                    config_mapping = {
+                        'story_extraction_type': 'ADO_STORY_EXTRACTION_TYPE',
+                        'test_case_extraction_type': 'ADO_TEST_CASE_EXTRACTION_TYPE',
+                        'auto_test_case_extraction': 'ADO_AUTO_TEST_CASE_EXTRACTION',
+                        'openai_model': 'OPENAI_MODEL',
+                        'openai_max_retries': 'OPENAI_MAX_RETRIES',
+                        'openai_retry_delay': 'OPENAI_RETRY_DELAY',
+                        'requirement_type': 'ADO_REQUIREMENT_TYPE',
+                        'user_story_type': 'ADO_USER_STORY_TYPE'
+                    }
+
+                    # Process each config setting
+                    for config_key, env_var in config_mapping.items():
+                        if config_key in data:
+                            value = data[config_key]
+                            
+                            # Handle boolean values
+                            if config_key == 'auto_test_case_extraction':
+                                value = str(str(value).lower() == 'true').lower()
+                            # Handle numeric values
+                            elif config_key in ['openai_max_retries', 'openai_retry_delay']:
+                                value = str(value)
+                            else:
+                                value = str(value)
+
+                            # Update .env file
+                            self._update_env_file(env_var, value)
+                            # Update environment variable
+                            os.environ[env_var] = value
+                            self.logger.info(f"Updated {config_key} to: {value}")
+
+                    # Reload all settings
+                    Settings.reload_config()
                     
                     config_data = {
                         'poll_interval_seconds': self.monitor.config.poll_interval_seconds,
                         'epic_ids': data.get('epic_ids', []),
                         'auto_sync': self.monitor.config.auto_sync,
+                        'story_extraction_type': Settings.STORY_EXTRACTION_TYPE,
                         'test_case_extraction_type': Settings.TEST_CASE_EXTRACTION_TYPE,
+                        'auto_test_case_extraction': Settings.AUTO_TEST_CASE_EXTRACTION,
+                        'requirement_type': Settings.REQUIREMENT_TYPE,
+                        'user_story_type': Settings.USER_STORY_TYPE,
+                        'openai_model': Settings.OPENAI_MODEL,
+                        'openai_max_retries': Settings.OPENAI_MAX_RETRIES,
+                        'openai_retry_delay': Settings.OPENAI_RETRY_DELAY,
                         'auto_extract_new_epics': getattr(self.monitor.config, 'auto_extract_new_epics', True),
                         'log_level': getattr(self.monitor.config, 'log_level', 'INFO'),
                         'max_concurrent_syncs': getattr(self.monitor.config, 'max_concurrent_syncs', 3),
