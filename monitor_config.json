@@ -1,6 +1,6 @@
 {
   "poll_interval_seconds": 1800,
-  "epic_ids": [],
+  "epic_ids": ["258", "290"],
   "auto_sync": true,
   "story_extraction_type": "User Story",
   "test_case_extraction_type": "Test Case",

@@ -36,10 +36,20 @@ class MonitorConfig:
     notification_webhook: Optional[str] = None
     retry_attempts: int = 3
     retry_delay_seconds: int = 60
-    # New configuration options for work item types
+    # OpenAI settings
+    openai_model: str = "gpt-4"  # Model to use for content generation
+    openai_max_retries: int = 3  # Maximum number of retries for OpenAI calls
+    openai_retry_delay: int = 10  # Delay between retries in seconds
+    
+    # Work item types and settings
+    requirement_type: str = "Epic"  # Default work item type for requirements
+    user_story_type: str = "User Story"  # Default work item type for user stories
     story_extraction_type: str = "User Story"  # Can be "User Story" or "Task"
-    test_case_extraction_type: str = "Issue"   # Can be "Issue" or "Test Case"
+    test_case_extraction_type: str = "Test Case"   # Can be "Issue" or "Test Case"
     skip_duplicate_check: bool = False  # Option to skip duplicate checking
+    # Test case extraction settings
+    auto_test_case_extraction: bool = True  # Whether to automatically extract test cases for new stories
+    
     # Enhanced configuration options
     extraction_cooldown_hours: int = 24  # Cooldown period before re-extraction (0 to disable)
     enable_content_hash_comparison: bool = True  # Use hash-based change detection
@@ -214,9 +224,15 @@ class EpicChangeMonitor:
         try:
             # Try to get the EPIC work item to verify it exists
             work_item = self.agent.ado_client.get_work_item_by_id(epic_id)
-            if work_item:
-                self.logger.debug(f"EPIC {epic_id} exists in Azure DevOps")
-                return True
+            if work_item and work_item.fields:
+                # Check if it's an Epic
+                work_item_type = work_item.fields.get("System.WorkItemType")
+                if work_item_type == "Epic":
+                    self.logger.debug(f"EPIC {epic_id} exists in Azure DevOps")
+                    return True
+                else:
+                    self.logger.warning(f"Work item {epic_id} exists but is not an Epic (type: {work_item_type})")
+                    return False
             else:
                 self.logger.warning(f"EPIC {epic_id} not found in Azure DevOps")
                 return False
@@ -570,17 +586,48 @@ class EpicChangeMonitor:
 
     def stop(self):
         """Stop the monitoring service"""
-        if not self.is_running:
-            return
+        try:
+            # Set the stop flag first to prevent new checks
+            self.is_running = False
+            
+            # Wait for any ongoing checks to complete
+            if hasattr(self, '_monitor_thread') and self._monitor_thread is not None:
+                try:
+                    self._monitor_thread.join(timeout=5)  # Wait up to 5 seconds
+                except Exception as e:
+                    self.logger.warning(f"Error waiting for monitor thread to stop: {e}")
+                self._monitor_thread = None
 
-        # Capture snapshots before stopping
-        self.logger.info("Saving snapshots before shutdown")
-        for epic_id, state in self.monitored_epics.items():
-            if state.last_snapshot:
-                self._save_snapshot(epic_id, state.last_snapshot)
+            # Capture snapshots before stopping
+            self.logger.info("Saving snapshots before shutdown")
+            for epic_id, state in self.monitored_epics.items():
+                try:
+                    if state.last_snapshot:
+                        self._save_snapshot(epic_id, state.last_snapshot)
+                except Exception as e:
+                    self.logger.error(f"Error saving snapshot for epic {epic_id}: {e}")
 
-        # Save processed epics state
-        self._save_processed_epics()
+            # Save processed epics state
+            try:
+                self._save_processed_epics()
+            except Exception as e:
+                self.logger.error(f"Error saving processed epics state: {e}")
+            
+            # Clear any ongoing tasks and queues
+            if hasattr(self, '_ongoing_checks'):
+                self._ongoing_checks.clear()
+            
+            # Stop any background tasks or timers
+            if hasattr(self, '_check_timer'):
+                self._check_timer.cancel()
+                
+            self.logger.info("Monitor service stopped successfully")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error during monitor stop: {e}")
+            self.is_running = False  # Ensure this is set even if something fails
+            return False
 
         self.logger.info("Stopping EPIC Change Monitor")
         self.is_running = False
@@ -894,3 +941,44 @@ def create_default_config(config_file: str = "monitor_config.json"):
 
     print(f"Created default configuration file: {config_file}")
     return default_config
+
+if __name__ == "__main__":
+    # Set up logging configuration
+    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    logging.basicConfig(
+        level=os.getenv('LOG_LEVEL', 'INFO'),
+        format=log_format,
+        handlers=[
+            logging.StreamHandler(sys.stdout),  # Log to stdout
+            logging.FileHandler('logs/enhanced_epic_monitor.log')  # Also log to file
+        ]
+    )
+    logger = logging.getLogger(__name__)
+    
+    # Log initial startup information
+    logger.info("🚀 Starting Enhanced EPIC Monitor")
+    logger.info("=" * 50)
+    
+    try:
+        # Load or create default configuration
+        config_file = "monitor_config_enhanced.json"
+        logger.info(f"📋 Loading configuration from {config_file}")
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                config_data = json.load(f)
+                logger.info("✅ Configuration file found")
+                logger.debug(f"Configuration data: {json.dumps(config_data, indent=2)}")
+                config = MonitorConfig(**config_data)
+                logger.info("✅ Configuration loaded successfully")
+        else:
+            logger.warning(f"⚠️ Configuration file {config_file} not found, creating default")
+            config = create_default_config()
+
+        monitor = EpicChangeMonitor(config)
+        monitor.start()
+    except KeyboardInterrupt:
+        logger.info("Shutting down gracefully...")
+        monitor.stop()
+    except Exception as e:
+        logger.error(f"Fatal error: {str(e)}")
+        sys.exit(1)

@@ -667,14 +667,25 @@ class StoryExtractionAgent:
     def _setup_logger(self) -> logging.Logger:
         """Setup logging configuration"""
         logger = logging.getLogger("StoryExtractionAgent")
-        logger.setLevel(logging.INFO)
+        logger.setLevel(logging.DEBUG)
         
         if not logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter(
+            # Add file handler
+            file_handler = logging.FileHandler('logs/story_extraction.log')
+            file_formatter = logging.Formatter(
                 '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
             )
-            handler.setFormatter(formatter)
-            logger.addHandler(handler)
+            file_handler.setFormatter(file_formatter)
+            file_handler.setLevel(logging.DEBUG)
+            logger.addHandler(file_handler)
+            
+            # Add console handler
+            console_handler = logging.StreamHandler()
+            console_formatter = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            )
+            console_handler.setFormatter(console_formatter)
+            console_handler.setLevel(logging.INFO)
+            logger.addHandler(console_handler)
         
         return logger

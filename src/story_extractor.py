@@ -1,6 +1,7 @@
 import json
 import re
 import time
+import logging
 from typing import List
 from openai import OpenAI
 from openai import RateLimitError
@@ -17,14 +18,21 @@ class StoryExtractor:
         Settings.validate()
         self.client = OpenAI(api_key=Settings.OPENAI_API_KEY)
         self.story_creator = EnhancedStoryCreator()
+        self.logger = logging.getLogger("StoryExtractor")
+        self.logger.setLevel(logging.DEBUG)
     
     def extract_stories(self, requirement: Requirement, existing_stories: List[dict] = None) -> StoryExtractionResult:
         """Extract enhanced user stories from a requirement using AI, avoiding duplicates"""
+        self.logger.info(f"Starting story extraction for requirement: {requirement.id}")
+        self.logger.debug(f"Requirement details: {json.dumps(requirement.__dict__, indent=2)}")
         try:
+            self.logger.debug("Analyzing requirement with AI...")
             stories = self._analyze_requirement_with_ai(requirement)
+            self.logger.info(f"Found {len(stories)} potential stories")
             # Filter out duplicates and convert EnhancedUserStory to UserStory
             filtered_stories = []
             existing_stories = existing_stories or []
+            self.logger.debug(f"Checking against {len(existing_stories)} existing stories")
             for story in stories:
                 if not any(
                     story.heading == es.get('heading') and

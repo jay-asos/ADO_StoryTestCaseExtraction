@@ -94,6 +94,68 @@ class MonitorAPI:
                 'service': 'ADO Story Extractor API'
             })
 
+        # Config endpoints
+        @self.app.route('/api/config', methods=['POST'])
+        def update_config():
+            """Update the monitor configuration"""
+            if not self.monitor:
+                return jsonify({
+                    'error': 'Monitor not configured'
+                }), 500
+            
+            try:
+                config_data = request.get_json()
+                if not config_data:
+                    return jsonify({
+                        'error': 'No configuration data provided'
+                    }), 400
+
+                # Get current config from monitor
+                current_config = self.monitor.config.__dict__.copy()
+
+                # Update with new values
+                if 'epic_ids' in config_data:
+                    # Handle epic_ids specially since they need to be strings
+                    current_config['epic_ids'] = [str(epic_id) for epic_id in config_data['epic_ids']]
+                    del config_data['epic_ids']  # Remove from config_data to prevent double processing
+                
+                current_config.update(config_data)
+                
+                # Create new config object
+                new_config = MonitorConfig(**current_config)
+                
+                # Save the updated config to file
+                with open('monitor_config.json', 'w') as f:
+                    json.dump(current_config, f, indent=4)
+                
+                # Update monitor with new config
+                self.monitor.config = new_config
+                
+                # If epic_ids were updated, refresh the monitored epics
+                if 'epic_ids' in config_data:
+                    current_epics = set(self.monitor.monitored_epics.keys())
+                    new_epics = set(str(epic_id) for epic_id in config_data['epic_ids'])
+                    
+                    # Remove epics that are no longer in the config
+                    for epic_id in current_epics - new_epics:
+                        if epic_id in self.monitor.monitored_epics:
+                            del self.monitor.monitored_epics[epic_id]
+                    
+                    # Add new epics
+                    for epic_id in new_epics - current_epics:
+                        self.monitor.add_epic(str(epic_id))
+                
+                return jsonify({
+                    'status': 'success',
+                    'message': 'Configuration updated successfully',
+                    'config': current_config
+                })
+            except Exception as e:
+                self.logger.error(f"Error updating configuration: {str(e)}")
+                return jsonify({
+                    'error': f'Failed to update configuration: {str(e)}'
+                }), 500
+
         # Monitor control endpoints
         @self.app.route('/api/monitor/start', methods=['POST'])
         def start_monitor():
@@ -144,18 +206,32 @@ class MonitorAPI:
                         'error': 'Monitor not configured'
                     }), 400
 
-                if not self.monitor.is_running:
-                    return jsonify({
-                        'success': False,
-                        'error': 'Monitor is not running'
-                    }), 400
+                # Get current status before stopping
+                current_status = self.monitor.get_status()
+                was_running = current_status.get('is_running', False)
 
-                self.monitor.stop()
+                # Even if monitor reports not running, try to stop it to ensure cleanup
+                try:
+                    self.monitor.stop()
+                except Exception as stop_error:
+                    self.logger.error(f"Error during monitor stop: {stop_error}")
+
+                # Stop the monitor thread if it exists
+                if self.monitor_thread and self.monitor_thread.is_alive():
+                    try:
+                        self.monitor_thread.join(timeout=5)  # Wait up to 5 seconds
+                    except Exception as thread_error:
+                        self.logger.error(f"Error stopping monitor thread: {thread_error}")
+                    self.monitor_thread = None
+
+                # Get final status
+                final_status = self.monitor.get_status()
+                final_status['is_running'] = False  # Ensure this is set
 
                 return jsonify({
                     'success': True,
-                    'message': 'Monitor stopped successfully',
-                    'status': self.monitor.get_status()
+                    'message': 'Monitor stopped successfully' if was_running else 'Monitor was already stopped',
+                    'status': final_status
                 })
 
             except Exception as e:
@@ -164,26 +240,40 @@ class MonitorAPI:
                     'success': False,
                     'error': f'Failed to stop monitor: {str(e)}'
                 }), 500
+                    'success': False,
+                    'error': f'Failed to stop monitor: {str(e)}'
+                }), 500
 
-        @self.app.route('/api/monitor/status', methods=['GET'])
+        # Rest of the route handlers follow...
+
+        @self.app.route('/api/monitor/status')
         def get_monitor_status():
-            """Get current monitoring status"""
+            """Get the current status of the monitor"""
             try:
                 if not self.monitor:
                     return jsonify({
-                        'is_running': False,
                         'error': 'Monitor not configured'
-                    })
+                    }), 500
 
-                status = self.monitor.get_status()
-                return jsonify(status)
+        @self.app.route('/api/epics/<epic_id>', methods=['DELETE'])
+        def remove_epic(epic_id):
+            """Remove an EPIC from monitoring"""
+            try:
+                if not self.monitor:
+                    return jsonify({'error': 'Monitor not running'}), 400
+
+                if epic_id not in self.monitor.monitored_epics:
+                    return jsonify({'error': f'EPIC {epic_id} not found in monitored EPICs'}), 404
+
+                success = self.monitor.remove_epic(epic_id)
+                if success:
+                    return jsonify({'message': f'Successfully removed EPIC {epic_id} from monitoring'})
+                else:
+                    return jsonify({'error': f'Failed to remove EPIC {epic_id}'}), 500
 
             except Exception as e:
-                self.logger.error(f"Error getting monitor status: {str(e)}")
-                return jsonify({
-                    'is_running': False,
-                    'error': f'Failed to get monitor status: {str(e)}'
-                })
+                self.logger.error(f"Error removing EPIC {epic_id}: {str(e)}")
+                return jsonify({'error': f'Failed to remove EPIC: {str(e)}'}), 500
 
         @self.app.route('/api/epics', methods=['GET'])
         def get_epics():
@@ -208,8 +298,8 @@ class MonitorAPI:
 
                             epics_data.append({
                                 'id': epic_id,
-                                'title': epic_info.get('fields', {}).get('System.Title', f'Epic {epic_id}'),
-                                'state': epic_info.get('fields', {}).get('System.State', 'Unknown'),
+                                'title': epic_info.fields.get('System.Title', f'Epic {epic_id}'),
+                                'state': epic_info.fields.get('System.State', 'Unknown'),
                                 'story_count': story_count,
                                 'last_changed': epic_state.last_check.isoformat() if epic_state.last_check else None,
                                 'consecutive_errors': epic_state.consecutive_errors,
