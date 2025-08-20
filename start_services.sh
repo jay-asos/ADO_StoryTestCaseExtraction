@@ -1,69 +1,34 @@
 #!/bin/zsh
 
-# Kill any existing Python processes for our services
+# Kill any existing monitor processes
 echo "🔄 Stopping existing services..."
-pkill -f "python.*monitor.py|python.*monitor_api.py|python.*monitor_daemon.py" || true
+pkill -f "python.*monitor_daemon.py" || true
 
 # Set up environment
 SCRIPT_DIR=$(dirname "$0")
 cd "$SCRIPT_DIR"
 export PYTHONPATH=$PYTHONPATH:$SCRIPT_DIR
 
-# Set default environment variables
-export OPENAI_RETRY_DELAY=${OPENAI_RETRY_DELAY:-10}
-export OPENAI_MAX_RETRIES=${OPENAI_MAX_RETRIES:-3}
-export OPENAI_MODEL=${OPENAI_MODEL:-"gpt-4"}
-export LOG_LEVEL=${LOG_LEVEL:-"DEBUG"}
-
 # Ensure logs directory exists
 mkdir -p logs
 
-# Set up rotating logs for better visibility
-echo "🔄 Rotating log files..."
-for log in monitor_api.log logs/enhanced_epic_monitor.log; do
-    if [ -f "$log" ]; then
-        mv "$log" "${log}.old"
-    fi
-done
+# Start the monitor API and dashboard
+echo "� Starting Monitor API and Dashboard..."
+python3 monitor_daemon.py --mode api --port 5001 --config monitor_config.json &
 
-# Load .env file if it exists
-if [ -f ".env" ]; then
-    echo "📥 Loading .env file..."
-    while IFS='=' read -r key value; do
-        # Skip comments and empty lines
-        [[ $key =~ ^#.*$ ]] && continue
-        [[ -z $key ]] && continue
-        # Remove quotes and export the variable
-        value=$(echo "$value" | tr -d '"' | tr -d "'")
-        export "$key=$value"
-    done < .env
-else
-    echo "⚠️ Warning: .env file not found, using default settings"
-fi
+# Wait a moment for the API to start
+sleep 2
 
-# Verify critical configuration
-if ! grep -q "ADO_AUTO_TEST_CASE_EXTRACTION=" .env; then
-    echo "ℹ️  Adding auto test case extraction setting..."
-    echo "ADO_AUTO_TEST_CASE_EXTRACTION=true" >> .env
-fi
+echo "✅ Services started!"
+echo "� Dashboard UI available at: http://localhost:5001/dashboard"
+echo "🔍 Monitor API available at: http://localhost:5001/api"
+echo "📝 Check logs/enhanced_epic_monitor.log for detailed logs"
 
 # Activate virtual environment if it exists
 if [ -f ".venv/bin/activate" ]; then
     echo "🔌 Activating virtual environment..."
     source .venv/bin/activate
 fi
-
-# Function to check if a port is in use
-check_port() {
-    lsof -i :$1 >/dev/null 2>&1
-    return $?
-}
-
-# Wait for ports to be free
-while check_port 5001; do
-    echo "⏳ Waiting for port 5001 to be free..."
-    sleep 1
-done
 
 # Verify config files exist
 CONFIG_FILES=("monitor_config.json" "monitor_config_enhanced.json")

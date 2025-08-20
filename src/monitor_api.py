@@ -48,6 +48,8 @@ class MonitorAPI:
 
     def __init__(self, config: MonitorConfig = None, port: int = 5001):
         # Force reload settings from .env file at startup
+        self.monitor = None
+        self.is_monitor_running = False
         Settings.reload_config()
         
         self.app = Flask(__name__, template_folder='../templates', static_folder='../static')
@@ -182,11 +184,12 @@ class MonitorAPI:
 
                 self.monitor_thread = threading.Thread(target=start_monitor_thread, daemon=True)
                 self.monitor_thread.start()
+                self.is_monitor_running = True
 
                 return jsonify({
                     'success': True,
                     'message': 'Monitor started successfully',
-                    'status': self.monitor.get_status()
+                    'status': 'running'
                 })
 
             except Exception as e:
@@ -213,6 +216,7 @@ class MonitorAPI:
                 # Even if monitor reports not running, try to stop it to ensure cleanup
                 try:
                     self.monitor.stop()
+                    self.is_monitor_running = False
                 except Exception as stop_error:
                     self.logger.error(f"Error during monitor stop: {stop_error}")
 
@@ -240,11 +244,127 @@ class MonitorAPI:
                     'success': False,
                     'error': f'Failed to stop monitor: {str(e)}'
                 }), 500
-                    'success': False,
-                    'error': f'Failed to stop monitor: {str(e)}'
-                }), 500
 
         # Rest of the route handlers follow...
+
+        def shutdown_server():
+            """Shutdown function for the Flask server"""
+            # First try the development server shutdown function
+            success = False
+            
+            # Try the development server shutdown function
+            func = request.environ.get('werkzeug.server.shutdown')
+            if func is not None:
+                try:
+                    self.logger.info("Using Werkzeug shutdown function")
+                    func()
+                    success = True
+                except Exception as e:
+                    self.logger.warning(f"Werkzeug shutdown failed: {e}")
+
+            # Try the production server shutdown if previous method failed
+            if not success:
+                try:
+                    from werkzeug.serving import shutdown as werkzeug_shutdown
+                    self.logger.info("Using Werkzeug production shutdown")
+                    werkzeug_shutdown()
+                    success = True
+                except Exception as e:
+                    self.logger.warning(f"Production server shutdown failed: {e}")
+
+            # Try process termination if previous methods failed
+            if not success:
+                try:
+                    import signal
+                    pid = os.getpid()
+                    self.logger.info(f"Sending SIGTERM to process {pid}")
+                    os.kill(pid, signal.SIGTERM)
+                    success = True
+                except Exception as e:
+                    self.logger.warning(f"SIGTERM failed: {e}")
+
+            # Try sys.exit() as a last resort
+            if not success:
+                try:
+                    import sys
+                    self.logger.info("Using sys.exit()")
+                    sys.exit(0)
+                    success = True
+                except Exception as e:
+                    self.logger.warning(f"sys.exit() failed: {e}")
+            
+            return success
+
+        @self.app.route('/api/shutdown', methods=['POST'])
+        def shutdown():
+            """Shutdown the API server"""
+            # Stop the monitor if it's running
+            if self.monitor and self.monitor.is_running:
+                self.logger.info("Stopping monitor service before shutdown...")
+                try:
+                    self.monitor.stop()
+                except Exception as e:
+                    self.logger.warning(f"Error stopping monitor during shutdown: {e}")
+            
+            # Save any pending state
+            if self.monitor:
+                try:
+                    self.monitor._save_processed_epics()
+                except Exception as e:
+                    self.logger.warning(f"Error saving state during shutdown: {e}")
+            
+            # Attempt server shutdown using multiple methods
+            self.logger.info("Initiating API server shutdown...")
+            
+            # 1. Try development server shutdown
+            func = request.environ.get('werkzeug.server.shutdown')
+            if func is not None:
+                try:
+                    self.logger.info("Using Werkzeug shutdown function")
+                    func()
+                    return jsonify({
+                        'success': True,
+                        'message': 'Server shutdown initiated'
+                    })
+                except Exception as e:
+                    self.logger.warning(f"Development server shutdown failed: {e}")
+
+            # 2. Try production server shutdown
+            try:
+                from werkzeug.serving import shutdown as werkzeug_shutdown
+                self.logger.info("Using Werkzeug production shutdown")
+                werkzeug_shutdown()
+                return jsonify({
+                    'success': True,
+                    'message': 'Server shutdown initiated'
+                })
+            except Exception as e:
+                self.logger.warning(f"Production server shutdown failed: {e}")
+
+            # 3. Try process termination
+            try:
+                import signal
+                pid = os.getpid()
+                self.logger.info(f"Sending SIGTERM to process {pid}")
+                os.kill(pid, signal.SIGTERM)
+                return jsonify({
+                    'success': True,
+                    'message': 'Server shutdown initiated via SIGTERM'
+                })
+            except Exception as e:
+                self.logger.warning(f"SIGTERM failed: {e}")
+
+            # 4. Last resort: sys.exit()
+            try:
+                import sys
+                self.logger.info("Using sys.exit()")
+                sys.exit(0)
+            except Exception as e:
+                self.logger.error(f"All shutdown methods failed: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': 'All shutdown methods failed'
+                }), 500
 
         @self.app.route('/api/monitor/status')
         def get_monitor_status():
@@ -254,6 +374,20 @@ class MonitorAPI:
                     return jsonify({
                         'error': 'Monitor not configured'
                     }), 500
+                
+                response_data = {
+                    'status': 'running' if self.is_monitor_running else 'stopped',
+                    'is_running': bool(self.is_monitor_running),  # Ensure boolean
+                    'epic_count': len(self.monitor.monitored_epics) if self.monitor.monitored_epics else 0,
+                    'last_check': self.monitor.last_check.isoformat() if hasattr(self.monitor, 'last_check') and self.monitor.last_check else None
+                }
+                self.logger.debug(f"Monitor status: {response_data}")  # Debug log
+                return jsonify(response_data)
+            except Exception as e:
+                self.logger.error(f"Error getting monitor status: {e}")
+                return jsonify({
+                    'error': f'Failed to get monitor status: {str(e)}'
+                }), 500
 
         @self.app.route('/api/epics/<epic_id>', methods=['DELETE'])
         def remove_epic(epic_id):
@@ -423,8 +557,8 @@ class MonitorAPI:
                 return jsonify({'error': f'Failed to get configuration: {str(e)}'}), 500
 
         @self.app.route('/api/config', methods=['PUT'])
-        def update_config():
-            """Update configuration"""
+        def update_config_put():
+            """Update configuration using PUT method"""
             try:
                 if not self.monitor:
                     return jsonify({'error': 'Monitor not configured'}), 400
