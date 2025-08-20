@@ -319,11 +319,18 @@ class ADOClient:
             # Prepare work item data for test case with test type as tag
             test_type = test_case_data.get('test_type', 'functional')
             
+            # Ensure we have a valid title
+            title = test_case_data.get("title", "").strip()
+            if not title:
+                # Create title from description or test type
+                description = test_case_data.get("description", "").strip()
+                title = description[:100] if description else f"{test_type.title()} Test Case"
+            
             document = [
                 {
                     "op": "add",
                     "path": "/fields/System.Title",
-                    "value": test_case_data.get("title", "")
+                    "value": title
                 },
                 {
                     "op": "add",

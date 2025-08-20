@@ -169,8 +169,16 @@ Generate test cases that thoroughly validate this user story, including positive
                 if not expected_result.endswith('.'):
                     expected_result += '.'
 
+                # Generate a descriptive title if none provided
+                title = tc_data.get("title")
+                if not title:
+                    # Create a title from test description or first test step
+                    description = tc_data.get("description", "").strip()
+                    first_step = next((step for step in formatted_steps if step), "")
+                    title = description or first_step.split(".", 1)[-1].strip() or "Validate User Story"
+
                 test_case = TestCase(
-                    title=tc_data.get("title", "Untitled Test Case"),
+                    title=title,
                     description=tc_data.get("description", ""),
                     test_type=tc_data.get("test_type", "positive"),
                     test_steps=formatted_steps,
