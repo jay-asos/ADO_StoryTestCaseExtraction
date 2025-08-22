@@ -462,11 +462,16 @@ class ADOClient:
             # Add test type as a tag instead of using TestCaseType field
             test_type = test_case_data.get('test_type', 'functional')
             
+            # Get title from test case data
+            title = test_case_data.get('title', '').strip()
+            if not title:
+                title = "Functional Test Case"  # Default title if none provided
+            
             document = [
                 {
                     "op": "add",
                     "path": "/fields/System.Title",
-                    "value": test_case_data.get('title', '')
+                    "value": title
                 },
                 {
                     "op": "add",

@@ -145,18 +145,7 @@ Examples:
     # Validate configuration
     if not config.epic_ids:
         print("⚠️  No EPIC IDs configured for monitoring")
-        print(f"💡 Edit {args.config} and add EPIC IDs to the 'epic_ids' list")
-        print("Example: [\"12345\", \"67890\"]")
-        
-        # Ask if user wants to continue anyway
-        try:
-            response = input("\nContinue anyway? (y/N): ").strip().lower()
-            if response not in ['y', 'yes']:
-                print("👋 Exiting...")
-                return 0
-        except KeyboardInterrupt:
-            print("\n👋 Exiting...")
-            return 0
+        print("💡 Epic IDs can be added later through the API")
     
     # Run in selected mode
     if args.mode == 'standalone':

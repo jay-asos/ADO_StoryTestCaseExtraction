@@ -12,6 +12,10 @@ export PYTHONPATH=$PYTHONPATH:$SCRIPT_DIR
 # Ensure logs directory exists
 mkdir -p logs
 
+# Export configuration from monitor_config.json to environment
+echo "📝 Exporting configuration to environment..."
+export ADO_AUTO_TEST_CASE_EXTRACTION=$(jq -r '.auto_test_case_extraction' monitor_config.json)
+
 # Start the monitor API and dashboard
 echo "� Starting Monitor API and Dashboard..."
 python3 monitor_daemon.py --mode api --port 5001 --config monitor_config.json &
@@ -42,10 +46,8 @@ done
 # Ensure logs directory exists
 mkdir -p logs
 
-# Start the monitor API server with improved logging and error handling
-echo "🚀 Starting monitor API server..."
-python3 monitor_daemon.py --mode api --port 5001 --config monitor_config.json 2>&1 &
-MONITOR_API_PID=$!
+# Monitor API is already running from the previous command
+echo "✨ Monitor API is already running..."
 
 # Verify monitor API server started
 sleep 2
