@@ -68,7 +68,10 @@ class MonitorAPI:
             try:
                 with open('monitor_config.json', 'r') as f:
                     config_data = json.load(f)
-                    config = MonitorConfig(**config_data)
+                    # Remove ADO settings that belong to Settings class
+                    monitor_settings = {k: v for k, v in config_data.items() 
+                                     if not k.startswith('ado_') and k not in ['openai_api_key']}
+                    config = MonitorConfig(**monitor_settings)
                     self.logger.info("Loaded monitor configuration from monitor_config.json")
             except Exception as e:
                 self.logger.error(f"Failed to load monitor configuration: {str(e)}")
@@ -596,6 +599,9 @@ class MonitorAPI:
                 try:
                     # Dictionary mapping config keys to their environment variable names
                     config_mapping = {
+                        'ado_organization': 'ADO_ORGANIZATION',
+                        'ado_project': 'ADO_PROJECT',
+                        'ado_pat': 'ADO_PAT',
                         'story_extraction_type': 'ADO_STORY_EXTRACTION_TYPE',
                         'test_case_extraction_type': 'ADO_TEST_CASE_EXTRACTION_TYPE',
                         'auto_test_case_extraction': 'ADO_AUTO_TEST_CASE_EXTRACTION',
@@ -617,6 +623,9 @@ class MonitorAPI:
                             # Handle numeric values
                             elif config_key in ['openai_max_retries', 'openai_retry_delay']:
                                 value = str(value)
+                            # Skip empty sensitive values to prevent accidental clearing
+                            elif config_key in ['ado_pat'] and not value:
+                                continue
                             else:
                                 value = str(value)
 
@@ -630,6 +639,9 @@ class MonitorAPI:
                     Settings.reload_config()
                     
                     config_data = {
+                        'ado_organization': Settings.ADO_ORGANIZATION,
+                        'ado_project': Settings.ADO_PROJECT,
+                        'ado_pat': '***hidden***',  # Don't expose the actual PAT
                         'poll_interval_seconds': self.monitor.config.poll_interval_seconds,
                         'epic_ids': data.get('epic_ids', []),
                         'auto_sync': self.monitor.config.auto_sync,

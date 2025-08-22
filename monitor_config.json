@@ -1,4 +1,7 @@
 {
+  "ado_organization": "asos",
+  "ado_project": "Order Management",
+  "ado_pat": "***hidden***",
   "poll_interval_seconds": 1800,
   "epic_ids": [],
   "auto_sync": true,
