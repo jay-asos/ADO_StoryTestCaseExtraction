@@ -81,6 +81,18 @@ coverage/
 .hypothesis/
 .pytest_cache/
 
+# Test files and directories
+tests/
+test_*.py
+*_test.py
+__tests__/
+pytestdebug.log
+**/tests/
+*.spec.js
+*.test.js
+*.spec.ts
+*.test.ts
+
 # Translations
 *.mo
 *.pot
