@@ -1,10 +1,10 @@
 {
   "poll_interval_seconds": 1800,
-  "epic_ids": ["258", "290"],
+  "epic_ids": [],
   "auto_sync": true,
   "story_extraction_type": "User Story",
   "test_case_extraction_type": "Test Case",
-  "auto_test_case_extraction": true,
+  "auto_test_case_extraction": false,
   "requirement_type": "Epic",
   "user_story_type": "User Story",
   "openai_model": "gpt-4-turbo",

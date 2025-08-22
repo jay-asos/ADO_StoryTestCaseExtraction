@@ -75,13 +75,31 @@ Your task is to analyze user stories and generate detailed test cases that cover
 - UI/UX validation where applicable
 - Data validation and business rule testing
 
-For each test case, provide:
-1. A clear, descriptive title that indicates what is being tested
+For each test case, you MUST provide:
+1. A clear, descriptive title that SPECIFICALLY describes what is being tested
+   - Bad example: "Functional Test Case"
+   - Good examples: 
+     - "Verify Login with Valid Credentials"
+     - "Handle Invalid Password Input"
+     - "Check Email Field Maximum Length"
 2. Test type (must be one of: positive, negative, edge_case)
 3. A brief description of the test objective
 4. Detailed test steps (numbered list of specific actions)
 5. Clear expected result (complete sentence ending with a period)
 6. Prerequisites (environment, data, or system state needed)
+
+Important: The title is critical and must follow these rules:
+1. Be specific to the test case's purpose
+2. Always start with an action verb like Verify, Validate, Check, Test, Handle, or Ensure
+3. Never use generic titles like 'Functional Test Case' or 'Test Case 1'
+
+Examples of good titles:
+- "Verify Login with Valid Credentials"
+- "Test Empty Password Field Validation"
+- "Handle Invalid Email Format"
+- "Ensure Session Timeout After Inactivity"
+- "Validate Maximum Password Length"
+- "Check Error Message for Failed Login"
 
 Format your response as JSON with the following structure:
 {
