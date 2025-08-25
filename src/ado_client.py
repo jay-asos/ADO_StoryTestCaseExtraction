@@ -37,6 +37,7 @@ class ADOClient:
     def get_requirements(self, state_filter: Optional[str] = None, work_item_type: Optional[str] = None) -> List[Requirement]:
         """Get all requirements from the project, optionally filtered by work item type (e.g., 'Epic')."""
         try:
+            print(f"[INFO] Fetching requirements from project {self.project}")
             # Build WIQL query
             wiql_query = f"""
             SELECT [System.Id], [System.Title], [System.Description], [System.State]
@@ -53,15 +54,34 @@ class ADOClient:
             wiql_result = self.wit_client.query_by_wiql({"query": wiql_query})
             if not wiql_result.work_items:
                 return []
-            # Get work item IDs
+            # Get work item IDs and implement batching
             work_item_ids = [item.id for item in wiql_result.work_items]
-            # Get full work items
-            work_items = self.wit_client.get_work_items(
-                ids=work_item_ids,
-                fields=["System.Id", "System.Title", "System.Description", "System.State"]
-            )
+            batch_size = 50  # Azure DevOps recommended batch size
             requirements = []
-            for item in work_items:
+            
+            # Process work items in batches
+            for i in range(0, len(work_item_ids), batch_size):
+                batch_ids = work_item_ids[i:i + batch_size]
+                try:
+                    # Get full work items for this batch
+                    work_items_batch = self.wit_client.get_work_items(
+                        ids=batch_ids,
+                        fields=["System.Id", "System.Title", "System.Description", "System.State"]
+                    )
+                    # Process the batch
+                    for item in work_items_batch:
+                        fields = item.fields
+                        requirement = Requirement(
+                            id=str(item.id),  # Ensure id is always a string
+                            title=fields.get("System.Title", ""),
+                            description=fields.get("System.Description", ""),
+                            state=fields.get("System.State", ""),
+                            url=item.url
+                        )
+                        requirements.append(requirement)
+                except Exception as e:
+                    print(f"[WARNING] Failed to fetch batch {i//batch_size + 1}, skipping {len(batch_ids)} items: {str(e)}")
+                    continue
                 fields = item.fields
                 requirement = Requirement(
                     id=str(item.id),  # Ensure id is always a string
@@ -73,7 +93,11 @@ class ADOClient:
                 requirements.append(requirement)
             return requirements
         except Exception as e:
-            raise Exception(f"Failed to get requirements: {str(e)}")
+            error_msg = f"Failed to get requirements: {str(e)}"
+            print(f"[ERROR] {error_msg}")
+            if "Max retries exceeded" in str(e):
+                print("[INFO] The error appears to be related to too many items being requested at once. The batching mechanism should handle this.")
+            raise Exception(error_msg)
     
     def get_requirement_by_id(self, requirement_id: str) -> Optional[Requirement]:
         """Get a single requirement by string ID with detailed error messages"""

@@ -507,13 +507,17 @@ class StoryExtractionAgent:
                         created_stories.append(story_id)
                         self.logger.info(f"[AGENT] Successfully created story {story_id}: {story.heading}")
                         
-                        # Extract and upload test cases for this story
-                        try:
-                            test_case_ids = self._extract_and_upload_test_cases(story, str(story_id))
-                            created_test_cases.extend(test_case_ids)
-                            self.logger.info(f"[AGENT] Created {len(test_case_ids)} test cases for story {story_id}")
-                        except Exception as tc_exc:
-                            self.logger.error(f"[AGENT] Failed to create test cases for story {story_id}: {tc_exc}")
+                        # Extract and upload test cases for this story if auto-extraction is enabled
+                        if Settings.AUTO_TEST_CASE_EXTRACTION:
+                            self.logger.info(f"[AGENT] Auto test case extraction enabled - extracting test cases for story {story_id}")
+                            try:
+                                test_case_ids = self._extract_and_upload_test_cases(story, str(story_id))
+                                created_test_cases.extend(test_case_ids)
+                                self.logger.info(f"[AGENT] Created {len(test_case_ids)} test cases for story {story_id}")
+                            except Exception as tc_exc:
+                                self.logger.error(f"[AGENT] Failed to create test cases for story {story_id}: {tc_exc}")
+                        else:
+                            self.logger.info(f"[AGENT] Auto test case extraction disabled - skipping test cases for story {story_id}")
                     else:
                         self.logger.error(f"[AGENT] Story upload did not return a valid integer ID for '{story.heading}'")
             else:
