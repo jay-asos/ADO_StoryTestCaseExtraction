@@ -1,5 +1,7 @@
 # ADO Story Extractor 🚀
 
+> **Default Port**: This application runs on port **5001** by default. Replace `{port}` in commands below with `5001` unless you've configured a different port.
+
 ## Overview
 
 A **Python-based Azure DevOps (ADO) Story Extractor** that uses AI to automatically extract user stories from requirements/epics and manage them in Azure DevOps. The system provides intelligent monitoring, change detection, and synchronization capabilities with both CLI and API interfaces.
@@ -7,6 +9,8 @@ A **Python-based Azure DevOps (ADO) Story Extractor** that uses AI to automatica
 ## 🎯 Key Features
 
 - **🌐 Modern Web Dashboard**: Beautiful, responsive interface with dark theme support
+- **🎯 Selective Test Case Upload**: Individual checkboxes with bulk selection for precise control
+- **⚙️ Dynamic Requirement Types**: Switch between Epic/Feature types on-the-fly via dropdown
 - **🤖 AI-Powered Extraction**: Uses OpenAI GPT to analyze requirements and generate user stories
 - **🔄 Change Detection**: Monitors epics using content hashing for automatic updates
 - **⚡ Automatic Synchronization**: Creates, updates, and manages user stories in ADO
@@ -24,6 +28,7 @@ A **Python-based Azure DevOps (ADO) Story Extractor** that uses AI to automatica
 - **🔍 Test Case Extraction**: Built-in AI-powered test case generation from user stories
 - **🚫 Duplicate Prevention**: Intelligent duplicate detection prevents story re-creation
 - **🎛️ Dashboard Configuration**: Complete configuration management through the web interface
+- **🔐 Smart Button Controls**: Auto-disable upload buttons after successful operations
 
 ## 📁 Project Structure
 
@@ -105,9 +110,9 @@ ado-story-extractor/
 
 ```bash
 # Start the web dashboard
-python monitor_daemon.py --mode api --host 127.0.0.1 --port 5000
+python monitor_daemon.py --mode api --host 127.0.0.1 --port {port}
 
-# Open your browser to: http://127.0.0.1:5000/
+# Open your browser to: http://127.0.0.1:{port}/
 ```
 
 **Features available in the dashboard:**
@@ -115,6 +120,8 @@ python monitor_daemon.py --mode api --host 127.0.0.1 --port 5000
 - ✅ Add/remove epics visually
 - ✅ Edit configuration through forms
 - ✅ View real-time logs
+- ✅ Select individual test cases for upload
+- ✅ Switch between Epic/Feature requirement types
 - ✅ Dark/light theme toggle
 - ✅ Responsive design for all devices
 
@@ -182,8 +189,45 @@ python monitor_daemon.py --create-config
 python monitor_daemon.py --mode standalone
 
 # Or run with REST API for external integration
-python monitor_daemon.py --mode api --host 0.0.0.0 --port 8080
+python monitor_daemon.py --mode api --host 0.0.0.0 --port {port}
 ```
+
+## 🆕 Enhanced Dashboard Features
+
+### Selective Test Case Upload
+The enhanced dashboard now provides granular control over test case uploads:
+
+- **Individual Selection**: Each extracted test case has its own checkbox for selective upload
+- **Bulk Operations**: "Select All" checkbox to quickly select/deselect all test cases
+- **Upload Control**: Only selected test cases are uploaded to ADO
+- **Progress Tracking**: Visual feedback during upload operations
+- **Duplicate Prevention**: Upload button automatically disables after successful operations
+
+### Dynamic Requirement Type Management
+Switch between different ADO work item types seamlessly:
+
+- **Real-time Switching**: Dropdown to change between "Epic" and "Feature" types
+- **Live Updates**: UI labels and behavior update immediately upon selection  
+- **No Restart Required**: Changes take effect without server restart
+- **Persistent Setting**: Selection is saved and persists across sessions
+- **Backend Integration**: Full integration with ADO client for proper work item creation
+
+### Usage Instructions for Enhanced Features
+
+#### Selective Test Case Upload:
+1. Extract test cases using the dashboard
+2. Review the extracted test cases in the results section
+3. Use individual checkboxes to select specific test cases for upload
+4. Or use "Select All" to quickly select all test cases
+5. Click "Upload Selected Test Cases to ADO" to upload only the selected items
+6. Upload button will disable after successful operation to prevent duplicates
+
+#### Changing Requirement Type:
+1. Locate the "Requirement Type" dropdown in the top configuration bar
+2. Select either "Epic" or "Feature" from the dropdown
+3. All UI elements will immediately update to reflect the new type
+4. Future operations will use the selected work item type
+5. Setting is automatically saved and persists across browser sessions
 
 ## 📖 Usage Examples
 
@@ -225,26 +269,26 @@ python monitor_daemon.py --mode standalone
 ### API Integration
 ```bash
 # Start API server
-python monitor_daemon.py --mode api --port 5000
+python monitor_daemon.py --mode api --port {port}
 
 # API endpoints will be available at:
-# http://localhost:5000/api/health
-# http://localhost:5000/api/status
-# http://localhost:5000/api/force-check
+# http://localhost:{port}/api/health
+# http://localhost:{port}/api/status
+# http://localhost:{port}/api/force-check
 ```
 
 ### Web Dashboard Integration
 ```bash
 # Start API server with web dashboard
-python monitor_daemon.py --mode api --port 5000
+python monitor_daemon.py --mode api --port {port}
 
 # Access the modern web dashboard at:
-# http://localhost:5000/
+# http://localhost:{port}/
 
 # API endpoints available at:
-# http://localhost:5000/api/health
-# http://localhost:5000/api/status
-# http://localhost:5000/api/force-check
+# http://localhost:{port}/api/health
+# http://localhost:{port}/api/status
+# http://localhost:{port}/api/force-check
 ```
 
 ## 🌐 Web Dashboard
@@ -256,11 +300,14 @@ The system now includes a **beautiful, modern web dashboard** built with Tailwin
 - **Monitor Control Panel**: Start/stop monitoring service with real-time status
 - **Epic Management**: Add/remove epics from monitoring with live updates
 - **Configuration Editor**: Edit monitor settings through an intuitive modal interface
+- **Selective Test Case Upload**: Individual checkboxes for each test case with "Select All" functionality
+- **Dynamic Requirement Type**: Dropdown to switch between Epic/Feature types on-the-fly
 - **Live Log Viewer**: Real-time log streaming with UI-only clearing (preserves files)
 - **Dark Theme Support**: Toggle between light and dark modes with persistence
 - **Toast Notifications**: User-friendly feedback for all actions
 - **Responsive Design**: Works perfectly on desktop, tablet, and mobile
 - **Real-time Updates**: Auto-refreshing status and epic information
+- **Smart Controls**: Buttons auto-disable after operations to prevent duplicates
 
 #### 📋 Dashboard Sections
 
@@ -291,26 +338,21 @@ The system now includes a **beautiful, modern web dashboard** built with Tailwin
    - Health status monitoring
    - Configuration summary
    - Performance metrics
+   - Requirement type settings (Epic/Feature)
 
-#### 🔧 Dashboard Configuration
-```json
-{
-  "poll_interval_seconds": 30,
-  "max_concurrent_syncs": 3,
-  "auto_sync": true,
-  "auto_extract_new_epics": true,
-  "log_level": "INFO",
-  "epic_ids": ["123", "456"]
-}
-```
+6. **Test Case Management**
+   - Individual test case selection with checkboxes
+   - Bulk "Select All" functionality
+   - Selective upload to ADO with progress indication
+   - Upload status tracking and duplicate prevention
 
-#### 🚀 Getting Started with Dashboard
+####  Getting Started with Dashboard
 1. **Start the API server**:
    ```bash
-   python monitor_daemon.py --mode api --host 127.0.0.1 --port 5000
+   python monitor_daemon.py --mode api --host 127.0.0.1 --port {port}
    ```
 
-2. **Open your browser** to `http://127.0.0.1:5000/`
+2. **Open your browser** to `http://127.0.0.1:{port}/`
 
 3. **Key Features Available**:
    - ✅ Start/stop monitor with one click
@@ -318,6 +360,8 @@ The system now includes a **beautiful, modern web dashboard** built with Tailwin
    - ✅ Edit configuration without restarting
    - ✅ View real-time logs
    - ✅ Toggle dark/light theme
+   - ✅ Select individual test cases for upload
+   - ✅ Switch requirement type (Epic/Feature) dynamically
    - ✅ Clear log display (keeps files intact)
 
 #### 🎯 Dashboard Benefits
@@ -338,12 +382,35 @@ The system now includes a **beautiful, modern web dashboard** built with Tailwin
 | `ADO_PROJECT` | Project name in ADO | Yes |
 | `ADO_PAT` | Personal Access Token with work item permissions | Yes |
 | `OPENAI_API_KEY` | OpenAI API key for GPT access | Yes |
-| `ADO_REQUIREMENT_TYPE` | Work item type for requirements (default: "Epic") | No |
+| `ADO_REQUIREMENT_TYPE` | Work item type for requirements ("Epic" or "Feature") | No |
 | `ADO_USER_STORY_TYPE` | Work item type for user stories (default: "User Story") | No |
 | `OPENAI_MAX_RETRIES` | Max retry attempts for OpenAI API (default: 3) | No |
 | `OPENAI_RETRY_DELAY` | Delay between retries in seconds (default: 5) | No |
 | `ADO_STORY_EXTRACTION_TYPE` | Work item type for story extraction (User Story/Task) | No |
 | `ADO_TEST_CASE_EXTRACTION_TYPE` | Work item type for test case extraction (Issue/Test Case) | No |
+
+**Note**: The `ADO_REQUIREMENT_TYPE` can be dynamically changed through the web dashboard dropdown without requiring a server restart.
+
+#### .env Configuration Example
+```bash
+# Core ADO Configuration
+ADO_ORGANIZATION=your-org
+ADO_PROJECT=your-project
+ADO_PAT=your-personal-access-token
+
+# OpenAI Configuration  
+OPENAI_API_KEY=your-openai-api-key
+
+# Work Item Type Configuration (configurable via dashboard)
+ADO_REQUIREMENT_TYPE=Epic
+ADO_USER_STORY_TYPE=User Story
+ADO_STORY_EXTRACTION_TYPE=User Story
+ADO_TEST_CASE_EXTRACTION_TYPE=Test Case
+
+# Optional Settings
+OPENAI_MAX_RETRIES=3
+OPENAI_RETRY_DELAY=5
+```
 
 ### Monitor Configuration (`monitor_config.json`)
 
@@ -471,6 +538,12 @@ The Enhanced ADO Story Extractor daemon now includes sophisticated state managem
 ### 🔥 **ENHANCED**: Auto-Extract Stories from New Epics
 
 ## Features
+
+### 🔥 **NEW**: Enhanced Web Dashboard
+- **Selective Test Case Upload**: Individual checkboxes for each extracted test case with bulk selection
+- **Dynamic Requirement Type**: Dropdown to switch between Epic/Feature types throughout the application
+- **Smart UI Controls**: Upload button auto-disables after successful operations to prevent duplicates
+- **Real-time Configuration**: Change requirement type on-the-fly without server restart
 
 ### 🔥 **NEW**: Auto-Extract Stories from New Epics
 - **Automatic Discovery**: Daemon continuously scans Azure DevOps for new epics

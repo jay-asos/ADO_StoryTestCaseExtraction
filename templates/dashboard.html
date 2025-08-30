@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EPIC Change Monitor Dashboard</title>
+    <title x-text="`${config.requirement_type || 'EPIC'} Change Monitor Dashboard`">EPIC Change Monitor Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -39,7 +39,7 @@
                             <div class="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-chart-line text-white text-sm"></i>
                             </div>
-                            <h1 class="text-xl font-bold text-gray-900 dark:text-white">EPIC Monitor Dashboard</h1>
+                            <h1 class="text-xl font-bold text-gray-900 dark:text-white" x-text="`${config.requirement_type || 'EPIC'} Monitor Dashboard`">EPIC Monitor Dashboard</h1>
                         </div>
                         <div class="flex items-center space-x-2">
                             <div :class="monitorStatus.is_running ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'"
@@ -94,7 +94,7 @@
                             <i class="fas fa-sync-alt text-blue-600 text-lg"></i>
                             <div>
                                 <h3 class="font-semibold text-gray-900 dark:text-white">Auto Monitoring</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">Real-time EPIC change detection</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300" x-text="`Real-time ${config.requirement_type || 'EPIC'} change detection`">Real-time EPIC change detection</p>
                             </div>
                         </div>
                     </div>
@@ -103,7 +103,7 @@
                             <i class="fas fa-robot text-green-600 text-lg"></i>
                             <div>
                                 <h3 class="font-semibold text-gray-900 dark:text-white">AI Story Generation</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">Auto-create user stories from EPICs</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300" x-text="`Auto-create user stories from ${config.requirement_type || 'EPIC'}s`">Auto-create user stories from EPICs</p>
                             </div>
                         </div>
                     </div>
@@ -131,7 +131,7 @@
                                 Monitoring Features
                             </h3>
                             <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Auto-discover new EPICs in Azure DevOps</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i><span x-text="`Auto-discover new ${config.requirement_type || 'EPIC'}s in Azure DevOps`">Auto-discover new EPICs in Azure DevOps</span></li>
                                 <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Content-based change detection (title, description, state)</li>
                                 <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Duplicate prevention with cooldown periods</li>
                                 <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Real-time status monitoring & alerts</li>
@@ -241,6 +241,14 @@
 
                     <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                         <div class="flex items-center space-x-2 mb-2">
+                            <i class="fas fa-sitemap text-blue-500"></i>
+                            <h3 class="font-medium text-gray-900 dark:text-white">Requirement Type</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-300" x-text="config.requirement_type || 'Epic'"></p>
+                    </div>
+
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
                             <i class="fas fa-book text-green-500"></i>
                             <h3 class="font-medium text-gray-900 dark:text-white">Story Extraction Type</h3>
                         </div>
@@ -276,7 +284,7 @@
                         <div class="group relative">
                             <i class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help"></i>
                             <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                Control the EPIC monitoring service and trigger manual checks
+                                <span x-text="`Control the ${config.requirement_type || 'EPIC'} monitoring service and trigger manual checks`">Control the EPIC monitoring service and trigger manual checks</span>
                             </div>
                         </div>
                     </div>
@@ -292,7 +300,7 @@
                         <div class="text-sm text-amber-800 dark:text-amber-200">
                             <strong>⚠️ Monitor Operation Tips:</strong>
                             <ul class="mt-2 space-y-1 list-disc list-inside">
-                                <li><strong>Start Monitor:</strong> Begins automatic EPIC scanning and story generation</li>
+                                <li><strong>Start Monitor:</strong> <span x-text="`Begins automatic ${config.requirement_type || 'EPIC'} scanning and story generation`">Begins automatic EPIC scanning and story generation</span></li>
                                 <li><strong>Check Now:</strong> Performs immediate scan without starting continuous monitoring</li>
                                 <li><strong>Stop Monitor:</strong> Safely stops monitoring while preserving current state</li>
                                 <li>Monitor state is preserved between browser sessions</li>
@@ -384,9 +392,9 @@
                         <div class="text-sm text-green-800 dark:text-green-200">
                             <strong>📊 Statistics Insights:</strong>
                             <ul class="mt-2 space-y-1 list-disc list-inside">
-                                <li><strong>Total EPICs:</strong> All EPICs being monitored across your Azure DevOps project</li>
-                                <li><strong>Changed EPICs:</strong> EPICs with detected changes that triggered story generation</li>
-                                <li><strong>Total Stories:</strong> User stories/tasks automatically generated from EPICs</li>
+                                <li><strong x-text="`Total ${config.requirement_type || 'EPIC'}s:`">Total EPICs:</strong> <span x-text="`All ${config.requirement_type || 'EPIC'}s being monitored across your Azure DevOps project`">All EPICs being monitored across your Azure DevOps project</span></li>
+                                <li><strong x-text="`Changed ${config.requirement_type || 'EPIC'}s:`">Changed EPICs:</strong> <span x-text="`${config.requirement_type || 'EPIC'}s with detected changes that triggered story generation`">EPICs with detected changes that triggered story generation</span></li>
+                                <li><strong>Total Stories:</strong> <span x-text="`User stories/tasks automatically generated from ${config.requirement_type || 'EPIC'}s`">User stories/tasks automatically generated from EPICs</span></li>
                                 <li><strong>Test Cases:</strong> Test cases extracted from generated stories</li>
                                 <li>Click on any card to view detailed breakdown and trends</li>
                             </ul>
@@ -400,7 +408,7 @@
                      @click="showStatsDetail('epics')">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total EPICs</p>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400" x-text="`Total ${config.requirement_type || 'EPIC'}s`">Total EPICs</p>
                             <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="stats.total_epics"></p>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 <span x-text="stats.epics_with_stories_extracted || 0"></span> processed
@@ -422,7 +430,7 @@
                      @click="showStatsDetail('changes')">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Changed EPICs</p>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400" x-text="`Changed ${config.requirement_type || 'EPIC'}s`">Changed EPICs</p>
                             <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="stats.changed_epics"></p>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 Last 24 hours
@@ -649,12 +657,12 @@
                     <div class="flex items-center space-x-3">
                         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
                             <i class="fas fa-layer-group text-blue-500 mr-2"></i>
-                            Monitored EPICs
+                            <span x-text="`Monitored ${config.requirement_type || 'EPIC'}s`">Monitored EPICs</span>
                         </h2>
                         <div class="group relative">
                             <i class="fas fa-info-circle text-gray-400 hover:text-blue-500 cursor-help"></i>
                             <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                View all EPICs being monitored and their current status
+                                <span x-text="`View all ${config.requirement_type || 'EPIC'}s being monitored and their current status`">View all EPICs being monitored and their current status</span>
                             </div>
                         </div>
                     </div>
@@ -677,7 +685,7 @@
                     <div class="flex items-start space-x-3">
                         <i class="fas fa-layer-group text-indigo-600 mt-0.5"></i>
                         <div class="text-sm text-indigo-800 dark:text-indigo-200">
-                            <strong>📋 EPIC Management Features:</strong>
+                            <strong x-text="`📋 ${config.requirement_type || 'EPIC'} Management Features:`">📋 EPIC Management Features:</strong>
                             <ul class="mt-2 space-y-1 list-disc list-inside">
                                 <li><strong>Status Indicators:</strong> 🟢 Processed (stories generated), 🟡 Changed (needs processing), 🔴 Error, ⚪ New</li>
                                 <li><strong>Change Detection:</strong> Monitors title, description, state, and priority changes</li>
@@ -915,6 +923,17 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Requirement Type
+                                    </label>
+                                    <select x-model="configForm.requirement_type"
+                                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                        <option value="Epic">Epic</option>
+                                        <option value="Feature">Feature</option>
+                                    </select>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Work item type for requirements (Epic/Feature)</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Story Extraction Type
                                     </label>
                                     <select x-model="configForm.story_extraction_type"
@@ -926,6 +945,8 @@
                                     </select>
                                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Work item type for extracted stories</p>
                                 </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Test Case Extraction Type
@@ -1163,6 +1184,7 @@
                 config: {
                     ado_organization: '',
                     ado_project: '',
+                    requirement_type: 'Epic',
                     story_extraction_type: 'User Story',
                     test_case_extraction_type: 'Issue',
                     check_interval_minutes: 30,
@@ -1177,6 +1199,7 @@
                     ado_pat: '',
                     openai_api_key: '',
                     openai_model: 'gpt-4',
+                    requirement_type: 'Epic',
                     story_extraction_type: 'User Story',
                     test_case_extraction_type: 'Issue',
                     check_interval_minutes: 30,
@@ -1329,6 +1352,7 @@
                             
                             // Handle other fields
                             this.configForm.openai_model = this.config.openai_model || 'gpt-4';
+                            this.configForm.requirement_type = this.config.requirement_type || 'Epic';
                             this.configForm.story_extraction_type = this.config.story_extraction_type || 'User Story';
                             this.configForm.test_case_extraction_type = this.config.test_case_extraction_type || 'Issue';
                             this.configForm.auto_test_case_extraction = this.config.auto_test_case_extraction !== undefined ? this.config.auto_test_case_extraction : true;
