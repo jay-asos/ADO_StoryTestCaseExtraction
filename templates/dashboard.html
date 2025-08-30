@@ -539,11 +539,11 @@
                             <span x-text="extractingTestCases ? 'Extracting...' : 'Extract Test Cases'"></span>
                         </button>
                         <button @click="uploadTestCases()"
-                                :disabled="!testStoryId.trim() || extractingTestCases || extractedTestCases.length === 0"
+                                :disabled="!testStoryId.trim() || extractingTestCases || extractedTestCases.length === 0 || uploadButtonDisabled"
                                 class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                             <i class="fas fa-upload mr-2"></i>
-                            Upload to ADO
-                            <span x-show="extractedTestCases.length > 0" class="ml-1 bg-green-700 px-2 py-0.5 rounded-full text-xs" x-text="extractedTestCases.length"></span>
+                            <span x-text="uploadButtonDisabled ? 'Uploaded - Refresh to Upload Again' : 'Upload to ADO'"></span>
+                            <span x-show="extractedTestCases.length > 0 && !uploadButtonDisabled" class="ml-1 bg-green-700 px-2 py-0.5 rounded-full text-xs" x-text="extractedTestCases.length"></span>
                         </button>
                     </div>
 
@@ -588,26 +588,60 @@
 
                     <!-- Extracted Test Cases Display -->
                     <div x-show="extractedTestCases.length > 0" class="mt-4">
-                        <h3 class="text-md font-semibold text-gray-900 dark:text-white mb-3">
-                            Extracted Test Cases (<span x-text="extractedTestCases.length"></span>)
-                        </h3>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-md font-semibold text-gray-900 dark:text-white">
+                                Extracted Test Cases (<span x-text="extractedTestCases.length"></span>)
+                            </h3>
+                            <div class="flex items-center space-x-2">
+                                <label class="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                                    <input type="checkbox" 
+                                           :checked="selectedTestCases.length === testCasesForStory.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== '')).length && testCasesForStory.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== '')).length > 0"
+                                           @click="
+                                                const unuploadedTestCases = testCasesForStory.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== ''));
+                                                if (selectedTestCases.length === unuploadedTestCases.length && unuploadedTestCases.length > 0) {
+                                                    // If all are selected, deselect all
+                                                    selectedTestCases = [];
+                                                    selectAllChecked = false;
+                                                } else {
+                                                    // Otherwise, select all unuploaded test cases
+                                                    selectedTestCases = unuploadedTestCases.map(tc => tc.title);
+                                                    selectAllChecked = true;
+                                                }
+                                           "
+                                           class="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out">
+                                    <span class="ml-2">Select All</span>
+                                </label>
+                                <span class="text-sm text-gray-600 dark:text-gray-300">
+                                    (<span x-text="selectedTestCases.length"></span> selected)
+                                </span>
+                            </div>
+                        </div>
                         <div class="space-y-3 max-h-96 overflow-y-auto">
                             <template x-for="testCase in extractedTestCases" :key="testCase.title">
                                 <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
-                                    <div class="font-medium text-gray-900 dark:text-white" x-text="testCase.title"></div>
-                                    <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                                        Type: <span x-text="testCase.test_type || configForm.test_case_extraction_type"></span>
-                                        <span x-show="testCase.uploaded_id" class="ml-2 text-green-600">
-                                            (Uploaded: #<span x-text="testCase.uploaded_id"></span>)
-                                        </span>
-                                    </div>
-                                    <div x-show="testCase.description" class="text-sm text-gray-600 dark:text-gray-300 mt-2" x-text="testCase.description"></div>
-                                    <div x-show="testCase.steps && testCase.steps.length > 0" class="mt-2">
-                                        <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Steps:</div>
-                                        <ol class="text-sm text-gray-600 dark:text-gray-400 pl-4 list-decimal">
-                                            <template x-for="step in testCase.steps" :key="step">
-                                                <li x-text="step"></li>
-                                            </template>
+                                    <div class="flex items-start">
+                                        <div class="mr-3 pt-1">
+                                            <input type="checkbox" 
+                                                   x-model="selectedTestCases" 
+                                                   :value="testCase.title"
+                                                   :disabled="testCase.uploaded_id != null && testCase.uploaded_id !== ''"
+                                                   class="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out">
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="font-medium text-gray-900 dark:text-white" x-text="testCase.title"></div>
+                                            <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                                Type: <span x-text="testCase.test_type || configForm.test_case_extraction_type"></span>
+                                                <span x-show="testCase.uploaded_id" class="ml-2 text-green-600">
+                                                    (Uploaded: #<span x-text="testCase.uploaded_id"></span>)
+                                                </span>
+                                            </div>
+                                            <div x-show="testCase.description" class="text-sm text-gray-600 dark:text-gray-300 mt-2" x-text="testCase.description"></div>
+                                            <div x-show="testCase.steps && testCase.steps.length > 0" class="mt-2">
+                                                <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Steps:</div>
+                                                <ol class="text-sm text-gray-600 dark:text-gray-400 pl-4 list-decimal">
+                                                    <template x-for="step in testCase.steps" :key="step">
+                                                        <li x-text="step"></li>
+                                                    </template>
                                         </ol>
                                     </div>
                                     <div x-show="testCase.expected_result" class="text-sm text-gray-600 dark:text-gray-300 mt-2">
@@ -1020,34 +1054,68 @@
                                     <span x-text="extractingTestCases ? 'Extracting...' : 'Extract Test Cases'"></span>
                                 </button>
                                 <button @click="uploadTestCases()"
-                                        :disabled="!testStoryId.trim() || extractingTestCases || extractedTestCases.length === 0"
+                                        :disabled="!testStoryId.trim() || extractingTestCases || extractedTestCases.length === 0 || uploadButtonDisabled || selectedTestCases.length === 0"
                                         class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                     <i class="fas fa-upload mr-2"></i>
-                                    Upload Test Cases
+                                    <span x-text="uploadButtonDisabled ? 'Uploaded' : `Upload Test Cases (${selectedTestCases.length})`"></span>
                                 </button>
                             </div>
                         </div>
 
                         <!-- Extracted Test Cases Display -->
                         <div x-show="extractedTestCases.length > 0" class="mt-6">
-                            <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-3">
-                                Extracted Test Cases (<span x-text="extractedTestCases.length"></span>)
-                            </h4>
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold text-gray-900 dark:text-white">
+                                    Extracted Test Cases (<span x-text="extractedTestCases.length"></span>)
+                                </h4>
+                                <div class="flex items-center space-x-2">
+                                    <label class="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                                        <input type="checkbox" 
+                                               :checked="selectedTestCases.length === extractedTestCases.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== '')).length && extractedTestCases.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== '')).length > 0"
+                                               @click="
+                                                    const unuploadedTestCases = extractedTestCases.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== ''));
+                                                    if (selectedTestCases.length === unuploadedTestCases.length && unuploadedTestCases.length > 0) {
+                                                        // If all are selected, deselect all
+                                                        selectedTestCases = [];
+                                                        selectAllChecked = false;
+                                                    } else {
+                                                        // Otherwise, select all unuploaded test cases
+                                                        selectedTestCases = unuploadedTestCases.map(tc => tc.title);
+                                                        selectAllChecked = true;
+                                                    }
+                                               "
+                                               class="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out">
+                                        <span class="ml-2">Select All</span>
+                                    </label>
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">
+                                        (<span x-text="selectedTestCases.length"></span> selected)
+                                    </span>
+                                </div>
+                            </div>
                             <div class="space-y-4 max-h-96 overflow-y-auto">
                                 <template x-for="testCase in extractedTestCases" :key="testCase.title">
                                     <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
-                                        <div class="font-medium text-gray-900 dark:text-white" x-text="testCase.title"></div>
-                                        <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                                            Type: <span x-text="testCase.test_type || config.test_case_extraction_type"></span>
-                                            <span x-show="testCase.uploaded_id" class="ml-2 text-green-600">
-                                                (Uploaded: #<span x-text="testCase.uploaded_id"></span>)
-                                            </span>
-                                        </div>
-                                        <div x-show="testCase.description" class="text-sm text-gray-600 dark:text-gray-300 mt-2" x-text="testCase.description"></div>
-                                        <div x-show="testCase.steps && testCase.steps.length > 0" class="mt-2">
-                                            <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Steps:</div>
-                                            <ol class="text-sm text-gray-600 dark:text-gray-400 pl-4 list-decimal">
-                                                <template x-for="step in testCase.steps" :key="step">
+                                        <div class="flex items-start">
+                                            <div class="mr-3 pt-1">
+                                                <input type="checkbox" 
+                                                       x-model="selectedTestCases" 
+                                                       :value="testCase.title"
+                                                       :disabled="testCase.uploaded_id != null && testCase.uploaded_id !== ''"
+                                                       class="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out">
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="font-medium text-gray-900 dark:text-white" x-text="testCase.title"></div>
+                                                <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                                    Type: <span x-text="testCase.test_type || config.test_case_extraction_type"></span>
+                                                    <span x-show="testCase.uploaded_id" class="ml-2 text-green-600">
+                                                        (Uploaded: #<span x-text="testCase.uploaded_id"></span>)
+                                                    </span>
+                                                </div>
+                                                <div x-show="testCase.description" class="text-sm text-gray-600 dark:text-gray-300 mt-2" x-text="testCase.description"></div>
+                                                <div x-show="testCase.steps && testCase.steps.length > 0" class="mt-2">
+                                                    <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Steps:</div>
+                                                    <ol class="text-sm text-gray-600 dark:text-gray-400 pl-4 list-decimal">
+                                                        <template x-for="step in testCase.steps" :key="step">
                                                     <li x-text="step"></li>
                                                 </template>
                                             </ol>
@@ -1102,6 +1170,7 @@
                 loading: false,
                 lastUpdated: 'Never',
                 nextCheckCountdown: null,
+                uploadButtonDisabled: false, // Add this new variable to track upload button state
 
                 // UI State
                 showCapabilitiesDetail: false,
@@ -1146,6 +1215,8 @@
                 testStoryId: '',
                 extractingTestCases: false,
                 extractedTestCases: [],
+                selectedTestCases: [], // Array to track selected test cases
+                selectAllChecked: false, // Toggle for select all checkbox
 
                 // Monitor Status
                 monitorStatus: {
@@ -1210,6 +1281,21 @@
                     await this.loadStats();
                     this.startPolling();
                     this.updateLastUpdated();
+                    
+                    // Add watcher for selectedTestCases
+                    this.$watch('selectedTestCases', (newValue) => {
+                        // Update selectAllChecked based on whether all unuploaded test cases are selected
+                        const testCasesToConsider = this.extractedTestCases.length > 0 
+                            ? this.extractedTestCases.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== ''))
+                            : this.testCasesForStory?.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== '')) || [];
+                            
+                        // Update selectAllChecked only if there are unuploaded test cases
+                        if (testCasesToConsider.length > 0) {
+                            this.selectAllChecked = newValue.length === testCasesToConsider.length;
+                        } else {
+                            this.selectAllChecked = false;
+                        }
+                    });
                 },
 
                 // Theme Management
@@ -1437,13 +1523,31 @@
 
                 async uploadTestCases() {
                     if (this.extractedTestCases.length === 0) return;
+                    
+                    if (this.selectedTestCases.length === 0) {
+                        this.showNotification('No test cases selected for upload', 'warning');
+                        return;
+                    }
 
                     try {
+                        // Disable the upload button during the operation
+                        this.uploadButtonDisabled = true;
+                        
+                        // Filter test cases to only upload the selected ones that haven't been uploaded yet
+                        const testCasesToUpload = this.extractedTestCases.filter(tc => 
+                            this.selectedTestCases.includes(tc.title) && !(tc.uploaded_id != null && tc.uploaded_id !== '')
+                        );
+                        
+                        if (testCasesToUpload.length === 0) {
+                            this.showNotification('All selected test cases have already been uploaded', 'info');
+                            return;
+                        }
+                        
                         const response = await fetch(`/api/stories/${this.testStoryId.trim()}/test-cases/upload`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                test_cases: this.extractedTestCases,
+                                test_cases: testCasesToUpload,
                                 work_item_type: this.config.test_case_extraction_type
                             })
                         });
@@ -1451,19 +1555,41 @@
                         if (response.ok) {
                             const data = await response.json();
                             // Update test cases with uploaded IDs
-                            data.uploaded_test_cases.forEach((uploaded, index) => {
-                                if (uploaded.success && this.extractedTestCases[index]) {
-                                    this.extractedTestCases[index].uploaded_id = uploaded.id;
+                            data.uploaded_test_cases.forEach((uploaded) => {
+                                if (uploaded.success) {
+                                    // Find and update the test case in the array
+                                    const testCase = this.extractedTestCases.find(tc => tc.title === uploaded.title);
+                                    if (testCase) {
+                                        testCase.uploaded_id = uploaded.id;
+                                    }
                                 }
                             });
+                            
+                            // Remove uploaded test cases from the selection
+                            this.selectedTestCases = this.selectedTestCases.filter(title => 
+                                !data.uploaded_test_cases.some(tc => tc.success && tc.title === title)
+                            );
+                            
                             this.showNotification(`Successfully uploaded ${data.successful_uploads} test cases`, 'success', 'Test Case Upload');
+                            
+                            // Only disable the upload button if all test cases have been uploaded
+                            const remainingUnuploadedTestCases = this.extractedTestCases.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== ''));
+                            if (remainingUnuploadedTestCases.length === 0) {
+                                this.uploadButtonDisabled = true;
+                            } else {
+                                this.uploadButtonDisabled = false;
+                            }
                         } else {
                             const error = await response.json();
                             this.showNotification(error.error || 'Failed to upload test cases', 'error');
+                            // Re-enable the button if there was an error
+                            this.uploadButtonDisabled = false;
                         }
                     } catch (error) {
                         console.error('Failed to upload test cases:', error);
                         this.showNotification('Failed to upload test cases', 'error');
+                        // Re-enable the button if there was an error
+                        this.uploadButtonDisabled = false;
                     }
                 },
 
