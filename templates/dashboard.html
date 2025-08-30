@@ -595,19 +595,8 @@
                             <div class="flex items-center space-x-2">
                                 <label class="flex items-center text-sm text-gray-600 dark:text-gray-300">
                                     <input type="checkbox" 
-                                           :checked="selectedTestCases.length === testCasesForStory.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== '')).length && testCasesForStory.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== '')).length > 0"
-                                           @click="
-                                                const unuploadedTestCases = testCasesForStory.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== ''));
-                                                if (selectedTestCases.length === unuploadedTestCases.length && unuploadedTestCases.length > 0) {
-                                                    // If all are selected, deselect all
-                                                    selectedTestCases = [];
-                                                    selectAllChecked = false;
-                                                } else {
-                                                    // Otherwise, select all unuploaded test cases
-                                                    selectedTestCases = unuploadedTestCases.map(tc => tc.title);
-                                                    selectAllChecked = true;
-                                                }
-                                           "
+                                           :checked="allTestCasesSelected"
+                                           @change="toggleAllTestCases()"
                                            class="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out">
                                     <span class="ml-2">Select All</span>
                                 </label>
@@ -1071,19 +1060,8 @@
                                 <div class="flex items-center space-x-2">
                                     <label class="flex items-center text-sm text-gray-600 dark:text-gray-300">
                                         <input type="checkbox" 
-                                               :checked="selectedTestCases.length === extractedTestCases.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== '')).length && extractedTestCases.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== '')).length > 0"
-                                               @click="
-                                                    const unuploadedTestCases = extractedTestCases.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== ''));
-                                                    if (selectedTestCases.length === unuploadedTestCases.length && unuploadedTestCases.length > 0) {
-                                                        // If all are selected, deselect all
-                                                        selectedTestCases = [];
-                                                        selectAllChecked = false;
-                                                    } else {
-                                                        // Otherwise, select all unuploaded test cases
-                                                        selectedTestCases = unuploadedTestCases.map(tc => tc.title);
-                                                        selectAllChecked = true;
-                                                    }
-                                               "
+                                               :checked="allTestCasesSelected"
+                                               @change="toggleAllTestCases()"
                                                class="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out">
                                         <span class="ml-2">Select All</span>
                                     </label>
@@ -1265,6 +1243,17 @@
                     );
                 },
 
+                // Helper method to get unuploaded test cases
+                get unuploadedTestCases() {
+                    return this.extractedTestCases.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== ''));
+                },
+
+                // Helper method to check if all test cases are selected
+                get allTestCasesSelected() {
+                    return this.unuploadedTestCases.length > 0 && 
+                           this.selectedTestCases.length === this.unuploadedTestCases.length;
+                },
+
                 // Initialization
                 async init() {
                     // Load theme from localStorage
@@ -1285,17 +1274,21 @@
                     // Add watcher for selectedTestCases
                     this.$watch('selectedTestCases', (newValue) => {
                         // Update selectAllChecked based on whether all unuploaded test cases are selected
-                        const testCasesToConsider = this.extractedTestCases.length > 0 
-                            ? this.extractedTestCases.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== ''))
-                            : this.testCasesForStory?.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== '')) || [];
-                            
-                        // Update selectAllChecked only if there are unuploaded test cases
-                        if (testCasesToConsider.length > 0) {
-                            this.selectAllChecked = newValue.length === testCasesToConsider.length;
-                        } else {
-                            this.selectAllChecked = false;
-                        }
+                        this.selectAllChecked = this.allTestCasesSelected;
                     });
+                },
+
+                // Test Case Selection Methods
+                toggleAllTestCases() {
+                    if (this.allTestCasesSelected) {
+                        // Deselect all
+                        this.selectedTestCases = [];
+                        this.selectAllChecked = false;
+                    } else {
+                        // Select all unuploaded test cases
+                        this.selectedTestCases = this.unuploadedTestCases.map(tc => tc.title);
+                        this.selectAllChecked = true;
+                    }
                 },
 
                 // Theme Management
@@ -1534,8 +1527,8 @@
                         this.uploadButtonDisabled = true;
                         
                         // Filter test cases to only upload the selected ones that haven't been uploaded yet
-                        const testCasesToUpload = this.extractedTestCases.filter(tc => 
-                            this.selectedTestCases.includes(tc.title) && !(tc.uploaded_id != null && tc.uploaded_id !== '')
+                        const testCasesToUpload = this.unuploadedTestCases.filter(tc => 
+                            this.selectedTestCases.includes(tc.title)
                         );
                         
                         if (testCasesToUpload.length === 0) {
@@ -1573,8 +1566,7 @@
                             this.showNotification(`Successfully uploaded ${data.successful_uploads} test cases`, 'success', 'Test Case Upload');
                             
                             // Only disable the upload button if all test cases have been uploaded
-                            const remainingUnuploadedTestCases = this.extractedTestCases.filter(tc => !(tc.uploaded_id != null && tc.uploaded_id !== ''));
-                            if (remainingUnuploadedTestCases.length === 0) {
+                            if (this.unuploadedTestCases.length === 0) {
                                 this.uploadButtonDisabled = true;
                             } else {
                                 this.uploadButtonDisabled = false;
