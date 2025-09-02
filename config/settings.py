@@ -8,15 +8,29 @@ class Settings:
     print("[CONFIG] Loading environment variables...")
     load_dotenv()
 
+    # Platform selection (ADO or JIRA)
+    PLATFORM_TYPE = os.getenv('PLATFORM_TYPE', 'ADO')  # 'ADO' or 'JIRA'
+
     # Azure DevOps settings
     ADO_ORGANIZATION = os.getenv('ADO_ORGANIZATION')
     ADO_PROJECT = os.getenv('ADO_PROJECT')
     ADO_PAT = os.getenv('ADO_PAT')
     ADO_BASE_URL = "https://dev.azure.com"
 
-    # Work item types
+    # JIRA settings
+    JIRA_BASE_URL = os.getenv('JIRA_BASE_URL')  # e.g., https://yourcompany.atlassian.net
+    JIRA_USERNAME = os.getenv('JIRA_USERNAME')  # JIRA username/email
+    JIRA_TOKEN = os.getenv('JIRA_TOKEN')  # JIRA API token
+    JIRA_PROJECT_KEY = os.getenv('JIRA_PROJECT_KEY')  # e.g., 'PROJ'
+
+    # Work item types for ADO
     REQUIREMENT_TYPE = os.getenv('ADO_REQUIREMENT_TYPE', 'Epic')
     USER_STORY_TYPE = os.getenv('ADO_USER_STORY_TYPE', 'User Story')
+
+    # Work item types for JIRA
+    JIRA_REQUIREMENT_TYPE = os.getenv('JIRA_REQUIREMENT_TYPE', 'Epic')
+    JIRA_USER_STORY_TYPE = os.getenv('JIRA_USER_STORY_TYPE', 'Story')
+    JIRA_TEST_CASE_TYPE = os.getenv('JIRA_TEST_CASE_TYPE', 'Test')
 
     # Story extraction work item type (Story or Task)
     STORY_EXTRACTION_TYPE = os.getenv('ADO_STORY_EXTRACTION_TYPE', 'User Story')
@@ -97,16 +111,33 @@ class Settings:
         print("[CONFIG] Reloading configuration...")
         load_dotenv(override=True)  # Force reload with override
         
-        # Reload all class variables
+        # Platform selection
+        cls.PLATFORM_TYPE = os.getenv('PLATFORM_TYPE', 'ADO')
+        print(f"[CONFIG] Platform Type: {cls.PLATFORM_TYPE}")
+        
+        # Reload Azure DevOps settings
         cls.ADO_ORGANIZATION = os.getenv('ADO_ORGANIZATION')
         cls.ADO_PROJECT = os.getenv('ADO_PROJECT')
         cls.ADO_PAT = os.getenv('ADO_PAT')
         
-        # Work item types
-        cls.REQUIREMENT_TYPE = os.getenv('ADO_REQUIREMENT_TYPE', 'Epic')
-        cls.USER_STORY_TYPE = os.getenv('ADO_USER_STORY_TYPE', 'User Story')
-        cls.STORY_EXTRACTION_TYPE = os.getenv('ADO_STORY_EXTRACTION_TYPE', 'User Story')
-        cls.TEST_CASE_EXTRACTION_TYPE = os.getenv('ADO_TEST_CASE_EXTRACTION_TYPE', 'Issue')
+        # Reload JIRA settings
+        cls.JIRA_BASE_URL = os.getenv('JIRA_BASE_URL')
+        cls.JIRA_USERNAME = os.getenv('JIRA_USERNAME')
+        cls.JIRA_TOKEN = os.getenv('JIRA_TOKEN')
+        cls.JIRA_PROJECT_KEY = os.getenv('JIRA_PROJECT_KEY')
+        
+        # Work item types based on platform
+        if cls.PLATFORM_TYPE == 'JIRA':
+            cls.REQUIREMENT_TYPE = os.getenv('JIRA_REQUIREMENT_TYPE', 'Epic')
+            cls.USER_STORY_TYPE = os.getenv('JIRA_USER_STORY_TYPE', 'Story')
+            cls.STORY_EXTRACTION_TYPE = os.getenv('JIRA_USER_STORY_TYPE', 'Story')
+            cls.TEST_CASE_EXTRACTION_TYPE = os.getenv('JIRA_TEST_CASE_TYPE', 'Test')
+        else:
+            cls.REQUIREMENT_TYPE = os.getenv('ADO_REQUIREMENT_TYPE', 'Epic')
+            cls.USER_STORY_TYPE = os.getenv('ADO_USER_STORY_TYPE', 'User Story')
+            cls.STORY_EXTRACTION_TYPE = os.getenv('ADO_STORY_EXTRACTION_TYPE', 'User Story')
+            cls.TEST_CASE_EXTRACTION_TYPE = os.getenv('ADO_TEST_CASE_EXTRACTION_TYPE', 'Issue')
+        
         cls.AUTO_TEST_CASE_EXTRACTION = os.getenv('ADO_AUTO_TEST_CASE_EXTRACTION', 'true').lower() == 'true'
         
         # OpenAI settings
@@ -118,6 +149,7 @@ class Settings:
         except Exception:
             cls.OPENAI_RETRY_DELAY = 5
         
+        print(f"[CONFIG] Reloaded - REQUIREMENT_TYPE: {cls.REQUIREMENT_TYPE}")
         print(f"[CONFIG] Reloaded - USER_STORY_TYPE: {cls.USER_STORY_TYPE}")
         print(f"[CONFIG] Reloaded - STORY_EXTRACTION_TYPE: {cls.STORY_EXTRACTION_TYPE}")
         print(f"[CONFIG] Reloaded - TEST_CASE_EXTRACTION_TYPE: {cls.TEST_CASE_EXTRACTION_TYPE}")

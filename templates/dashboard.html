@@ -42,6 +42,11 @@
                             <h1 class="text-xl font-bold text-gray-900 dark:text-white" x-text="`${config.requirement_type || 'EPIC'} Monitor Dashboard`">EPIC Monitor Dashboard</h1>
                         </div>
                         <div class="flex items-center space-x-2">
+                            <div class="px-2 py-1 rounded-full text-xs font-medium"
+                                 :class="config.platform_type === 'JIRA' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'">
+                                <i :class="config.platform_type === 'JIRA' ? 'fab fa-jira' : 'fas fa-microsoft'" class="mr-1"></i>
+                                <span x-text="config.platform_type || 'ADO'"></span>
+                            </div>
                             <div :class="monitorStatus.is_running ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'"
                                  class="px-2 py-1 rounded-full text-xs font-medium">
                                 <i :class="monitorStatus.is_running ? 'fas fa-play' : 'fas fa-stop'" class="mr-1"></i>
@@ -838,8 +843,55 @@
                     </div>
 
                     <form @submit.prevent="saveConfiguration()" class="space-y-6">
-                        <!-- Azure DevOps Settings -->
+                        <!-- Platform Selection at Top -->
                         <div>
+                            <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4">Platform Selection</h4>
+                            <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                                <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" 
+                                               x-model="configForm.platform_type" 
+                                               value="ADO" 
+                                               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 dark:bg-gray-700 dark:border-gray-600">
+                                        <div class="ml-3">
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">Azure DevOps</div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">Use Azure DevOps for work item management</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" 
+                                               x-model="configForm.platform_type" 
+                                               value="JIRA" 
+                                               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 dark:bg-gray-700 dark:border-gray-600">
+                                        <div class="ml-3">
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">JIRA</div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">Use JIRA for work item management</div>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button type="button" @click="switchPlatform()" 
+                                            :disabled="switchingPlatform"
+                                            class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded transition-colors">
+                                        <span x-show="!switchingPlatform">Switch Platform</span>
+                                        <span x-show="switchingPlatform" class="flex items-center">
+                                            <i class="fas fa-spinner fa-spin mr-1"></i> Switching...
+                                        </span>
+                                    </button>
+                                    <button type="button" @click="testPlatformConnection()" 
+                                            :disabled="testingConnection"
+                                            class="px-3 py-1.5 text-xs bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded transition-colors">
+                                        <span x-show="!testingConnection">Test Connection</span>
+                                        <span x-show="testingConnection" class="flex items-center">
+                                            <i class="fas fa-spinner fa-spin mr-1"></i> Testing...
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Azure DevOps Settings (shown when ADO is selected) -->
+                        <div x-show="configForm.platform_type === 'ADO'">
                             <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4">Azure DevOps Settings</h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
@@ -879,6 +931,59 @@
                                         </button>
                                     </div>
                                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to keep current token. Only provide if updating.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- JIRA Settings (shown when JIRA is selected) -->
+                        <div x-show="configForm.platform_type === 'JIRA'">
+                            <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4">JIRA Settings</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Base URL <span class="text-red-500">*</span>
+                                    </label>
+                                    <input x-model="configForm.jira_base_url"
+                                           type="url"
+                                           placeholder="e.g., https://yourcompany.atlassian.net"
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Your JIRA instance URL</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Username/Email <span class="text-red-500">*</span>
+                                    </label>
+                                    <input x-model="configForm.jira_username"
+                                           type="email"
+                                           placeholder="e.g., your.email@company.com"
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Your JIRA username or email</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        API Token
+                                    </label>
+                                    <div class="relative">
+                                        <input x-model="configForm.jira_token"
+                                               :type="showJiraToken ? 'text' : 'password'"
+                                               placeholder="Enter JIRA API token"
+                                               class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                        <button type="button" @click="showJiraToken = !showJiraToken"
+                                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                            <i :class="showJiraToken ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                        </button>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Generate from JIRA Profile > Security > API tokens</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Project Key <span class="text-red-500">*</span>
+                                    </label>
+                                    <input x-model="configForm.jira_project_key"
+                                           type="text"
+                                           placeholder="e.g., PROJ"
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Your JIRA project key</p>
                                 </div>
                             </div>
                         </div>
@@ -1170,6 +1275,8 @@
                 lastUpdated: 'Never',
                 nextCheckCountdown: null,
                 uploadButtonDisabled: false, // Add this new variable to track upload button state
+                switchingPlatform: false,
+                testingConnection: false,
 
                 // UI State
                 showCapabilitiesDetail: false,
@@ -1182,8 +1289,12 @@
 
                 // Configuration
                 config: {
+                    platform_type: 'ADO',
                     ado_organization: '',
                     ado_project: '',
+                    jira_base_url: '',
+                    jira_username: '',
+                    jira_project_key: '',
                     requirement_type: 'Epic',
                     story_extraction_type: 'User Story',
                     test_case_extraction_type: 'Issue',
@@ -1194,9 +1305,14 @@
                 },
 
                 configForm: {
+                    platform_type: 'ADO',
                     ado_organization: '',
                     ado_project: '',
                     ado_pat: '',
+                    jira_base_url: '',
+                    jira_username: '',
+                    jira_token: '',
+                    jira_project_key: '',
                     openai_api_key: '',
                     openai_model: 'gpt-4',
                     requirement_type: 'Epic',
@@ -1209,6 +1325,7 @@
                 // Form state
                 showAdoPat: false,
                 showOpenAiKey: false,
+                showJiraToken: false,
 
                 savingConfig: false,
 
@@ -1334,8 +1451,12 @@
                             this.config = await response.json();
                             
                             // Initialize form with current config - explicit mapping
+                            this.configForm.platform_type = this.config.platform_type || 'ADO';
                             this.configForm.ado_organization = this.config.ado_organization || '';
                             this.configForm.ado_project = this.config.ado_project || '';
+                            this.configForm.jira_base_url = this.config.jira_base_url || '';
+                            this.configForm.jira_username = this.config.jira_username || '';
+                            this.configForm.jira_project_key = this.config.jira_project_key || '';
                             
                             // Handle sensitive fields - show placeholder for masked values, empty for editing
                             if (this.config.ado_pat && this.config.ado_pat.startsWith('*')) {
@@ -1742,6 +1863,74 @@
                     } catch (error) {
                         console.error('Failed to clear server logs:', error);
                         this.showNotification('Failed to clear server logs', 'warning');
+                    }
+                },
+
+                async switchPlatform() {
+                    this.switchingPlatform = true;
+                    try {
+                        const response = await fetch('/api/platform/switch', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                platform_type: this.configForm.platform_type
+                            })
+                        });
+
+                        const data = await response.json();
+                        
+                        if (response.ok && data.success) {
+                            this.showNotification(data.message, 'success', 'Platform Switch');
+                            
+                            // Update local config
+                            this.config.platform_type = data.platform_type;
+                            this.config.requirement_type = data.requirement_type;
+                            this.config.user_story_type = data.user_story_type;
+                            this.config.story_extraction_type = data.story_extraction_type;
+                            this.config.test_case_extraction_type = data.test_case_extraction_type;
+                            
+                            // Reload configuration to get updated values
+                            await this.loadConfiguration();
+                        } else {
+                            this.showNotification(data.error || 'Failed to switch platform', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Platform switch error:', error);
+                        this.showNotification('Failed to switch platform', 'error');
+                    } finally {
+                        this.switchingPlatform = false;
+                    }
+                },
+
+                async testPlatformConnection() {
+                    this.testingConnection = true;
+                    try {
+                        const response = await fetch('/api/platform/test-connection', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+
+                        const data = await response.json();
+                        
+                        if (response.ok && data.success) {
+                            const projectName = data.project_info?.name || data.project_info?.key || 'Unknown';
+                            this.showNotification(
+                                `${data.platform} connection successful! Project: ${projectName}`, 
+                                'success', 
+                                'Connection Test'
+                            );
+                        } else {
+                            this.showNotification(
+                                data.error || `${data.platform || 'Platform'} connection failed`, 
+                                'error',
+                                'Connection Test'
+                            );
+                        }
+                    } catch (error) {
+                        console.error('Connection test error:', error);
+                        this.showNotification('Failed to test platform connection', 'error');
+                    } finally {
+                        this.testingConnection = false;
                     }
                 },
 

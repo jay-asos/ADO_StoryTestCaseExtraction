@@ -531,9 +531,13 @@ class MonitorAPI:
                     return jsonify({'error': 'Monitor not configured'}), 400
 
                 config_dict = {
+                    'platform_type': self.settings.PLATFORM_TYPE,
                     'ado_organization': self.settings.ADO_ORGANIZATION,
                     'ado_project': self.settings.ADO_PROJECT,
                     'ado_pat': '***hidden***',  # Don't expose the actual PAT
+                    'jira_base_url': getattr(self.settings, 'JIRA_BASE_URL', ''),
+                    'jira_username': getattr(self.settings, 'JIRA_USERNAME', ''),
+                    'jira_project_key': getattr(self.settings, 'JIRA_PROJECT_KEY', ''),
                     'openai_api_key': '***hidden***',  # Don't expose the actual API key
                     'openai_model': self.settings.OPENAI_MODEL,
                     'openai_max_retries': self.settings.OPENAI_MAX_RETRIES,
@@ -675,6 +679,89 @@ class MonitorAPI:
             except Exception as e:
                 self.logger.error(f"Error updating config: {str(e)}")
                 return jsonify({'error': f'Failed to update configuration: {str(e)}'}), 500
+
+        @self.app.route('/api/platform/switch', methods=['POST'])
+        def switch_platform():
+            """Switch between ADO and JIRA platforms"""
+            try:
+                data = request.get_json()
+                if not data or 'platform_type' not in data:
+                    return jsonify({'error': 'Platform type is required'}), 400
+
+                platform_type = data['platform_type'].upper()
+                if platform_type not in ['ADO', 'JIRA']:
+                    return jsonify({'error': 'Platform type must be ADO or JIRA'}), 400
+
+                # Update .env file
+                self._update_env_file('PLATFORM_TYPE', platform_type)
+                
+                # Reload settings
+                Settings.reload_config()
+                
+                self.logger.info(f"Platform switched to: {platform_type}")
+                
+                return jsonify({
+                    'success': True,
+                    'message': f'Platform switched to {platform_type}',
+                    'platform_type': platform_type,
+                    'requirement_type': Settings.REQUIREMENT_TYPE,
+                    'user_story_type': Settings.USER_STORY_TYPE,
+                    'story_extraction_type': Settings.STORY_EXTRACTION_TYPE,
+                    'test_case_extraction_type': Settings.TEST_CASE_EXTRACTION_TYPE
+                })
+
+            except Exception as e:
+                self.logger.error(f"Error switching platform: {str(e)}")
+                return jsonify({'error': f'Failed to switch platform: {str(e)}'}), 500
+
+        @self.app.route('/api/platform/test-connection', methods=['POST'])
+        def test_platform_connection():
+            """Test connection to the selected platform"""
+            try:
+                if Settings.PLATFORM_TYPE == 'JIRA':
+                    from src.jira_client import JiraClient
+                    jira_client = JiraClient()
+                    success = jira_client.test_connection()
+                    
+                    if success:
+                        project_info = jira_client.get_project_info()
+                        return jsonify({
+                            'success': True,
+                            'platform': 'JIRA',
+                            'message': 'JIRA connection successful',
+                            'project_info': project_info
+                        })
+                    else:
+                        return jsonify({
+                            'success': False,
+                            'platform': 'JIRA',
+                            'error': 'JIRA connection failed'
+                        }), 400
+                else:
+                    # Test ADO connection
+                    from src.ado_client import ADOClient
+                    ado_client = ADOClient()
+                    
+                    # Try to get project info as a connection test
+                    try:
+                        # This will raise an exception if connection fails
+                        projects = ado_client.get_projects()
+                        return jsonify({
+                            'success': True,
+                            'platform': 'ADO',
+                            'message': 'ADO connection successful',
+                            'project_info': {'name': Settings.ADO_PROJECT}
+                        })
+                    except Exception as e:
+                        return jsonify({
+                            'success': False,
+                            'platform': 'ADO',
+                            'error': f'ADO connection failed: {str(e)}'
+                        }), 400
+
+            except Exception as e:
+                self.logger.error(f"Error testing platform connection: {str(e)}")
+                return jsonify({'error': f'Failed to test connection: {str(e)}'}), 500
 
         @self.app.route('/api/monitor/check', methods=['POST'])
         def force_check():
