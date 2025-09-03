@@ -7,6 +7,18 @@ class Settings:
     # Load environment variables
     print("[CONFIG] Loading environment variables...")
     load_dotenv()
+    
+    # Log AI service provider configuration at startup
+    _ai_provider = os.getenv('AI_SERVICE_PROVIDER', 'OPENAI')
+    print(f"[CONFIG] 🤖 AI Service Provider: {_ai_provider}")
+    if _ai_provider == 'AZURE_OPENAI':
+        _azure_endpoint = os.getenv('AZURE_OPENAI_ENDPOINT', 'Not configured')
+        _azure_deployment = os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME', 'Not configured')
+        print(f"[CONFIG] 🔷 Azure OpenAI Endpoint: {_azure_endpoint}")
+        print(f"[CONFIG] 🔷 Azure OpenAI Deployment: {_azure_deployment}")
+    else:
+        _openai_model = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo')
+        print(f"[CONFIG] 🔶 OpenAI Model: {_openai_model}")
 
     # Platform selection (ADO or JIRA)
     PLATFORM_TYPE = os.getenv('PLATFORM_TYPE', 'ADO')  # 'ADO' or 'JIRA'
@@ -41,10 +53,21 @@ class Settings:
     # Test case extraction settings
     AUTO_TEST_CASE_EXTRACTION = os.getenv('ADO_AUTO_TEST_CASE_EXTRACTION', 'true').lower() == 'true'
 
+    # AI Service Configuration
+    AI_SERVICE_PROVIDER = os.getenv('AI_SERVICE_PROVIDER', 'OPENAI')  # 'OPENAI' or 'AZURE_OPENAI'
+
     # OpenAI settings
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo')
     OPENAI_MAX_RETRIES = int(os.getenv('OPENAI_MAX_RETRIES', 3))
+
+    # Azure OpenAI settings
+    AZURE_OPENAI_ENDPOINT = os.getenv('AZURE_OPENAI_ENDPOINT')
+    AZURE_OPENAI_API_KEY = os.getenv('AZURE_OPENAI_API_KEY')
+    AZURE_OPENAI_API_VERSION = os.getenv('AZURE_OPENAI_API_VERSION', '2024-02-15-preview')
+    AZURE_OPENAI_DEPLOYMENT_NAME = os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME')
+    AZURE_OPENAI_MODEL = os.getenv('AZURE_OPENAI_MODEL', 'gpt-35-turbo')
+
     try:
         OPENAI_RETRY_DELAY = int(os.getenv('OPENAI_RETRY_DELAY', 5))
     except Exception:
@@ -90,12 +113,35 @@ class Settings:
         else:
             print(f"[CONFIG] ADO_PAT: {'*' * (len(cls.ADO_PAT) - 4) + cls.ADO_PAT[-4:]}")
 
-        # Check OpenAI settings
-        if not cls.OPENAI_API_KEY:
-            missing.append("OPENAI_API_KEY")
-            print("[ERROR] OPENAI_API_KEY is not set")
+        # Check AI service settings
+        print(f"[CONFIG] AI_SERVICE_PROVIDER: {cls.AI_SERVICE_PROVIDER}")
+        
+        if cls.AI_SERVICE_PROVIDER == 'AZURE_OPENAI':
+            # Validate Azure OpenAI settings
+            if not cls.AZURE_OPENAI_ENDPOINT:
+                missing.append("AZURE_OPENAI_ENDPOINT")
+                print("[ERROR] AZURE_OPENAI_ENDPOINT is not set")
+            else:
+                print(f"[CONFIG] AZURE_OPENAI_ENDPOINT: {cls.AZURE_OPENAI_ENDPOINT}")
+                
+            if not cls.AZURE_OPENAI_API_KEY:
+                missing.append("AZURE_OPENAI_API_KEY")
+                print("[ERROR] AZURE_OPENAI_API_KEY is not set")
+            else:
+                print(f"[CONFIG] AZURE_OPENAI_API_KEY: {'*' * (len(cls.AZURE_OPENAI_API_KEY) - 4) + cls.AZURE_OPENAI_API_KEY[-4:]}")
+                
+            if not cls.AZURE_OPENAI_DEPLOYMENT_NAME:
+                missing.append("AZURE_OPENAI_DEPLOYMENT_NAME")
+                print("[ERROR] AZURE_OPENAI_DEPLOYMENT_NAME is not set")
+            else:
+                print(f"[CONFIG] AZURE_OPENAI_DEPLOYMENT_NAME: {cls.AZURE_OPENAI_DEPLOYMENT_NAME}")
         else:
-            print(f"[CONFIG] OPENAI_API_KEY: {'*' * (len(cls.OPENAI_API_KEY) - 4) + cls.OPENAI_API_KEY[-4:]}")
+            # Validate OpenAI settings
+            if not cls.OPENAI_API_KEY:
+                missing.append("OPENAI_API_KEY")
+                print("[ERROR] OPENAI_API_KEY is not set")
+            else:
+                print(f"[CONFIG] OPENAI_API_KEY: {'*' * (len(cls.OPENAI_API_KEY) - 4) + cls.OPENAI_API_KEY[-4:]}")
 
         print(f"[CONFIG] Work Item Types - Story: {cls.STORY_EXTRACTION_TYPE}, Test Case: {cls.TEST_CASE_EXTRACTION_TYPE}")
 
@@ -140,10 +186,21 @@ class Settings:
         
         cls.AUTO_TEST_CASE_EXTRACTION = os.getenv('ADO_AUTO_TEST_CASE_EXTRACTION', 'true').lower() == 'true'
         
+        # AI service configuration
+        cls.AI_SERVICE_PROVIDER = os.getenv('AI_SERVICE_PROVIDER', 'OPENAI')
+        
         # OpenAI settings
         cls.OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
         cls.OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo')
         cls.OPENAI_MAX_RETRIES = int(os.getenv('OPENAI_MAX_RETRIES', 3))
+        
+        # Azure OpenAI settings
+        cls.AZURE_OPENAI_ENDPOINT = os.getenv('AZURE_OPENAI_ENDPOINT')
+        cls.AZURE_OPENAI_API_KEY = os.getenv('AZURE_OPENAI_API_KEY')
+        cls.AZURE_OPENAI_API_VERSION = os.getenv('AZURE_OPENAI_API_VERSION', '2024-02-15-preview')
+        cls.AZURE_OPENAI_DEPLOYMENT_NAME = os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME')
+        cls.AZURE_OPENAI_MODEL = os.getenv('AZURE_OPENAI_MODEL', 'gpt-35-turbo')
+        
         try:
             cls.OPENAI_RETRY_DELAY = int(os.getenv('OPENAI_RETRY_DELAY', 5))
         except Exception:

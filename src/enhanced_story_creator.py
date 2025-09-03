@@ -1,9 +1,9 @@
 import logging
 import json
 from typing import List
-from openai import OpenAI
 from src.models_enhanced import EnhancedUserStory, StoryComplexityAnalysis, ComplexityFactor, ComplexityLevel
 from config.settings import Settings
+from src.ai_client import get_ai_client
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -13,11 +13,17 @@ class EnhancedStoryCreator:
     
     def __init__(self):
         Settings.validate()
-        import os
-        # Set OpenAI API key in environment variable
-        os.environ["OPENAI_API_KEY"] = Settings.OPENAI_API_KEY
-        # Initialize OpenAI client with no additional config
-        self.client = OpenAI()
+        self.ai_client = get_ai_client()
+        
+        # Log which AI service is being used
+        ai_provider = getattr(Settings, 'AI_SERVICE_PROVIDER', 'OPENAI')
+        logger.info(f"🤖 EnhancedStoryCreator: Initialized with AI provider '{ai_provider}'")
+        if ai_provider == 'AZURE_OPENAI':
+            deployment = getattr(Settings, 'AZURE_OPENAI_DEPLOYMENT_NAME', 'Unknown')
+            logger.info(f"🔷 EnhancedStoryCreator: Using Azure OpenAI deployment '{deployment}'")
+        else:
+            model = getattr(Settings, 'OPENAI_MODEL', 'Unknown')
+            logger.info(f"🔶 EnhancedStoryCreator: Using OpenAI model '{model}'")
 
     _JSON_FORMAT = '''
 {
@@ -82,9 +88,8 @@ Return as JSON using this exact format (do not modify the structure):
 """
 
         try:
-            logger.info("Sending request to OpenAI")
-            response = self.client.chat.completions.create(
-                model="gpt-4",  # Using GPT-4 for better analysis
+            logger.info("Sending request to AI service")
+            result = self.ai_client.chat_completion(
                 messages=[
                     {
                         "role": "system",
@@ -101,7 +106,6 @@ Your task is to analyze user stories and output valid JSON that conforms to the 
                 ],
                 temperature=0.3  # Lower temperature for more consistent JSON output
             )
-            result = response.choices[0].message.content.strip()
             logger.info("Got response from OpenAI", extra={'response': result})
             
             # Parse the response

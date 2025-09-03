@@ -11,7 +11,8 @@ A **Python-based Azure DevOps (ADO) Story Extractor** that uses AI to automatica
 - **🌐 Modern Web Dashboard**: Beautiful, responsive interface with dark theme support
 - **🎯 Selective Test Case Upload**: Individual checkboxes with bulk selection for precise control
 - **⚙️ Dynamic Requirement Types**: Switch between Epic/Feature types on-the-fly via dropdown
-- **🤖 AI-Powered Extraction**: Uses OpenAI GPT to analyze requirements and generate user stories
+- **🤖 Dual AI Provider Support**: Choose between OpenAI and Azure OpenAI Service with seamless switching
+- **🔷 Azure OpenAI Integration**: Enterprise-grade AI with enhanced security, compliance, and regional control
 - **🔄 Change Detection**: Monitors epics using content hashing for automatic updates
 - **⚡ Automatic Synchronization**: Creates, updates, and manages user stories in ADO
 - **📸 Snapshot Tracking**: Maintains history for change detection and rollback
@@ -29,6 +30,7 @@ A **Python-based Azure DevOps (ADO) Story Extractor** that uses AI to automatica
 - **🚫 Duplicate Prevention**: Intelligent duplicate detection prevents story re-creation
 - **🎛️ Dashboard Configuration**: Complete configuration management through the web interface
 - **🔐 Smart Button Controls**: Auto-disable upload buttons after successful operations
+- **📊 Enhanced Logging**: Comprehensive logging for AI service calls and configuration changes
 
 ## 📁 Project Structure
 
@@ -65,7 +67,9 @@ ado-story-extractor/
 
 1. **Python 3.8+** installed
 2. **Azure DevOps** account with appropriate permissions
-3. **OpenAI API** key for story extraction
+3. **AI Service** - Choose one:
+   - **OpenAI API** key for OpenAI service, OR
+   - **Azure OpenAI Service** resource with deployed model
 
 ### Setup
 
@@ -79,7 +83,7 @@ ado-story-extractor/
    **Dependencies include:**
    - `flask` - Web framework for the dashboard
    - `azure-devops` - Azure DevOps integration
-   - `openai` - AI-powered story extraction
+   - `openai` - AI-powered story extraction (supports both OpenAI and Azure OpenAI)
    - `requests` - HTTP client for API calls
    - `pydantic` - Data validation and modeling
    - `pytest` - Testing framework
@@ -90,12 +94,26 @@ ado-story-extractor/
    # Edit .env with your credentials
    ```
 
-   Required variables:
+   **Required variables (choose AI provider):**
+   
+   For **OpenAI**:
    ```env
    ADO_ORGANIZATION=your-organization
    ADO_PROJECT=your-project
    ADO_PAT=your-personal-access-token
+   AI_SERVICE_PROVIDER=OPENAI
    OPENAI_API_KEY=your-openai-api-key
+   ```
+   
+   For **Azure OpenAI Service**:
+   ```env
+   ADO_ORGANIZATION=your-organization
+   ADO_PROJECT=your-project
+   ADO_PAT=your-personal-access-token
+   AI_SERVICE_PROVIDER=AZURE_OPENAI
+   AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+   AZURE_OPENAI_API_KEY=your-azure-openai-api-key
+   AZURE_OPENAI_DEPLOYMENT_NAME=gpt-35-turbo
    ```
 
 3. **Validate Setup**:
@@ -374,6 +392,13 @@ The system now includes a **beautiful, modern web dashboard** built with Tailwin
 
 ## 🔧 Configuration
 
+### AI Service Provider Support
+
+The system supports both **OpenAI** and **Azure OpenAI Service** for AI-powered story extraction and analysis. You can easily switch between providers through configuration:
+
+- **OpenAI**: Direct integration with OpenAI's API service
+- **Azure OpenAI Service**: Enterprise-grade AI service with enhanced security, compliance, and regional control
+
 ### Environment Variables
 
 | Variable | Description | Required |
@@ -381,25 +406,43 @@ The system now includes a **beautiful, modern web dashboard** built with Tailwin
 | `ADO_ORGANIZATION` | Azure DevOps organization name | Yes |
 | `ADO_PROJECT` | Project name in ADO | Yes |
 | `ADO_PAT` | Personal Access Token with work item permissions | Yes |
-| `OPENAI_API_KEY` | OpenAI API key for GPT access | Yes |
+| **AI Service Configuration** | | |
+| `AI_SERVICE_PROVIDER` | AI service to use: "OPENAI" or "AZURE_OPENAI" | No (default: "OPENAI") |
+| **OpenAI Configuration** | | |
+| `OPENAI_API_KEY` | OpenAI API key for GPT access | Yes (if using OpenAI) |
+| `OPENAI_MODEL` | OpenAI model to use (default: "gpt-3.5-turbo") | No |
+| **Azure OpenAI Configuration** | | |
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI resource endpoint URL | Yes (if using Azure OpenAI) |
+| `AZURE_OPENAI_API_KEY` | Azure OpenAI API key | Yes (if using Azure OpenAI) |
+| `AZURE_OPENAI_DEPLOYMENT_NAME` | Azure OpenAI model deployment name | Yes (if using Azure OpenAI) |
+| `AZURE_OPENAI_API_VERSION` | Azure OpenAI API version (default: "2024-02-15-preview") | No |
+| `AZURE_OPENAI_MODEL` | Model name in Azure OpenAI (default: "gpt-35-turbo") | No |
+| **Work Item Configuration** | | |
 | `ADO_REQUIREMENT_TYPE` | Work item type for requirements ("Epic" or "Feature") | No |
 | `ADO_USER_STORY_TYPE` | Work item type for user stories (default: "User Story") | No |
-| `OPENAI_MAX_RETRIES` | Max retry attempts for OpenAI API (default: 3) | No |
-| `OPENAI_RETRY_DELAY` | Delay between retries in seconds (default: 5) | No |
 | `ADO_STORY_EXTRACTION_TYPE` | Work item type for story extraction (User Story/Task) | No |
 | `ADO_TEST_CASE_EXTRACTION_TYPE` | Work item type for test case extraction (Issue/Test Case) | No |
+| **Rate Limiting** | | |
+| `OPENAI_MAX_RETRIES` | Max retry attempts for AI API (default: 3) | No |
+| `OPENAI_RETRY_DELAY` | Delay between retries in seconds (default: 5) | No |
 
-**Note**: The `ADO_REQUIREMENT_TYPE` can be dynamically changed through the web dashboard dropdown without requiring a server restart.
+**Note**: The `ADO_REQUIREMENT_TYPE` and AI service provider can be dynamically changed through the web dashboard without requiring a server restart.
 
-#### .env Configuration Example
+#### .env Configuration Examples
+
+##### Option 1: Using OpenAI (Default)
 ```bash
 # Core ADO Configuration
 ADO_ORGANIZATION=your-org
 ADO_PROJECT=your-project
 ADO_PAT=your-personal-access-token
 
+# AI Service Configuration
+AI_SERVICE_PROVIDER=OPENAI
+
 # OpenAI Configuration  
 OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-3.5-turbo
 
 # Work Item Type Configuration (configurable via dashboard)
 ADO_REQUIREMENT_TYPE=Epic
@@ -408,9 +451,69 @@ ADO_STORY_EXTRACTION_TYPE=User Story
 ADO_TEST_CASE_EXTRACTION_TYPE=Test Case
 
 # Optional Settings
-OPENAI_MAX_RETRIES=3
-OPENAI_RETRY_DELAY=5
+OPENAI_MAX_RETRIES=5
+OPENAI_RETRY_DELAY=10
 ```
+
+##### Option 2: Using Azure OpenAI Service
+```bash
+# Core ADO Configuration
+ADO_ORGANIZATION=your-org
+ADO_PROJECT=your-project
+ADO_PAT=your-personal-access-token
+
+# AI Service Configuration
+AI_SERVICE_PROVIDER=AZURE_OPENAI
+
+# Azure OpenAI Configuration
+AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com/
+AZURE_OPENAI_API_KEY=your-azure-openai-api-key
+AZURE_OPENAI_DEPLOYMENT_NAME=gpt-35-turbo
+AZURE_OPENAI_API_VERSION=2024-02-15-preview
+AZURE_OPENAI_MODEL=gpt-35-turbo
+
+# OpenAI Configuration (kept for compatibility)
+OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-3.5-turbo
+
+# Work Item Type Configuration (configurable via dashboard)
+ADO_REQUIREMENT_TYPE=Epic
+ADO_USER_STORY_TYPE=User Story
+ADO_STORY_EXTRACTION_TYPE=User Story
+ADO_TEST_CASE_EXTRACTION_TYPE=Test Case
+
+# Optional Settings
+OPENAI_MAX_RETRIES=5
+OPENAI_RETRY_DELAY=10
+```
+
+### Azure OpenAI Service Benefits
+
+When using Azure OpenAI Service, you get:
+
+- **🔒 Enterprise Security**: Data stays within your Azure tenant
+- **📋 Compliance**: Better compliance with corporate data policies  
+- **🌐 Private Networking**: VNet integration and private endpoints
+- **🗺️ Regional Control**: Deploy in specific Azure regions
+- **💰 Cost Management**: Enterprise pricing and billing integration
+- **⚡ SLA Guarantees**: Enterprise-grade service level agreements
+- **🔍 Enhanced Monitoring**: Integrated with Azure monitoring and logging
+
+### Dashboard Configuration
+
+The web dashboard provides a user-friendly interface to configure both AI providers:
+
+1. **Access Configuration**: Click "Configuration" in the dashboard
+2. **Select AI Provider**: Choose between "OpenAI" and "Azure OpenAI Service" 
+3. **Configure Settings**: Enter your AI service credentials and settings
+4. **Test Connection**: Verify your configuration before saving
+5. **Save & Apply**: Configuration takes effect immediately
+
+**Features:**
+- ✅ Real-time AI provider switching
+- ✅ Secure credential handling (keys are hidden)
+- ✅ Configuration validation and testing
+- ✅ Automatic service detection and initialization
 
 ### Monitor Configuration (`monitor_config.json`)
 
@@ -695,37 +798,127 @@ Each test case includes:
 - Automatic removal of epics that become inaccessible
 - Comprehensive logging for troubleshooting
 
+## 📊 Logging & Monitoring
+
+### Comprehensive AI Service Logging
+
+The system provides detailed logging for all AI service interactions and configuration changes:
+
+#### Startup Logging
+```
+[CONFIG] 🤖 AI Service Provider: AZURE_OPENAI
+[CONFIG] 🔷 Azure OpenAI Endpoint: https://your-resource.openai.azure.com/
+[CONFIG] 🔷 Azure OpenAI Deployment: gpt-35-turbo
+```
+
+#### AI Client Initialization
+```
+🤖 AI Client Factory: Creating client for provider 'AZURE_OPENAI'
+🔷 Initializing Azure OpenAI Service client
+🔷 Initialized Azure OpenAI client with deployment: gpt-35-turbo
+```
+
+#### Component Logging
+Each AI-powered component logs its configuration:
+```
+🤖 StoryExtractor: Initialized with AI provider 'AZURE_OPENAI'
+🔷 StoryExtractor: Using Azure OpenAI deployment 'gpt-35-turbo'
+🤖 EnhancedStoryCreator: Initialized with AI provider 'AZURE_OPENAI'
+🤖 TestCaseExtractor: Initialized with AI provider 'AZURE_OPENAI'
+```
+
+#### API Request Logging
+All AI API calls are logged with detailed information:
+```
+🔷 Azure OpenAI: Making chat completion request to deployment 'gpt-35-turbo'
+🔷 Azure OpenAI: Endpoint=https://..., API Version=2024-02-15-preview
+🔷 Azure OpenAI: Request completed successfully, response length: 1,234 characters
+```
+
+#### Dashboard Configuration Changes
+When saving configuration from the dashboard:
+```
+💾 Dashboard Config Save: Starting configuration update from dashboard
+🔄 Dashboard Config Save: AI Service Provider changing from 'OPENAI' to 'AZURE_OPENAI'
+💾 Dashboard Config Save: Updating Azure OpenAI azure_openai_endpoint = https://...
+✅ Dashboard Config Save: Configuration reload completed
+🤖 Dashboard Config Save: Active AI Service Provider = 'AZURE_OPENAI'
+```
+
+### Log Files & Locations
+
+- **Application Logs**: `logs/epic_monitor.log` - Main application activity
+- **Enhanced Logs**: `logs/enhanced_epic_monitor.log` - Detailed component logs  
+- **Story Extraction**: `logs/story_extraction.log` - AI extraction activities
+- **API Logs**: HTTP requests and responses (when debug logging enabled)
+
+### Monitoring Features
+
+- **Real-time Status**: Dashboard shows current AI provider and configuration
+- **Request Tracking**: Every AI API call is logged with timing and response details  
+- **Configuration Audit**: All configuration changes are logged with before/after states
+- **Error Handling**: Comprehensive error logging with retry information
+- **Performance Metrics**: Response times and success rates for AI requests
+
 ## Performance Considerations
 
+- **AI Provider Performance**: Azure OpenAI typically provides faster response times in specific regions
 - **Polling Frequency**: Default 30-second intervals balance responsiveness with API usage
 - **Concurrent Processing**: Configurable max concurrent syncs (default: 3)
-- **API Rate Limits**: Built-in retry logic respects Azure DevOps and OpenAI limits
+- **API Rate Limits**: Built-in retry logic respects Azure DevOps and AI service limits
 - **Memory Usage**: Efficient snapshot storage and cleanup
+- **Regional Latency**: Azure OpenAI can be deployed closer to your location for better performance
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Stories not being extracted for new epics**
-   - Check `auto_extract_new_epics` is set to `true`
-   - Verify Azure DevOps and OpenAI credentials
-   - Review logs for specific error messages
+1. **AI Service Connection Issues**
+   - **OpenAI**: Verify `OPENAI_API_KEY` is valid and has sufficient credits
+   - **Azure OpenAI**: Check endpoint URL, deployment name, and API key
+   - Review logs for specific authentication or connection errors
+   - Test configuration using the dashboard connection test feature
 
-2. **Duplicate processing**
+2. **Stories not being extracted for new epics**
+   - Check `auto_extract_new_epics` is set to `true`
+   - Verify Azure DevOps and AI service credentials
+   - Review logs for specific error messages
+   - Confirm the AI service provider is correctly configured
+
+3. **Duplicate processing**
    - Daemon prevents duplicate processing through state tracking
    - Snapshots ensure epics are only processed when actually new
 
-3. **Performance issues**
+4. **Performance issues**
    - Adjust `poll_interval_seconds` to reduce API calls
    - Decrease `max_concurrent_syncs` if hitting rate limits
+   - Consider switching to Azure OpenAI for better regional performance
 
 ### Log Analysis
 ```bash
-# Monitor daemon activity
+# Monitor daemon activity and AI service calls
 tail -f logs/epic_monitor.log
 
 # Check for specific epic processing
 grep "Epic 42" logs/epic_monitor.log
+
+# Monitor AI service interactions
+grep "Azure OpenAI\|OpenAI" logs/enhanced_epic_monitor.log
+
+# Check configuration changes
+grep "Dashboard Config Save" logs/epic_monitor.log
+```
+
+### Configuration Validation
+```bash
+# Test current AI configuration
+python -c "
+from config.settings import Settings
+from src.ai_client import get_ai_client
+print(f'AI Provider: {Settings.AI_SERVICE_PROVIDER}')
+client = get_ai_client()
+print('✅ AI client initialized successfully')
+"
 ```
 
 ## Future Enhancements
@@ -737,15 +930,38 @@ grep "Epic 42" logs/epic_monitor.log
 
 ## 🤝 Contributing
 
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature-name`
+3. **Test with both AI providers** (OpenAI and Azure OpenAI)
+4. **Run the test suite**: `python -m pytest tests/`
+5. **Verify dashboard functionality** with configuration changes
+6. **Check logging output** for proper AI service identification
+7. **Submit a pull request**
+
 Feel free to explore the code and adapt it to your needs! The project is well-structured with:
 - Comprehensive test coverage
 - Clean separation of concerns
 - Extensive documentation
 - Production-ready error handling
 
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+If you encounter issues:
+
+1. **Check the logs** - The system provides comprehensive logging for troubleshooting
+2. **Test AI configuration** - Use the dashboard to verify your AI service settings
+3. **Review the documentation** - This README covers most common scenarios
+4. **Create an issue** - Include logs and configuration details (without sensitive data)
+
 ---
 
 **Ready to get started? Run the demo first:** `python demo_epic_sync.py` 🎉
+
+*Built with ❤️ for efficient Azure DevOps epic and story management*
 
 ## 🔌 REST API Endpoints
 

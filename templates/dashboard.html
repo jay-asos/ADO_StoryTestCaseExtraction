@@ -988,36 +988,117 @@
                             </div>
                         </div>
 
-                        <!-- OpenAI Settings -->
+                        <!-- AI Service Settings -->
                         <div>
-                            <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4">OpenAI Settings</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        API Key
+                            <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4">AI Service Settings</h4>
+                            
+                            <!-- AI Provider Selection -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    AI Service Provider
+                                </label>
+                                <div class="flex space-x-4">
+                                    <label class="flex items-center">
+                                        <input x-model="configForm.ai_service_provider" 
+                                               type="radio" 
+                                               value="OPENAI"
+                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600">
+                                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">OpenAI</span>
                                     </label>
-                                    <div class="relative">
-                                        <input x-model="configForm.openai_api_key"
-                                               :type="showOpenAiKey ? 'text' : 'password'"
-                                               placeholder="Enter new API key to update (currently hidden for security)"
-                                               class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                                        <button type="button" @click="showOpenAiKey = !showOpenAiKey"
-                                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                                            <i :class="showOpenAiKey ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-                                        </button>
-                                    </div>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to keep current key. Only provide if updating.</p>
+                                    <label class="flex items-center">
+                                        <input x-model="configForm.ai_service_provider" 
+                                               type="radio" 
+                                               value="AZURE_OPENAI"
+                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600">
+                                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Azure OpenAI Service</span>
+                                    </label>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Model
-                                    </label>
-                                    <select x-model="configForm.openai_model"
-                                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                                        <option value="gpt-4">GPT-4</option>
-                                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                                    </select>
+                            </div>
+
+                            <!-- OpenAI Settings -->
+                            <div x-show="configForm.ai_service_provider === 'OPENAI'" class="space-y-4">
+                                <h5 class="text-sm font-semibold text-gray-800 dark:text-gray-200">OpenAI Configuration</h5>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            API Key
+                                        </label>
+                                        <div class="relative">
+                                            <input x-model="configForm.openai_api_key"
+                                                   :type="showOpenAiKey ? 'text' : 'password'"
+                                                   placeholder="Enter new API key to update (currently hidden for security)"
+                                                   class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                            <button type="button" @click="showOpenAiKey = !showOpenAiKey"
+                                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                                <i :class="showOpenAiKey ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                            </button>
+                                        </div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to keep current key. Only provide if updating.</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Model
+                                        </label>
+                                        <select x-model="configForm.openai_model"
+                                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                            <option value="gpt-4">GPT-4</option>
+                                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Azure OpenAI Settings -->
+                            <div x-show="configForm.ai_service_provider === 'AZURE_OPENAI'" class="space-y-4">
+                                <h5 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Azure OpenAI Service Configuration</h5>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Endpoint URL
+                                        </label>
+                                        <input x-model="configForm.azure_openai_endpoint"
+                                               type="url"
+                                               placeholder="https://your-resource-name.openai.azure.com/"
+                                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Your Azure OpenAI resource endpoint</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            API Key
+                                        </label>
+                                        <div class="relative">
+                                            <input x-model="configForm.azure_openai_api_key"
+                                                   :type="showAzureOpenAiKey ? 'text' : 'password'"
+                                                   placeholder="Enter Azure OpenAI API key"
+                                                   class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                            <button type="button" @click="showAzureOpenAiKey = !showAzureOpenAiKey"
+                                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                                <i :class="showAzureOpenAiKey ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Deployment Name
+                                        </label>
+                                        <input x-model="configForm.azure_openai_deployment_name"
+                                               type="text"
+                                               placeholder="gpt-35-turbo"
+                                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Your Azure OpenAI deployment name</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            API Version
+                                        </label>
+                                        <select x-model="configForm.azure_openai_api_version"
+                                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                            <option value="2024-02-15-preview">2024-02-15-preview</option>
+                                            <option value="2023-12-01-preview">2023-12-01-preview</option>
+                                            <option value="2023-10-01-preview">2023-10-01-preview</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1313,8 +1394,13 @@
                     jira_username: '',
                     jira_token: '',
                     jira_project_key: '',
+                    ai_service_provider: 'OPENAI',
                     openai_api_key: '',
                     openai_model: 'gpt-4',
+                    azure_openai_endpoint: '',
+                    azure_openai_api_key: '',
+                    azure_openai_deployment_name: '',
+                    azure_openai_api_version: '2024-02-15-preview',
                     requirement_type: 'Epic',
                     story_extraction_type: 'User Story',
                     test_case_extraction_type: 'Issue',
@@ -1325,6 +1411,7 @@
                 // Form state
                 showAdoPat: false,
                 showOpenAiKey: false,
+                showAzureOpenAiKey: false,
                 showJiraToken: false,
 
                 savingConfig: false,

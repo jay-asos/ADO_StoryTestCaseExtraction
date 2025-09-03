@@ -3,23 +3,32 @@ import re
 import time
 import logging
 from typing import List
-from openai import OpenAI
-from openai import RateLimitError
 
 from config.settings import Settings
 from src.models import Requirement, StoryExtractionResult, UserStory
 from src.models_enhanced import EnhancedUserStory
 from src.enhanced_story_creator import EnhancedStoryCreator
+from src.ai_client import get_ai_client
 
 class StoryExtractor:
     """AI-powered extractor that analyzes requirements and creates enhanced user stories"""
     
     def __init__(self):
         Settings.validate()
-        self.client = OpenAI(api_key=Settings.OPENAI_API_KEY)
+        self.ai_client = get_ai_client()
         self.story_creator = EnhancedStoryCreator()
         self.logger = logging.getLogger("StoryExtractor")
         self.logger.setLevel(logging.DEBUG)
+        
+        # Log which AI service is being used
+        ai_provider = getattr(Settings, 'AI_SERVICE_PROVIDER', 'OPENAI')
+        self.logger.info(f"🤖 StoryExtractor: Initialized with AI provider '{ai_provider}'")
+        if ai_provider == 'AZURE_OPENAI':
+            deployment = getattr(Settings, 'AZURE_OPENAI_DEPLOYMENT_NAME', 'Unknown')
+            self.logger.info(f"🔷 StoryExtractor: Using Azure OpenAI deployment '{deployment}'")
+        else:
+            model = getattr(Settings, 'OPENAI_MODEL', 'Unknown')
+            self.logger.info(f"🔶 StoryExtractor: Using OpenAI model '{model}'")
     
     def extract_stories(self, requirement: Requirement, existing_stories: List[dict] = None) -> StoryExtractionResult:
         """Extract enhanced user stories from a requirement using AI, avoiding duplicates"""
@@ -71,99 +80,85 @@ class StoryExtractor:
             )
     
     def _analyze_requirement_with_ai(self, requirement: Requirement) -> List[EnhancedUserStory]:
-        """Use OpenAI to analyze requirement and extract enhanced user stories with retry logic"""
+        """Use AI to analyze requirement and extract enhanced user stories"""
         
         prompt = self._build_extraction_prompt(requirement)
-        retries = Settings.OPENAI_MAX_RETRIES
-        delay = Settings.OPENAI_RETRY_DELAY
         
-        for i in range(retries):
-            try:
-                response = self.client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": """You are an expert business analyst specialized in breaking down requirements into user stories. 
-                            You should extract actionable user stories from requirements, ensuring each story follows the standard format:
-                            - Clear, concise heading
-                            - Detailed description following 'As a [user], I want [goal] so that [benefit]' format, including both Technical Context and Business Requirements sections
-                            - Specific, testable acceptance criteria in Given/When/Then format
-                            
-                            Format your description with clear sections:
-                            ```
-                            As a [user], I want [goal] so that [benefit]
-                            
-                            Technical Context:
-                            - Technical requirement 1
-                            - Technical requirement 2
-                            
-                            Business Requirements:
-                            - Business requirement 1
-                            - Business requirement 2
-                            ```
-                            
-                            Format acceptance criteria as an array of strings, each following Given/When/Then format:
-                            ```
-                            Given [initial context/state]
-                            When [action/trigger occurs]
-                            Then [expected outcome]
-                            And [additional outcomes if any]
-                            ```
+        try:
+            # Use the unified AI client for chat completion
+            content = self.ai_client.chat_completion(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """You are an expert business analyst specialized in breaking down requirements into user stories. 
+                        You should extract actionable user stories from requirements, ensuring each story follows the standard format:
+                        - Clear, concise heading
+                        - Detailed description following 'As a [user], I want [goal] so that [benefit]' format, including both Technical Context and Business Requirements sections
+                        - Specific, testable acceptance criteria in Given/When/Then format
+                        
+                        Format your description with clear sections:
+                        ```
+                        As a [user], I want [goal] so that [benefit]
+                        
+                        Technical Context:
+                        - Technical requirement 1
+                        - Technical requirement 2
+                        
+                        Business Requirements:
+                        - Business requirement 1
+                        - Business requirement 2
+                        ```
+                        
+                        Format acceptance criteria as an array of strings, each following Given/When/Then format:
+                        ```
+                        Given [initial context/state]
+                        When [action/trigger occurs]
+                        Then [expected outcome]
+                        And [additional outcomes if any]
+                        ```
 
-                            Example acceptance criteria:
-                            ```
-                            "Given the user is on the login page
-                            When they enter valid credentials and click login
-                            Then they should be redirected to the dashboard
-                            And their username should be displayed in the header"
-                            ```
-                            ```
-                            
-                            Return your response as valid JSON only, with no additional text."""
-                        },
-                        {
-                            "role": "user", 
-                            "content": prompt
-                        }
-                    ],
-                    temperature=0.3,
-                    max_tokens=2000
+                        Example acceptance criteria:
+                        ```
+                        "Given the user is on the login page
+                        When they enter valid credentials and click login
+                        Then they should be redirected to the dashboard
+                        And their username should be displayed in the header"
+                        ```
+                        ```
+                        
+                        Return your response as valid JSON only, with no additional text."""
+                    },
+                    {
+                        "role": "user", 
+                        "content": prompt
+                    }
+                ],
+                temperature=0.3,
+                max_tokens=2000
+            )
+            
+            # Parse JSON response
+            stories_data = json.loads(content)
+            
+            # Convert to EnhancedUserStory objects
+            stories = []
+            for story_data in stories_data.get("stories", []):
+                # Create an enhanced story with complexity analysis
+                story = self.story_creator.create_enhanced_story(
+                    heading=story_data["heading"],
+                    description=story_data["description"],
+                    acceptance_criteria=story_data.get("acceptance_criteria", [])
+                    if isinstance(story_data.get("acceptance_criteria"), list)
+                    else story_data.get("acceptance_criteria", "").split("\n")
                 )
-                
-                content = response.choices[0].message.content.strip()
-                
-                # Parse JSON response
-                stories_data = json.loads(content)
-                
-                # Convert to EnhancedUserStory objects
-                stories = []
-                for story_data in stories_data.get("stories", []):
-                    # Create an enhanced story with complexity analysis
-                    story = self.story_creator.create_enhanced_story(
-                        heading=story_data["heading"],
-                        description=story_data["description"],
-                        acceptance_criteria=story_data.get("acceptance_criteria", [])
-                        if isinstance(story_data.get("acceptance_criteria"), list)
-                        else story_data.get("acceptance_criteria", "").split("\n")
-                    )
-                    stories.append(story)
-                
-                return stories
-                
-            except RateLimitError:
-                if i < retries - 1:
-                    print(f"Rate limit exceeded. Retrying in {delay} seconds...")
-                    time.sleep(delay)
-                    delay *= 2  # Exponential backoff
-                else:
-                    raise Exception("Rate limit still exceeded after multiple retries.")
-            except json.JSONDecodeError as e:
-                raise Exception(f"Failed to parse AI response as JSON: {str(e)}")
-            except Exception as e:
-                raise Exception(f"AI analysis failed: {str(e)}")
-        
-        return []
+                stories.append(story)
+            
+            return stories
+            
+        except json.JSONDecodeError as e:
+            raise Exception(f"Failed to parse AI response as JSON: {str(e)}")
+        except Exception as e:
+            raise Exception(f"AI analysis failed: {str(e)}")
     
     def _build_extraction_prompt(self, requirement: Requirement) -> str:
         """Build the prompt for AI analysis"""

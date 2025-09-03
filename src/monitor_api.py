@@ -538,8 +538,13 @@ class MonitorAPI:
                     'jira_base_url': getattr(self.settings, 'JIRA_BASE_URL', ''),
                     'jira_username': getattr(self.settings, 'JIRA_USERNAME', ''),
                     'jira_project_key': getattr(self.settings, 'JIRA_PROJECT_KEY', ''),
+                    'ai_service_provider': getattr(self.settings, 'AI_SERVICE_PROVIDER', 'OPENAI'),
                     'openai_api_key': '***hidden***',  # Don't expose the actual API key
                     'openai_model': self.settings.OPENAI_MODEL,
+                    'azure_openai_endpoint': getattr(self.settings, 'AZURE_OPENAI_ENDPOINT', ''),
+                    'azure_openai_api_key': '***hidden***',  # Don't expose the actual API key
+                    'azure_openai_deployment_name': getattr(self.settings, 'AZURE_OPENAI_DEPLOYMENT_NAME', ''),
+                    'azure_openai_api_version': getattr(self.settings, 'AZURE_OPENAI_API_VERSION', '2024-02-15-preview'),
                     'openai_max_retries': self.settings.OPENAI_MAX_RETRIES,
                     'openai_retry_delay': self.settings.OPENAI_RETRY_DELAY,
                     'requirement_type': self.settings.REQUIREMENT_TYPE,
@@ -601,25 +606,63 @@ class MonitorAPI:
 
                 # Save configuration to file
                 try:
+                    self.logger.info(f"💾 Dashboard Config Save: Starting configuration update from dashboard")
+                    self.logger.info(f"💾 Dashboard Config Save: Received {len(data)} configuration parameters")
+                    
                     # Dictionary mapping config keys to their environment variable names
                     config_mapping = {
                         'ado_organization': 'ADO_ORGANIZATION',
                         'ado_project': 'ADO_PROJECT',
                         'ado_pat': 'ADO_PAT',
+                        'jira_base_url': 'JIRA_BASE_URL',
+                        'jira_username': 'JIRA_USERNAME',
+                        'jira_token': 'JIRA_TOKEN',
+                        'jira_project_key': 'JIRA_PROJECT_KEY',
+                        'ai_service_provider': 'AI_SERVICE_PROVIDER',
+                        'openai_api_key': 'OPENAI_API_KEY',
+                        'openai_model': 'OPENAI_MODEL',
+                        'azure_openai_endpoint': 'AZURE_OPENAI_ENDPOINT',
+                        'azure_openai_api_key': 'AZURE_OPENAI_API_KEY',
+                        'azure_openai_deployment_name': 'AZURE_OPENAI_DEPLOYMENT_NAME',
+                        'azure_openai_api_version': 'AZURE_OPENAI_API_VERSION',
                         'story_extraction_type': 'ADO_STORY_EXTRACTION_TYPE',
                         'test_case_extraction_type': 'ADO_TEST_CASE_EXTRACTION_TYPE',
                         'auto_test_case_extraction': 'ADO_AUTO_TEST_CASE_EXTRACTION',
-                        'openai_model': 'OPENAI_MODEL',
                         'openai_max_retries': 'OPENAI_MAX_RETRIES',
                         'openai_retry_delay': 'OPENAI_RETRY_DELAY',
                         'requirement_type': 'ADO_REQUIREMENT_TYPE',
                         'user_story_type': 'ADO_USER_STORY_TYPE'
                     }
 
+                    # Log AI service provider changes
+                    if 'ai_service_provider' in data:
+                        current_provider = getattr(self.settings, 'AI_SERVICE_PROVIDER', 'OPENAI')
+                        new_provider = data['ai_service_provider']
+                        if current_provider != new_provider:
+                            self.logger.info(f"🔄 Dashboard Config Save: AI Service Provider changing from '{current_provider}' to '{new_provider}'")
+                        else:
+                            self.logger.info(f"🔍 Dashboard Config Save: AI Service Provider remains '{new_provider}'")
+
                     # Process each config setting
                     for config_key, env_var in config_mapping.items():
                         if config_key in data:
                             value = data[config_key]
+                            
+                            # Log sensitive configuration updates (without showing values)
+                            if config_key == 'ai_service_provider':
+                                self.logger.info(f"💾 Dashboard Config Save: Updating {config_key} = {value}")
+                            elif config_key in ['azure_openai_endpoint', 'azure_openai_deployment_name', 'azure_openai_api_version']:
+                                if value:
+                                    self.logger.info(f"💾 Dashboard Config Save: Updating Azure OpenAI {config_key} = {value}")
+                                else:
+                                    self.logger.debug(f"💾 Dashboard Config Save: {config_key} is empty")
+                            elif config_key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token']:
+                                if value:
+                                    self.logger.info(f"💾 Dashboard Config Save: Updating {config_key} = ***hidden***")
+                                else:
+                                    self.logger.debug(f"💾 Dashboard Config Save: {config_key} is empty (skipping)")
+                            else:
+                                self.logger.debug(f"💾 Dashboard Config Save: Updating {config_key} = {value}")
                             
                             # Handle boolean values
                             if config_key == 'auto_test_case_extraction':
@@ -628,7 +671,8 @@ class MonitorAPI:
                             elif config_key in ['openai_max_retries', 'openai_retry_delay']:
                                 value = str(value)
                             # Skip empty sensitive values to prevent accidental clearing
-                            elif config_key in ['ado_pat'] and not value:
+                            elif config_key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token'] and not value:
+                                self.logger.debug(f"💾 Dashboard Config Save: Skipping empty sensitive value for {config_key}")
                                 continue
                             else:
                                 value = str(value)
@@ -641,6 +685,22 @@ class MonitorAPI:
 
                     # Reload all settings
                     Settings.reload_config()
+                    
+                    # Log the current AI service configuration after reload
+                    current_ai_provider = getattr(Settings, 'AI_SERVICE_PROVIDER', 'OPENAI')
+                    self.logger.info(f"✅ Dashboard Config Save: Configuration reload completed")
+                    self.logger.info(f"🤖 Dashboard Config Save: Active AI Service Provider = '{current_ai_provider}'")
+                    
+                    if current_ai_provider == 'AZURE_OPENAI':
+                        endpoint = getattr(Settings, 'AZURE_OPENAI_ENDPOINT', 'Not configured')
+                        deployment = getattr(Settings, 'AZURE_OPENAI_DEPLOYMENT_NAME', 'Not configured')
+                        api_version = getattr(Settings, 'AZURE_OPENAI_API_VERSION', 'Not configured')
+                        self.logger.info(f"🔷 Dashboard Config Save: Azure OpenAI Endpoint = {endpoint}")
+                        self.logger.info(f"🔷 Dashboard Config Save: Azure OpenAI Deployment = {deployment}")
+                        self.logger.info(f"🔷 Dashboard Config Save: Azure OpenAI API Version = {api_version}")
+                    else:
+                        openai_model = getattr(Settings, 'OPENAI_MODEL', 'Not configured')
+                        self.logger.info(f"🔶 Dashboard Config Save: OpenAI Model = {openai_model}")
                     
                     config_data = {
                         'ado_organization': Settings.ADO_ORGANIZATION,
