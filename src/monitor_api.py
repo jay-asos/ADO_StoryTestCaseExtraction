@@ -82,6 +82,31 @@ class MonitorAPI:
         # Setup routes
         self._setup_routes()
 
+    def _get_epic_processing_status(self, epic_state, story_count: int) -> str:
+        """Determine the processing status of an epic based on its state"""
+        # Check for errors first
+        if epic_state.consecutive_errors > 0:
+            return "Error"
+        
+        # Check if stories have been extracted
+        stories_extracted = epic_state.stories_extracted if hasattr(epic_state, 'stories_extracted') else False
+        
+        if stories_extracted and story_count > 0:
+            # Epic has been processed and has stories
+            return "Processed"
+        elif stories_extracted and story_count == 0:
+            # Epic was processed but no stories were created (might be an issue)
+            return "Processed (No Stories)"
+        elif epic_state.last_snapshot is not None and epic_state.last_check:
+            # Epic has been seen before but stories haven't been extracted yet
+            return "Changed"
+        elif epic_state.last_check is not None:
+            # Epic has been checked but not processed yet
+            return "New"
+        else:
+            # Brand new epic that hasn't been processed
+            return "New"
+
     def _setup_routes(self):
         """Setup Flask routes"""
 
@@ -433,10 +458,14 @@ class MonitorAPI:
                             except:
                                 pass
 
+                            # Determine processing status based on epic state
+                            processing_status = self._get_epic_processing_status(epic_state, story_count)
+                            
                             epics_data.append({
                                 'id': epic_id,
                                 'title': epic_info.fields.get('System.Title', f'Epic {epic_id}'),
                                 'state': epic_info.fields.get('System.State', 'Unknown'),
+                                'processing_status': processing_status,  # New field for processing status
                                 'story_count': story_count,
                                 'last_changed': epic_state.last_check.isoformat() if epic_state.last_check else None,
                                 'consecutive_errors': epic_state.consecutive_errors,
@@ -446,10 +475,12 @@ class MonitorAPI:
                     except Exception as e:
                         self.logger.error(f"Error fetching details for EPIC {epic_id}: {e}")
                         # Still include the EPIC even if we can't get details
+                        processing_status = self._get_epic_processing_status(epic_state, 0)
                         epics_data.append({
                             'id': epic_id,
                             'title': f'Epic {epic_id}',
                             'state': 'Unknown',
+                            'processing_status': processing_status,  # New field for processing status
                             'story_count': 0,
                             'last_changed': epic_state.last_check.isoformat() if epic_state.last_check else None,
                             'consecutive_errors': epic_state.consecutive_errors,
