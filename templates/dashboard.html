@@ -850,6 +850,44 @@
                         </button>
                     </div>
 
+                    <!-- Global Security Notice -->
+                    <div x-show="shouldHideSensitiveInfo()" class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-shield-alt text-red-500 text-lg mt-0.5"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h4 class="text-sm font-semibold text-red-800 dark:text-red-200 mb-2">
+                                    🔒 Security Protection Active
+                                </h4>
+                                <p class="text-sm text-red-700 dark:text-red-300 mb-2">
+                                    Sensitive information (API keys, tokens, passwords) is hidden until all required configuration fields are completed.
+                                </p>
+                                <div class="text-xs text-red-600 dark:text-red-400">
+                                    <strong>Required fields:</strong>
+                                    <span x-show="configForm.platform_type === 'ADO'">Organization, Project Name, Personal Access Token</span>
+                                    <span x-show="configForm.platform_type === 'JIRA'">Base URL, Username, Project Key, API Token</span>
+                                    • AI Service configuration • All sensitive credentials
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuration Complete Notice -->
+                    <div x-show="!shouldHideSensitiveInfo()" class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                            <div>
+                                <h4 class="text-sm font-semibold text-green-800 dark:text-green-200">
+                                    ✅ Configuration Complete
+                                </h4>
+                                <p class="text-xs text-green-700 dark:text-green-300">
+                                    All required fields are configured. Sensitive information is accessible for editing.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <form @submit.prevent="saveConfiguration()" class="space-y-6">
                         <!-- Platform Selection at Top -->
                         <div>
@@ -928,17 +966,32 @@
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Personal Access Token
                                     </label>
+                                    <!-- Security Warning for incomplete configuration -->
+                                    <div x-show="shouldHideSensitiveInfo()" class="mb-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                        <div class="flex items-center text-yellow-800 dark:text-yellow-200">
+                                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                                            <span class="text-xs">Complete required fields to view/edit sensitive information</span>
+                                        </div>
+                                    </div>
                                     <div class="relative">
                                         <input x-model="configForm.ado_pat"
-                                               :type="showAdoPat ? 'text' : 'password'"
-                                               placeholder="Enter new PAT to update (currently hidden for security)"
-                                               class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                               :type="showAdoPat && !shouldHideSensitiveInfo() ? 'text' : 'password'"
+                                               :placeholder="shouldHideSensitiveInfo() ? 'Complete configuration to edit' : 'Enter new PAT to update (currently hidden for security)'"
+                                               :disabled="shouldHideSensitiveInfo()"
+                                               :value="shouldHideSensitiveInfo() ? '••••••••••••••••' : configForm.ado_pat"
+                                               class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-500">
                                         <button type="button" @click="showAdoPat = !showAdoPat"
-                                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                                            <i :class="showAdoPat ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                                :disabled="shouldHideSensitiveInfo()"
+                                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed">
+                                            <i :class="showAdoPat && !shouldHideSensitiveInfo() ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
                                         </button>
                                     </div>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to keep current token. Only provide if updating.</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        <span x-show="!shouldHideSensitiveInfo()">Leave empty to keep current token. Only provide if updating.</span>
+                                        <span x-show="shouldHideSensitiveInfo()" class="text-yellow-600 dark:text-yellow-400">
+                                            <i class="fas fa-lock mr-1"></i>Protected - Complete required fields first
+                                        </span>
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -971,17 +1024,32 @@
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         API Token
                                     </label>
+                                    <!-- Security Warning for incomplete configuration -->
+                                    <div x-show="shouldHideSensitiveInfo()" class="mb-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                        <div class="flex items-center text-yellow-800 dark:text-yellow-200">
+                                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                                            <span class="text-xs">Complete required fields to view/edit sensitive information</span>
+                                        </div>
+                                    </div>
                                     <div class="relative">
                                         <input x-model="configForm.jira_token"
-                                               :type="showJiraToken ? 'text' : 'password'"
-                                               placeholder="Enter JIRA API token"
-                                               class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                               :type="showJiraToken && !shouldHideSensitiveInfo() ? 'text' : 'password'"
+                                               :placeholder="shouldHideSensitiveInfo() ? 'Complete configuration to edit' : 'Enter JIRA API token'"
+                                               :disabled="shouldHideSensitiveInfo()"
+                                               :value="shouldHideSensitiveInfo() ? '••••••••••••••••' : configForm.jira_token"
+                                               class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-500">
                                         <button type="button" @click="showJiraToken = !showJiraToken"
-                                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                                            <i :class="showJiraToken ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                                :disabled="shouldHideSensitiveInfo()"
+                                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed">
+                                            <i :class="showJiraToken && !shouldHideSensitiveInfo() ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
                                         </button>
                                     </div>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Generate from JIRA Profile > Security > API tokens</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        <span x-show="!shouldHideSensitiveInfo()">Generate from JIRA Profile > Security > API tokens</span>
+                                        <span x-show="shouldHideSensitiveInfo()" class="text-yellow-600 dark:text-yellow-400">
+                                            <i class="fas fa-lock mr-1"></i>Protected - Complete required fields first
+                                        </span>
+                                    </p>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1031,17 +1099,32 @@
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                             API Key
                                         </label>
+                                        <!-- Security Warning for incomplete configuration -->
+                                        <div x-show="shouldHideSensitiveInfo()" class="mb-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                            <div class="flex items-center text-yellow-800 dark:text-yellow-200">
+                                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                                <span class="text-xs">Complete required fields to view/edit sensitive information</span>
+                                            </div>
+                                        </div>
                                         <div class="relative">
                                             <input x-model="configForm.openai_api_key"
-                                                   :type="showOpenAiKey ? 'text' : 'password'"
-                                                   placeholder="Enter new API key to update (currently hidden for security)"
-                                                   class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                   :type="showOpenAiKey && !shouldHideSensitiveInfo() ? 'text' : 'password'"
+                                                   :placeholder="shouldHideSensitiveInfo() ? 'Complete configuration to edit' : 'Enter new API key to update (currently hidden for security)'"
+                                                   :disabled="shouldHideSensitiveInfo()"
+                                                   :value="shouldHideSensitiveInfo() ? '••••••••••••••••' : configForm.openai_api_key"
+                                                   class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-500">
                                             <button type="button" @click="showOpenAiKey = !showOpenAiKey"
-                                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                                                <i :class="showOpenAiKey ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                                    :disabled="shouldHideSensitiveInfo()"
+                                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed">
+                                                <i :class="showOpenAiKey && !shouldHideSensitiveInfo() ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
                                             </button>
                                         </div>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to keep current key. Only provide if updating.</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                            <span x-show="!shouldHideSensitiveInfo()">Leave empty to keep current key. Only provide if updating.</span>
+                                            <span x-show="shouldHideSensitiveInfo()" class="text-yellow-600 dark:text-yellow-400">
+                                                <i class="fas fa-lock mr-1"></i>Protected - Complete required fields first
+                                            </span>
+                                        </p>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1075,16 +1158,32 @@
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                             API Key
                                         </label>
+                                        <!-- Security Warning for incomplete configuration -->
+                                        <div x-show="shouldHideSensitiveInfo()" class="mb-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                            <div class="flex items-center text-yellow-800 dark:text-yellow-200">
+                                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                                <span class="text-xs">Complete required fields to view/edit sensitive information</span>
+                                            </div>
+                                        </div>
                                         <div class="relative">
                                             <input x-model="configForm.azure_openai_api_key"
-                                                   :type="showAzureOpenAiKey ? 'text' : 'password'"
-                                                   placeholder="Enter Azure OpenAI API key"
-                                                   class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                   :type="showAzureOpenAiKey && !shouldHideSensitiveInfo() ? 'text' : 'password'"
+                                                   :placeholder="shouldHideSensitiveInfo() ? 'Complete configuration to edit' : 'Enter Azure OpenAI API key'"
+                                                   :disabled="shouldHideSensitiveInfo()"
+                                                   :value="shouldHideSensitiveInfo() ? '••••••••••••••••' : configForm.azure_openai_api_key"
+                                                   class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-500">
                                             <button type="button" @click="showAzureOpenAiKey = !showAzureOpenAiKey"
-                                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                                                <i :class="showAzureOpenAiKey ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                                    :disabled="shouldHideSensitiveInfo()"
+                                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed">
+                                                <i :class="showAzureOpenAiKey && !shouldHideSensitiveInfo() ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
                                             </button>
                                         </div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                            <span x-show="!shouldHideSensitiveInfo()">Your Azure OpenAI service API key</span>
+                                            <span x-show="shouldHideSensitiveInfo()" class="text-yellow-600 dark:text-yellow-400">
+                                                <i class="fas fa-lock mr-1"></i>Protected - Complete required fields first
+                                            </span>
+                                        </p>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1449,6 +1548,57 @@
                     failed_syncs: 0
                 },
 
+                // Configuration Security Methods
+                get isConfigurationComplete() {
+                    // Check platform-specific required fields
+                    if (this.configForm.platform_type === 'ADO') {
+                        if (!this.configForm.ado_organization || !this.configForm.ado_project) {
+                            return false;
+                        }
+                        // ADO PAT is considered configured if it's hidden (starts with *) or has a value
+                        if (!this.isFieldConfigured('ado_pat')) {
+                            return false;
+                        }
+                    } else if (this.configForm.platform_type === 'JIRA') {
+                        if (!this.configForm.jira_base_url || !this.configForm.jira_username || !this.configForm.jira_project_key) {
+                            return false;
+                        }
+                        // JIRA token is considered configured if it's hidden (starts with *) or has a value
+                        if (!this.isFieldConfigured('jira_token')) {
+                            return false;
+                        }
+                    }
+
+                    // Check AI service configuration
+                    if (this.configForm.ai_service_provider === 'OPENAI') {
+                        if (!this.isFieldConfigured('openai_api_key')) {
+                            return false;
+                        }
+                    } else if (this.configForm.ai_service_provider === 'AZURE_OPENAI') {
+                        if (!this.configForm.azure_openai_endpoint || 
+                            !this.configForm.azure_openai_deployment_name ||
+                            !this.isFieldConfigured('azure_openai_api_key')) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                },
+
+                isFieldConfigured(fieldName) {
+                    const configValue = this.config[fieldName];
+                    const formValue = this.configForm[fieldName];
+                    
+                    // Field is configured if:
+                    // 1. Config has a masked value (starts with ***) indicating it's set
+                    // 2. Or form has a non-empty value being entered
+                    return (configValue && configValue.startsWith('***')) || (formValue && formValue.trim().length > 0);
+                },
+
+                shouldHideSensitiveInfo() {
+                    return !this.isConfigurationComplete;
+                },
+
                 // EPICs
                 epics: [],
                 epicFilter: '',
@@ -1552,6 +1702,13 @@
                             this.configForm.jira_base_url = this.config.jira_base_url || '';
                             this.configForm.jira_username = this.config.jira_username || '';
                             this.configForm.jira_project_key = this.config.jira_project_key || '';
+                            
+                            // Handle JIRA token (sensitive field)
+                            if (this.config.jira_token && this.config.jira_token.startsWith('*')) {
+                                this.configForm.jira_token = '';  // Empty for new input
+                            } else {
+                                this.configForm.jira_token = this.config.jira_token || '';
+                            }
                             
                             // Handle sensitive fields - show placeholder for masked values, empty for editing
                             if (this.config.ado_pat && this.config.ado_pat.startsWith('*')) {

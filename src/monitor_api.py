@@ -568,6 +568,7 @@ class MonitorAPI:
                     'ado_pat': '***hidden***',  # Don't expose the actual PAT
                     'jira_base_url': getattr(self.settings, 'JIRA_BASE_URL', ''),
                     'jira_username': getattr(self.settings, 'JIRA_USERNAME', ''),
+                    'jira_token': '***hidden***',  # Don't expose the actual token
                     'jira_project_key': getattr(self.settings, 'JIRA_PROJECT_KEY', ''),
                     'ai_service_provider': getattr(self.settings, 'AI_SERVICE_PROVIDER', 'OPENAI'),
                     'openai_api_key': '***hidden***',  # Don't expose the actual API key
