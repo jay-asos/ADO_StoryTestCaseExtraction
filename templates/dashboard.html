@@ -1566,6 +1566,20 @@
                                 this.configForm.openai_api_key = this.config.openai_api_key || '';
                             }
                             
+                            // Handle AI service provider - THIS WAS MISSING!
+                            this.configForm.ai_service_provider = this.config.ai_service_provider || 'OPENAI';
+                            
+                            // Handle Azure OpenAI fields
+                            this.configForm.azure_openai_endpoint = this.config.azure_openai_endpoint || '';
+                            this.configForm.azure_openai_deployment_name = this.config.azure_openai_deployment_name || '';
+                            this.configForm.azure_openai_api_version = this.config.azure_openai_api_version || '2024-02-15-preview';
+                            
+                            if (this.config.azure_openai_api_key && this.config.azure_openai_api_key.startsWith('*')) {
+                                this.configForm.azure_openai_api_key = '';  // Empty for new input
+                            } else {
+                                this.configForm.azure_openai_api_key = this.config.azure_openai_api_key || '';
+                            }
+                            
                             // Handle other fields
                             this.configForm.openai_model = this.config.openai_model || 'gpt-4';
                             this.configForm.requirement_type = this.config.requirement_type || 'Epic';
