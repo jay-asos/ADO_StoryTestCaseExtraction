@@ -4,6 +4,7 @@
 .env.development
 .env.test
 .env.production
+.env.docker
 
 # Python
 __pycache__/

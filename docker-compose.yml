@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  ado-story-extractor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ado-story-extractor
+    ports:
+      - "5001:5001"
+    environment:
+      # Platform Configuration
+      - PLATFORM_TYPE=${PLATFORM_TYPE:-ADO}
+      
+      # Azure DevOps Configuration
+      - ADO_ORGANIZATION=${ADO_ORGANIZATION}
+      - ADO_PROJECT=${ADO_PROJECT}
+      - ADO_PAT=${ADO_PAT}
+      
+      # JIRA Configuration (if using JIRA)
+      - JIRA_BASE_URL=${JIRA_BASE_URL}
+      - JIRA_USERNAME=${JIRA_USERNAME}
+      - JIRA_TOKEN=${JIRA_TOKEN}
+      - JIRA_PROJECT_KEY=${JIRA_PROJECT_KEY}
+      
+      # AI Service Configuration
+      - AI_SERVICE_PROVIDER=${AI_SERVICE_PROVIDER:-OPENAI}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4}
+      
+      # Azure OpenAI Configuration (if using Azure OpenAI)
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}
+      
+      # Application Configuration
+      - REQUIREMENT_TYPE=${REQUIREMENT_TYPE:-Epic}
+      - STORY_EXTRACTION_TYPE=${STORY_EXTRACTION_TYPE:-User Story}
+      - ADO_TEST_CASE_EXTRACTION_TYPE=${TEST_CASE_EXTRACTION_TYPE:-Test Case}
+      - ADO_AUTO_TEST_CASE_EXTRACTION=${AUTO_TEST_CASE_EXTRACTION:-false}
+      
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      
+    volumes:
+      # Persist logs and snapshots
+      - ./logs:/app/logs
+      - ./snapshots:/app/snapshots
+      - ./monitor_config.json:/app/monitor_config.json
+      - ./monitor_state.json:/app/monitor_state.json
+      - ./enhanced_monitor_state.json:/app/enhanced_monitor_state.json
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  default:
+    name: ado-story-extractor-network

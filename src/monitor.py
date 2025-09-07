@@ -31,6 +31,7 @@ class MonitorConfig:
     snapshot_directory: str = "snapshots"
     log_level: str = "INFO"
     epic_ids: List[str] = None
+    excluded_epic_ids: List[str] = None  # List of Epic IDs to exclude from automatic monitoring
     auto_sync: bool = True
     auto_extract_new_epics: bool = True  # New option to control story extraction for new epics
     notification_webhook: Optional[str] = None
@@ -202,11 +203,27 @@ class EpicChangeMonitor:
             self.logger.error(f"Failed to add EPIC {epic_id} to monitoring: {e}")
             return False
     
-    def remove_epic(self, epic_id: str) -> bool:
-        """Remove an EPIC from monitoring"""
+    def remove_epic(self, epic_id: str, exclude_from_auto_monitoring: bool = True) -> bool:
+        """Remove an EPIC from monitoring and optionally add to exclusion list"""
         if epic_id in self.monitored_epics:
             del self.monitored_epics[epic_id]
             self.logger.info(f"Removed EPIC {epic_id} from monitoring")
+            
+            # Add to exclusion list to prevent automatic re-addition
+            if exclude_from_auto_monitoring:
+                if not self.config.excluded_epic_ids:
+                    self.config.excluded_epic_ids = []
+                
+                if epic_id not in self.config.excluded_epic_ids:
+                    self.config.excluded_epic_ids.append(epic_id)
+                    self.logger.info(f"Added EPIC {epic_id} to exclusion list")
+                    
+                    # Save the updated configuration
+                    try:
+                        save_config_to_file(self.config, "monitor_config.json")
+                    except Exception as e:
+                        self.logger.error(f"Failed to save configuration after excluding EPIC {epic_id}: {e}")
+            
             return True
         return False
     
@@ -512,6 +529,11 @@ class EpicChangeMonitor:
         current_epic_ids = set(self.monitored_epics.keys())
         new_epics = all_epic_ids - current_epic_ids
         for epic_id in new_epics:
+            # Check if Epic is in the exclusion list
+            if self.config.excluded_epic_ids and epic_id in self.config.excluded_epic_ids:
+                self.logger.info(f"Auto-detect: EPIC {epic_id} is in exclusion list, skipping automatic monitoring")
+                continue
+                
             self.logger.info(f"Auto-detect: Adding new Epic {epic_id} to monitoring.")
             added_successfully = self.add_epic(epic_id)
             
@@ -739,6 +761,11 @@ class EpicChangeMonitor:
             newly_added = 0
             for epic_id in all_epic_ids:
                 if epic_id not in self.monitored_epics:
+                    # Check if Epic is in the exclusion list
+                    if self.config.excluded_epic_ids and epic_id in self.config.excluded_epic_ids:
+                        self.logger.info(f"EPIC {epic_id} is in exclusion list, skipping automatic monitoring")
+                        continue
+                    
                     self.logger.info(f"Adding existing EPIC {epic_id} to monitoring")
                     if self.add_epic(epic_id):
                         newly_added += 1
@@ -917,6 +944,18 @@ def load_config_from_file(config_file: str) -> MonitorConfig:
     except Exception as e:
         logging.error(f"Failed to load config from {config_file}: {e}")
         return MonitorConfig()
+
+
+def save_config_to_file(config: MonitorConfig, config_file: str):
+    """Save monitor configuration to JSON file"""
+    try:
+        # Convert dataclass to dict, excluding None values for cleaner JSON
+        config_dict = {k: v for k, v in asdict(config).items() if v is not None}
+        with open(config_file, 'w') as f:
+            json.dump(config_dict, f, indent=2)
+        logging.info(f"Configuration saved to {config_file}")
+    except Exception as e:
+        logging.error(f"Failed to save config to {config_file}: {e}")
 
 
 def create_default_config(config_file: str = "monitor_config.json"):

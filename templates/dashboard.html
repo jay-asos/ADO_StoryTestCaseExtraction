@@ -1252,20 +1252,6 @@
                                     </select>
                                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Work item type for extracted test cases</p>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                        Auto Test Case Extraction
-                                    </label>
-                                    <div class="flex items-center space-x-2">
-                                        <label class="inline-flex items-center cursor-pointer">
-                                            <input type="checkbox"
-                                                   x-model="configForm.auto_test_case_extraction"
-                                                   class="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                                            <span class="ml-2 text-gray-700 dark:text-gray-300">Enable automatic test case extraction</span>
-                                        </label>
-                                    </div>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">When enabled, test cases will be automatically extracted when new stories are created</p>
-                                </div>
                             </div>
                         </div>
 
@@ -1742,7 +1728,6 @@
                             this.configForm.requirement_type = this.config.requirement_type || 'Epic';
                             this.configForm.story_extraction_type = this.config.story_extraction_type || 'User Story';
                             this.configForm.test_case_extraction_type = this.config.test_case_extraction_type || 'Issue';
-                            this.configForm.auto_test_case_extraction = this.config.auto_test_case_extraction !== undefined ? this.config.auto_test_case_extraction : true;
                             this.configForm.check_interval_minutes = this.config.check_interval_minutes || 30;
                             this.configForm.epic_ids = this.config.epic_ids ? this.config.epic_ids.join(',') : '';
                             

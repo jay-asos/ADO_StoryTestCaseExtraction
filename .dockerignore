@@ -5,6 +5,7 @@
 # Docker
 Dockerfile
 docker-compose.yml
+docker-compose.prod.yml
 .dockerignore
 
 # Python
@@ -18,6 +19,56 @@ pip-log.txt
 pip-delete-this-directory.txt
 .venv
 .env
+
+# Development files
+.pytest_cache
+.idea
+.vscode
+*.log
+*.log.old
+
+# Documentation and non-essential files
+*.md
+!DOCKER_GUIDE.md
+!README.md
+
+# Test files and development scripts
+test_*.py
+tests/
+demo_*.py
+debug_*.py
+working_*.py
+verify_*.py
+simple_*.py
+
+# Temporary and runtime files
+monitor_state.json
+enhanced_monitor_state.json
+logs/
+snapshots/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+
+# IDE files
+*.iml
+.idea/
+
+# Backup files
+*.bak
+*.orig
+
+# Azure and deployment files
+.azure/
+azure-pipelines.yml
 
 # IDE
 .vscode

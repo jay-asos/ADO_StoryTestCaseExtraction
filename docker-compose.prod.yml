@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  ado-story-extractor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ado-story-extractor-prod
+    ports:
+      - "80:5001"  # Map to port 80 for production
+    environment:
+      # Platform Configuration
+      - PLATFORM_TYPE=${PLATFORM_TYPE:-ADO}
+      
+      # Azure DevOps Configuration
+      - ADO_ORGANIZATION=${ADO_ORGANIZATION}
+      - ADO_PROJECT=${ADO_PROJECT}
+      - ADO_PAT=${ADO_PAT}
+      
+      # JIRA Configuration (if using JIRA)
+      - JIRA_BASE_URL=${JIRA_BASE_URL}
+      - JIRA_USERNAME=${JIRA_USERNAME}
+      - JIRA_TOKEN=${JIRA_TOKEN}
+      - JIRA_PROJECT_KEY=${JIRA_PROJECT_KEY}
+      
+      # AI Service Configuration
+      - AI_SERVICE_PROVIDER=${AI_SERVICE_PROVIDER:-OPENAI}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4}
+      
+      # Azure OpenAI Configuration (if using Azure OpenAI)
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}
+      
+      # Application Configuration
+      - REQUIREMENT_TYPE=${REQUIREMENT_TYPE:-Epic}
+      - STORY_EXTRACTION_TYPE=${STORY_EXTRACTION_TYPE:-User Story}
+      - TEST_CASE_EXTRACTION_TYPE=${TEST_CASE_EXTRACTION_TYPE:-Test Case}
+      - AUTO_TEST_CASE_EXTRACTION=${AUTO_TEST_CASE_EXTRACTION:-false}
+      
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      
+    volumes:
+      # Use named volumes for production persistence
+      - app_logs:/app/logs
+      - app_snapshots:/app/snapshots
+      - app_config:/app/config
+      # Mount configuration files if they exist
+      - ./monitor_config.json:/app/monitor_config.json:ro
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Optional: Add nginx reverse proxy for production
+  nginx:
+    image: nginx:alpine
+    container_name: ado-story-extractor-nginx
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      # Add SSL certificates here if needed
+      # - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - ado-story-extractor
+    restart: unless-stopped
+    profiles:
+      - production  # Only start with --profile production
+
+volumes:
+  app_logs:
+    driver: local
+  app_snapshots:
+    driver: local
+  app_config:
+    driver: local
+
+networks:
+  default:
+    name: ado-story-extractor-network

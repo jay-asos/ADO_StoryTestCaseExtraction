@@ -75,17 +75,19 @@ Analyze the complexity and provide:
    - Testing complexity
 4. Provide rationale for the assessment
 
-Return as JSON using this exact format (do not modify the structure):
-{{"overall_complexity": "Low|Medium|High",
-  "story_points": "number (1-13)",
+Return ONLY valid JSON using this exact format (no additional text):
+{{
+  "overall_complexity": "Low",
+  "story_points": "3",
   "factors": [
-    {{"name": "factor name",
-      "assessment": "Low|Medium|High",
-      "impact": "detailed impact description"
+    {{
+      "name": "Technical Complexity",
+      "assessment": "Medium",
+      "impact": "Requires API integration and error handling"
     }}
   ],
-  "rationale": "explanation of complexity assessment"}}
-"""
+  "rationale": "Story involves moderate technical implementation with standard API patterns"
+}}"""
 
         try:
             logger.info("Sending request to AI service")
@@ -96,8 +98,10 @@ Return as JSON using this exact format (do not modify the structure):
                         "content": """You are an expert software project analyst specializing in story complexity assessment.
 Your task is to analyze user stories and output valid JSON that conforms to the specified structure.
 - Use only 'Low', 'Medium', or 'High' for complexity assessments
-- Story points should be a number between 1 and 13
-- Always ensure your output is valid JSON"""
+- Story points should be a number between 1 and 13 from the Fibonacci sequence
+- Always ensure your output is valid JSON
+- Return ONLY the JSON response, no additional text or explanations
+- Do not wrap the JSON in markdown code blocks"""
                     },
                     {
                         "role": "user",
@@ -106,15 +110,35 @@ Your task is to analyze user stories and output valid JSON that conforms to the 
                 ],
                 temperature=0.3  # Lower temperature for more consistent JSON output
             )
-            logger.info("Got response from OpenAI", extra={'response': result})
+            
+            # Log the raw AI response for debugging
+            logger.debug(f"Raw AI response for complexity: {repr(result)}")
+            logger.debug(f"AI response length: {len(result) if result else 0} characters")
+            
+            # Check if response is empty
+            if not result or not result.strip():
+                raise Exception("AI returned empty response for complexity analysis")
+            
+            # Clean up the response (remove markdown code blocks if present)
+            result = result.strip()
+            if result.startswith('```json'):
+                result = result[7:]  # Remove ```json
+            if result.startswith('```'):
+                result = result[3:]   # Remove ```
+            if result.endswith('```'):
+                result = result[:-3]  # Remove trailing ```
+            result = result.strip()
+            
+            logger.debug(f"Cleaned AI response for complexity: {repr(result[:200])}...")
             
             # Parse the response
             try:
                 # First try to parse as valid JSON
                 analysis_dict = json.loads(result)
-                logger.info("Successfully parsed response as JSON")
+                logger.info("Successfully parsed complexity response as JSON")
             except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse OpenAI response: {str(e)}")
+                logger.error(f"JSON parse error for complexity: {e}")
+                logger.error(f"Failed to parse complexity response: {result[:500]}...")  # Log first 500 chars
                 raise ValueError(f"Invalid JSON response from OpenAI: {str(e)}")
                 
         except Exception as e:

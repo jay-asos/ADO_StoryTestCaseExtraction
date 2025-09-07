@@ -137,8 +137,33 @@ class StoryExtractor:
                 max_tokens=2000
             )
             
+            # Log the raw AI response for debugging
+            self.logger.debug(f"Raw AI response: {repr(content)}")
+            self.logger.debug(f"AI response length: {len(content)} characters")
+            
+            # Check if response is empty
+            if not content or not content.strip():
+                raise Exception("AI returned empty response")
+            
+            # Clean up the response (remove markdown code blocks if present)
+            content = content.strip()
+            if content.startswith('```json'):
+                content = content[7:]  # Remove ```json
+            if content.startswith('```'):
+                content = content[3:]   # Remove ```
+            if content.endswith('```'):
+                content = content[:-3]  # Remove trailing ```
+            content = content.strip()
+            
+            self.logger.debug(f"Cleaned AI response: {repr(content[:200])}...")
+            
             # Parse JSON response
-            stories_data = json.loads(content)
+            try:
+                stories_data = json.loads(content)
+            except json.JSONDecodeError as e:
+                self.logger.error(f"JSON parse error: {e}")
+                self.logger.error(f"Failed to parse response: {content[:500]}...")  # Log first 500 chars
+                raise Exception(f"Failed to parse AI response as JSON: {str(e)}")
             
             # Convert to EnhancedUserStory objects
             stories = []

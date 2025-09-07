@@ -128,7 +128,9 @@ class MonitorAPI:
         @self.app.route('/api/config', methods=['POST'])
         def update_config():
             """Update the monitor configuration"""
+            self.logger.info("[CONFIG-API] 🔄 Configuration update request received")
             if not self.monitor:
+                self.logger.error("[CONFIG-API] ❌ Monitor not configured")
                 return jsonify({
                     'error': 'Monitor not configured'
                 }), 500
@@ -136,52 +138,86 @@ class MonitorAPI:
             try:
                 config_data = request.get_json()
                 if not config_data:
+                    self.logger.error("[CONFIG-API] ❌ No configuration data provided")
                     return jsonify({
                         'error': 'No configuration data provided'
                     }), 400
 
+                self.logger.info(f"[CONFIG-API] 📥 Received configuration data: {config_data}")
+
                 # Get current config from monitor
                 current_config = self.monitor.config.__dict__.copy()
+                self.logger.info(f"[CONFIG-API] 📋 Current configuration: {current_config}")
+
+                # Track changes for logging
+                changes_made = {}
 
                 # Update with new values
                 if 'epic_ids' in config_data:
                     # Handle epic_ids specially since they need to be strings
-                    current_config['epic_ids'] = [str(epic_id) for epic_id in config_data['epic_ids']]
+                    old_epic_ids = current_config.get('epic_ids', [])
+                    new_epic_ids = [str(epic_id) for epic_id in config_data['epic_ids']]
+                    current_config['epic_ids'] = new_epic_ids
+                    changes_made['epic_ids'] = {'old': old_epic_ids, 'new': new_epic_ids}
+                    self.logger.info(f"[CONFIG-API] 🔄 Epic IDs changed: {old_epic_ids} → {new_epic_ids}")
                     del config_data['epic_ids']  # Remove from config_data to prevent double processing
                 
+                # Log each configuration change
+                for key, new_value in config_data.items():
+                    old_value = current_config.get(key)
+                    if old_value != new_value:
+                        changes_made[key] = {'old': old_value, 'new': new_value}
+                        self.logger.info(f"[CONFIG-API] 🔄 {key} changed: {old_value} → {new_value}")
+                    else:
+                        self.logger.info(f"[CONFIG-API] ➡️ {key} unchanged: {new_value}")
+
                 current_config.update(config_data)
                 
                 # Create new config object
+                self.logger.info("[CONFIG-API] 🔨 Creating new MonitorConfig object")
                 new_config = MonitorConfig(**current_config)
                 
                 # Save the updated config to file
+                self.logger.info("[CONFIG-API] 💾 Saving updated config to monitor_config.json")
                 with open('monitor_config.json', 'w') as f:
                     json.dump(current_config, f, indent=4)
+                self.logger.info("[CONFIG-API] ✅ Configuration file saved successfully")
                 
                 # Update monitor with new config
+                self.logger.info("[CONFIG-API] 🔄 Updating monitor with new configuration")
                 self.monitor.config = new_config
                 
                 # If epic_ids were updated, refresh the monitored epics
-                if 'epic_ids' in config_data:
+                if 'epic_ids' in changes_made:
+                    self.logger.info("[CONFIG-API] 🎯 Refreshing monitored epics based on updated epic_ids")
                     current_epics = set(self.monitor.monitored_epics.keys())
-                    new_epics = set(str(epic_id) for epic_id in config_data['epic_ids'])
+                    new_epics = set(str(epic_id) for epic_id in changes_made['epic_ids']['new'])
                     
                     # Remove epics that are no longer in the config
-                    for epic_id in current_epics - new_epics:
+                    removed_epics = current_epics - new_epics
+                    for epic_id in removed_epics:
                         if epic_id in self.monitor.monitored_epics:
+                            self.logger.info(f"[CONFIG-API] ➖ Removing epic {epic_id} from monitoring")
                             del self.monitor.monitored_epics[epic_id]
                     
                     # Add new epics
-                    for epic_id in new_epics - current_epics:
+                    added_epics = new_epics - current_epics
+                    for epic_id in added_epics:
+                        self.logger.info(f"[CONFIG-API] ➕ Adding epic {epic_id} to monitoring")
                         self.monitor.add_epic(str(epic_id))
+
+                self.logger.info(f"[CONFIG-API] ✅ Configuration update completed successfully. Changes made: {len(changes_made)} items")
+                for key, change in changes_made.items():
+                    self.logger.info(f"[CONFIG-API] 📋 Final {key}: {change['new']}")
                 
                 return jsonify({
                     'status': 'success',
                     'message': 'Configuration updated successfully',
-                    'config': current_config
+                    'config': current_config,
+                    'changes_made': changes_made
                 })
             except Exception as e:
-                self.logger.error(f"Error updating configuration: {str(e)}")
+                self.logger.error(f"[CONFIG-API] ❌ Error updating configuration: {str(e)}")
                 return jsonify({
                     'error': f'Failed to update configuration: {str(e)}'
                 }), 500
@@ -603,43 +639,76 @@ class MonitorAPI:
         @self.app.route('/api/config', methods=['PUT'])
         def update_config_put():
             """Update configuration using PUT method"""
+            self.logger.info("[CONFIG-PUT] 🔄 Configuration PUT request received")
             try:
                 if not self.monitor:
+                    self.logger.error("[CONFIG-PUT] ❌ Monitor not configured")
                     return jsonify({'error': 'Monitor not configured'}), 400
 
                 data = request.get_json()
                 if not data:
+                    self.logger.error("[CONFIG-PUT] ❌ No configuration data provided")
                     return jsonify({'error': 'No configuration data provided'}), 400
 
+                self.logger.info(f"[CONFIG-PUT] 📥 Received {len(data)} configuration parameters")
+                # Log each parameter (hide sensitive values)
+                for key, value in data.items():
+                    if key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token']:
+                        self.logger.info(f"[CONFIG-PUT] 📋 {key}: ***hidden***")
+                    else:
+                        self.logger.info(f"[CONFIG-PUT] 📋 {key}: {value}")
+
                 # Update monitor configuration
+                config_changes = {}
                 if 'check_interval_minutes' in data:
-                    self.monitor.config.poll_interval_seconds = data['check_interval_minutes'] * 60
+                    old_interval = self.monitor.config.poll_interval_seconds
+                    new_interval = data['check_interval_minutes'] * 60
+                    self.monitor.config.poll_interval_seconds = new_interval
+                    config_changes['poll_interval_seconds'] = {'old': old_interval, 'new': new_interval}
+                    self.logger.info(f"[CONFIG-PUT] 🔄 Poll interval changed: {old_interval}s → {new_interval}s")
 
                 if 'auto_sync' in data:
-                    self.monitor.config.auto_sync = bool(data['auto_sync'])
+                    old_auto_sync = getattr(self.monitor.config, 'auto_sync', True)
+                    new_auto_sync = bool(data['auto_sync'])
+                    self.monitor.config.auto_sync = new_auto_sync
+                    config_changes['auto_sync'] = {'old': old_auto_sync, 'new': new_auto_sync}
+                    self.logger.info(f"[CONFIG-PUT] 🔄 Auto sync changed: {old_auto_sync} → {new_auto_sync}")
 
                 if 'auto_extract_new_epics' in data:
-                    self.monitor.config.auto_extract_new_epics = bool(data['auto_extract_new_epics'])
+                    old_auto_extract = getattr(self.monitor.config, 'auto_extract_new_epics', True)
+                    new_auto_extract = bool(data['auto_extract_new_epics'])
+                    self.monitor.config.auto_extract_new_epics = new_auto_extract
+                    config_changes['auto_extract_new_epics'] = {'old': old_auto_extract, 'new': new_auto_extract}
+                    self.logger.info(f"[CONFIG-PUT] 🔄 Auto extract new epics changed: {old_auto_extract} → {new_auto_extract}")
 
                 # Handle EPIC IDs
                 if 'epic_ids' in data and isinstance(data['epic_ids'], list):
+                    self.logger.info("[CONFIG-PUT] 🎯 Processing epic IDs update")
                     # Clear current EPICs and add new ones
                     current_epics = set(self.monitor.monitored_epics.keys())
                     new_epics = set(str(eid) for eid in data['epic_ids'])
                     
+                    self.logger.info(f"[CONFIG-PUT] 📊 Current epics: {current_epics}")
+                    self.logger.info(f"[CONFIG-PUT] 📊 New epics: {new_epics}")
+                    
                     # Remove EPICs not in the new list
-                    for epic_id in current_epics - new_epics:
+                    removed_epics = current_epics - new_epics
+                    for epic_id in removed_epics:
                         if epic_id in self.monitor.monitored_epics:
+                            self.logger.info(f"[CONFIG-PUT] ➖ Removing epic {epic_id} from monitoring")
                             del self.monitor.monitored_epics[epic_id]
                     
                     # Add new EPICs
-                    for epic_id in new_epics - current_epics:
+                    added_epics = new_epics - current_epics
+                    for epic_id in added_epics:
+                        self.logger.info(f"[CONFIG-PUT] ➕ Adding epic {epic_id} to monitoring")
                         self.monitor.add_epic(str(epic_id))
+                    
+                    config_changes['epic_ids'] = {'old': list(current_epics), 'new': list(new_epics)}
 
                 # Save configuration to file
                 try:
-                    self.logger.info(f"💾 Dashboard Config Save: Starting configuration update from dashboard")
-                    self.logger.info(f"💾 Dashboard Config Save: Received {len(data)} configuration parameters")
+                    self.logger.info(f"[CONFIG-PUT] 💾 Starting environment file updates for {len(data)} parameters")
                     
                     # Dictionary mapping config keys to their environment variable names
                     config_mapping = {
@@ -671,68 +740,85 @@ class MonitorAPI:
                         current_provider = getattr(self.settings, 'AI_SERVICE_PROVIDER', 'OPENAI')
                         new_provider = data['ai_service_provider']
                         if current_provider != new_provider:
-                            self.logger.info(f"🔄 Dashboard Config Save: AI Service Provider changing from '{current_provider}' to '{new_provider}'")
+                            self.logger.info(f"[CONFIG-PUT] 🔄 AI Service Provider changing: '{current_provider}' → '{new_provider}'")
                         else:
-                            self.logger.info(f"🔍 Dashboard Config Save: AI Service Provider remains '{new_provider}'")
+                            self.logger.info(f"[CONFIG-PUT] ✅ AI Service Provider unchanged: '{new_provider}'")
+
+                    # Track environment variable updates
+                    env_updates = {}
 
                     # Process each config setting
                     for config_key, env_var in config_mapping.items():
                         if config_key in data:
                             value = data[config_key]
                             
-                            # Log sensitive configuration updates (without showing values)
-                            if config_key == 'ai_service_provider':
-                                self.logger.info(f"💾 Dashboard Config Save: Updating {config_key} = {value}")
-                            elif config_key in ['azure_openai_endpoint', 'azure_openai_deployment_name', 'azure_openai_api_version']:
+                            # Get current value for comparison
+                            current_value = getattr(self.settings, env_var.replace('ADO_', '').replace('OPENAI_', '').replace('AZURE_OPENAI_', ''), None)
+                            
+                            # Log configuration updates (with proper masking for sensitive data)
+                            if config_key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token']:
                                 if value:
-                                    self.logger.info(f"💾 Dashboard Config Save: Updating Azure OpenAI {config_key} = {value}")
+                                    self.logger.info(f"[CONFIG-PUT] 🔒 Updating {config_key} (env: {env_var}) = ***hidden***")
                                 else:
-                                    self.logger.debug(f"💾 Dashboard Config Save: {config_key} is empty")
-                            elif config_key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token']:
-                                if value:
-                                    self.logger.info(f"💾 Dashboard Config Save: Updating {config_key} = ***hidden***")
-                                else:
-                                    self.logger.debug(f"💾 Dashboard Config Save: {config_key} is empty (skipping)")
+                                    self.logger.info(f"[CONFIG-PUT] ⚠️ Skipping empty sensitive value for {config_key}")
+                                    continue
                             else:
-                                self.logger.debug(f"💾 Dashboard Config Save: Updating {config_key} = {value}")
+                                self.logger.info(f"[CONFIG-PUT] 🔄 Updating {config_key} (env: {env_var}): '{current_value}' → '{value}'")
                             
                             # Handle boolean values
                             if config_key == 'auto_test_case_extraction':
+                                old_value = value
                                 value = str(str(value).lower() == 'true').lower()
+                                self.logger.info(f"[CONFIG-PUT] 🔢 Boolean conversion for {config_key}: {old_value} → {value}")
                             # Handle numeric values
                             elif config_key in ['openai_max_retries', 'openai_retry_delay']:
+                                old_value = value
                                 value = str(value)
+                                self.logger.info(f"[CONFIG-PUT] 🔢 String conversion for {config_key}: {old_value} → {value}")
                             # Skip empty sensitive values to prevent accidental clearing
                             elif config_key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token'] and not value:
-                                self.logger.debug(f"💾 Dashboard Config Save: Skipping empty sensitive value for {config_key}")
+                                self.logger.warning(f"[CONFIG-PUT] ⚠️ Skipping empty sensitive value for {config_key}")
                                 continue
                             else:
                                 value = str(value)
 
+                            # Track the update
+                            env_updates[env_var] = {'old': current_value, 'new': value}
+
                             # Update .env file
+                            self.logger.info(f"[CONFIG-PUT] 📝 Updating .env file: {env_var}={value if config_key not in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token'] else '***hidden***'}")
                             self._update_env_file(env_var, value)
+                            
                             # Update environment variable
                             os.environ[env_var] = value
-                            self.logger.info(f"Updated {config_key} to: {value}")
+                            self.logger.info(f"[CONFIG-PUT] 🌐 Environment variable updated: {env_var}")
+
+                    self.logger.info(f"[CONFIG-PUT] ✅ Completed {len(env_updates)} environment variable updates")
 
                     # Reload all settings
+                    self.logger.info("[CONFIG-PUT] 🔄 Reloading Settings configuration...")
                     Settings.reload_config()
+                    self.logger.info("[CONFIG-PUT] ✅ Settings configuration reloaded")
                     
                     # Log the current AI service configuration after reload
                     current_ai_provider = getattr(Settings, 'AI_SERVICE_PROVIDER', 'OPENAI')
-                    self.logger.info(f"✅ Dashboard Config Save: Configuration reload completed")
-                    self.logger.info(f"🤖 Dashboard Config Save: Active AI Service Provider = '{current_ai_provider}'")
+                    self.logger.info(f"[CONFIG-PUT] 🤖 Active AI Service Provider: '{current_ai_provider}'")
                     
                     if current_ai_provider == 'AZURE_OPENAI':
                         endpoint = getattr(Settings, 'AZURE_OPENAI_ENDPOINT', 'Not configured')
                         deployment = getattr(Settings, 'AZURE_OPENAI_DEPLOYMENT_NAME', 'Not configured')
                         api_version = getattr(Settings, 'AZURE_OPENAI_API_VERSION', 'Not configured')
-                        self.logger.info(f"🔷 Dashboard Config Save: Azure OpenAI Endpoint = {endpoint}")
-                        self.logger.info(f"🔷 Dashboard Config Save: Azure OpenAI Deployment = {deployment}")
-                        self.logger.info(f"🔷 Dashboard Config Save: Azure OpenAI API Version = {api_version}")
+                        self.logger.info(f"[CONFIG-PUT] 🔷 Azure OpenAI Endpoint: {endpoint}")
+                        self.logger.info(f"[CONFIG-PUT] 🔷 Azure OpenAI Deployment: {deployment}")
+                        self.logger.info(f"[CONFIG-PUT] 🔷 Azure OpenAI API Version: {api_version}")
                     else:
                         openai_model = getattr(Settings, 'OPENAI_MODEL', 'Not configured')
-                        self.logger.info(f"🔶 Dashboard Config Save: OpenAI Model = {openai_model}")
+                        self.logger.info(f"[CONFIG-PUT] 🔶 OpenAI Model: {openai_model}")
+                    
+                    # Log key application settings
+                    self.logger.info(f"[CONFIG-PUT] 📋 Story Extraction Type: {Settings.STORY_EXTRACTION_TYPE}")
+                    self.logger.info(f"[CONFIG-PUT] 🧪 Test Case Extraction Type: {Settings.TEST_CASE_EXTRACTION_TYPE}")
+                    self.logger.info(f"[CONFIG-PUT] ⚙️ Auto Test Case Extraction: {Settings.AUTO_TEST_CASE_EXTRACTION}")
                     
                     config_data = {
                         'ado_organization': Settings.ADO_ORGANIZATION,
@@ -756,16 +842,30 @@ class MonitorAPI:
                         'retry_delay_seconds': getattr(self.monitor.config, 'retry_delay_seconds', 60)
                     }
                     
+                    self.logger.info("[CONFIG-PUT] 💾 Saving configuration to monitor_config.json")
                     with open('monitor_config.json', 'w') as f:
                         json.dump(config_data, f, indent=2)
+                    self.logger.info("[CONFIG-PUT] ✅ Configuration file saved successfully")
                     
-                    self.logger.info("Configuration updated successfully")
+                    self.logger.info("[CONFIG-PUT] ✅ Configuration update completed successfully")
                 except Exception as e:
-                    self.logger.error(f"Failed to save configuration: {e}")
+                    self.logger.error(f"[CONFIG-PUT] ❌ Failed to save configuration: {e}")
+                    return jsonify({'error': f'Failed to save configuration: {str(e)}'}), 500
+
+                self.logger.info(f"[CONFIG-PUT] 📊 Configuration update summary:")
+                self.logger.info(f"[CONFIG-PUT] 📊 - Monitor config changes: {len(config_changes)}")
+                if 'env_updates' in locals():
+                    self.logger.info(f"[CONFIG-PUT] 📊 - Environment updates: {len(env_updates)}")
+                    for env_var, change in env_updates.items():
+                        if env_var in ['ADO_PAT', 'OPENAI_API_KEY', 'AZURE_OPENAI_API_KEY', 'JIRA_TOKEN']:
+                            self.logger.info(f"[CONFIG-PUT] 📊   {env_var}: ***hidden***")
+                        else:
+                            self.logger.info(f"[CONFIG-PUT] 📊   {env_var}: {change['old']} → {change['new']}")
 
                 return jsonify({
                     'success': True,
-                    'message': 'Configuration updated successfully'
+                    'message': 'Configuration updated successfully',
+                    'changes_made': {**config_changes, **({f"env_{k}": v for k, v in env_updates.items()} if 'env_updates' in locals() else {})}
                 })
 
             except Exception as e:
