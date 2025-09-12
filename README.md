@@ -1,4 +1,6 @@
-# ADO Story Extractor 🚀
+# STAX (Story & Test Automation eXtractor) 🚀
+
+> Formerly: ADO Story Extractor / ADO Story Test Case Extraction. The project has been rebranded to **STAX** to better reflect its broader, platform-agnostic focus on Story & Test Automation.
 
 > **Default Port**: This application runs on port **5001** by default. Replace `{port}` in commands below with `5001` unless you've configured a different port.
 
@@ -629,7 +631,7 @@ Advanced state management prevents duplicate story extraction:
 
 ## Daemon Enhancement: Smart State Management and Snapshot Handling
 
-The Enhanced ADO Story Extractor daemon now includes sophisticated state management that prevents duplicate story extractions and ensures reliable operation across restarts.
+The Enhanced STAX daemon now includes sophisticated state management that prevents duplicate story extractions and ensures reliable operation across restarts.
 
 ### 🆕 **LATEST**: Persistent State Management
 - **Snapshot on Shutdown**: Automatically saves all epic snapshots before stopping

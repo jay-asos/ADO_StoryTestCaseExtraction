@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  ado-story-extractor:
+  stax-app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ado-story-extractor
+    container_name: stax-app
     ports:
       - "5001:5001"
     environment:
@@ -62,4 +62,4 @@ services:
 
 networks:
   default:
-    name: ado-story-extractor-network
+    name: stax-network

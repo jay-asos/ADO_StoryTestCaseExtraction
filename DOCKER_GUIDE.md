@@ -282,4 +282,4 @@ docker-compose exec ado-story-extractor find /app/logs -name "*.log" -mtime +7 -
 5. **Updates**: Implement CI/CD for automated deployments
 6. **Scaling**: Consider horizontal scaling for high loads
 
-This containerized setup provides a robust, scalable, and secure deployment option for the ADO Story Test Case Extraction application.
+This containerized setup provides a robust, scalable, and secure deployment option for the **STAX** application (formerly ADO Story Test Case Extraction).

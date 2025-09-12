@@ -1,10 +1,10 @@
-# ADO Story Test Case Extraction - Docker Management
+# STAX (Story & Test Automation eXtractor) - Docker Management
 
 .PHONY: help build run dev prod stop clean logs shell test
 
 # Default target
 help:
-	@echo "ADO Story Test Case Extraction - Docker Commands"
+	@echo "STAX (Story & Test Automation eXtractor) - Docker Commands"
 	@echo ""
 	@echo "Development:"
 	@echo "  build      Build Docker image"
@@ -29,7 +29,7 @@ help:
 # Build Docker image
 build:
 	@echo "Building Docker image..."
-	docker build -t ado-story-extractor .
+	docker build -t stax-app .
 
 # Run development environment
 dev: build
@@ -45,7 +45,7 @@ dev-bg: build
 run: build
 	@echo "Running standalone container..."
 	docker run -d \
-		--name ado-story-extractor \
+		--name stax-app \
 		-p 5001:5001 \
 		--env-file .env \
 		-v $(PWD)/logs:/app/logs \
@@ -67,24 +67,24 @@ stop:
 	@echo "Stopping containers..."
 	docker-compose down
 	docker-compose -f docker-compose.prod.yml down
-	docker stop ado-story-extractor 2>/dev/null || true
+	docker stop stax-app 2>/dev/null || true
 
 # Clean up containers and images
 clean: stop
 	@echo "Cleaning up containers and images..."
-	docker rm ado-story-extractor 2>/dev/null || true
-	docker rmi ado-story-extractor 2>/dev/null || true
+	docker rm stax-app 2>/dev/null || true
+	docker rmi stax-app 2>/dev/null || true
 	docker system prune -f
 
 # View container logs
 logs:
 	@echo "Viewing container logs..."
-	docker-compose logs -f ado-story-extractor
+	docker-compose logs -f stax-app
 
 # Open shell in running container
 shell:
 	@echo "Opening shell in container..."
-	docker exec -it ado-story-extractor /bin/bash
+	docker exec -it stax-app /bin/bash
 
 # Run tests in container
 test: build

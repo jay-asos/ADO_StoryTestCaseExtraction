@@ -51,9 +51,9 @@ EXPOSE 5001
 LABEL security.scan="enabled" \
       security.non-root="true" \
       security.distroless="true" \
-      maintainer="ADO Story Extractor Team" \
-      version="1.0.0" \
-      description="ADO Story Test Case Extraction Application - Distroless"
+    maintainer="STAX Team" \
+    version="1.0.0" \
+    description="STAX (Story & Test Automation eXtractor) Application - Distroless"
 
 # Simple health check without curl dependency
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

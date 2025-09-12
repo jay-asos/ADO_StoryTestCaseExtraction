@@ -7,9 +7,9 @@ LABEL security.scan="enabled" \
       security.non-root="true" \
       security.minimal-base="true" \
       security.no-shell="true" \
-      maintainer="ADO Story Extractor Team" \
-      version="2.0.0" \
-      description="Zero-vulnerability ADO Story Test Case Extraction Application"
+    maintainer="STAX Team" \
+    version="2.0.0" \
+    description="Zero-vulnerability STAX (Story & Test Automation eXtractor) Application"
 
 # Security: Update all packages to latest versions
 RUN apk update && \

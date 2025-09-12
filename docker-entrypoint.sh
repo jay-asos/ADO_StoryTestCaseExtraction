@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# ADO Story Test Case Extraction - Docker Container Startup Script
+# STAX (Story & Test Automation eXtractor) - Docker Container Startup Script
 
 set -e
 
-echo "[DOCKER-STARTUP] Starting ADO Story Test Case Extraction application..."
+echo "[DOCKER-STARTUP] Starting STAX (Story & Test Automation eXtractor) application..."
 
 # Create necessary directories
 mkdir -p logs snapshots

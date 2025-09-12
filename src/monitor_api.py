@@ -1,6 +1,7 @@
 """
-Monitor API for the ADO Story Extractor Dashboard
+Monitor API for the STAX Dashboard (Story & Test Automation eXtractor)
 Provides REST API endpoints for the web dashboard
+Former name: ADO Story Extractor
 """
 
 import json
@@ -121,7 +122,7 @@ class MonitorAPI:
             return jsonify({
                 'status': 'healthy',
                 'timestamp': datetime.now().isoformat(),
-                'service': 'ADO Story Extractor API'
+                'service': 'STAX API'
             })
 
         # Config endpoints

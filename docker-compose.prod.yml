@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  ado-story-extractor:
+  stax-app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ado-story-extractor-prod
+    container_name: stax-app-prod
     ports:
       - "80:5001"  # Map to port 80 for production
     environment:
@@ -73,7 +73,7 @@ services:
   # Optional: Add nginx reverse proxy for production
   nginx:
     image: nginx:alpine
-    container_name: ado-story-extractor-nginx
+    container_name: stax-nginx
     ports:
       - "443:443"
       - "80:80"
@@ -82,7 +82,7 @@ services:
       # Add SSL certificates here if needed
       # - ./ssl:/etc/nginx/ssl:ro
     depends_on:
-      - ado-story-extractor
+      - stax-app
     restart: unless-stopped
     profiles:
       - production  # Only start with --profile production
@@ -97,4 +97,4 @@ volumes:
 
 networks:
   default:
-    name: ado-story-extractor-network
+    name: stax-network
