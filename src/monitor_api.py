@@ -1,6 +1,7 @@
 """
-Monitor API for the ADO Story Extractor Dashboard
+Monitor API for the STAX Dashboard (Story & Test Automation eXtractor)
 Provides REST API endpoints for the web dashboard
+Former name: ADO Story Extractor
 """
 
 import json
@@ -23,7 +24,7 @@ class MonitorAPI:
 
     def _update_env_file(self, key: str, value: str):
         """Update a value in the .env file"""
-        env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+        env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', '.env')
         if not os.path.exists(env_path):
             return
             
@@ -66,7 +67,7 @@ class MonitorAPI:
         self.monitor_thread = None
         if config is None:
             try:
-                with open('monitor_config.json', 'r') as f:
+                with open('config/monitor_config.json', 'r') as f:
                     config_data = json.load(f)
                     # Remove ADO settings that belong to Settings class
                     monitor_settings = {k: v for k, v in config_data.items() 
@@ -126,7 +127,7 @@ class MonitorAPI:
             return jsonify({
                 'status': 'healthy',
                 'timestamp': datetime.now().isoformat(),
-                'service': 'ADO Story Extractor API'
+                'service': 'STAX API'
             })
 
         # Config endpoints
@@ -183,8 +184,8 @@ class MonitorAPI:
                 new_config = MonitorConfig(**current_config)
                 
                 # Save the updated config to file
-                self.logger.info("[CONFIG-API] 💾 Saving updated config to monitor_config.json")
-                with open('monitor_config.json', 'w') as f:
+                self.logger.info("[CONFIG-API] 💾 Saving updated config to config/monitor_config.json")
+                with open('config/monitor_config.json', 'w') as f:
                     json.dump(current_config, f, indent=4)
                 self.logger.info("[CONFIG-API] ✅ Configuration file saved successfully")
                 
@@ -847,8 +848,8 @@ class MonitorAPI:
                         'retry_delay_seconds': getattr(self.monitor.config, 'retry_delay_seconds', 60)
                     }
                     
-                    self.logger.info("[CONFIG-PUT] 💾 Saving configuration to monitor_config.json")
-                    with open('monitor_config.json', 'w') as f:
+                    self.logger.info("[CONFIG-PUT] 💾 Saving configuration to config/monitor_config.json")
+                    with open('config/monitor_config.json', 'w') as f:
                         json.dump(config_data, f, indent=2)
                     self.logger.info("[CONFIG-PUT] ✅ Configuration file saved successfully")
                     

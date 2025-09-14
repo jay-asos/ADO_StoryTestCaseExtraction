@@ -32,7 +32,7 @@ class MonitorAPI:
         self.logger = logging.getLogger(__name__)
         
         # Initialize environment file manager
-        self.env_manager = EnvFileManager('.env')
+        self.env_manager = EnvFileManager('config/.env')
 
         # Create monitor instance, loading config from file if none provided
         self.monitor = None
@@ -376,7 +376,7 @@ class MonitorAPI:
                     # Add file path information
                     'env_file_path': self.env_manager.get_env_file_path(),
                     'env_file_directory': self.env_manager.get_env_file_directory(),
-                    'env_file_writable': is_env_file_writable('.env')
+                    'env_file_writable': is_env_file_writable('config/.env')
                 }
 
                 return jsonify(config_dict)
@@ -478,7 +478,7 @@ class MonitorAPI:
                         'retry_delay_seconds': getattr(self.monitor.config, 'retry_delay_seconds', 60)
                     }
                     
-                    with open('monitor_config.json', 'w') as f:
+                    with open('config/monitor_config.json', 'w') as f:
                         json.dump(config_data, f, indent=2)
                     
                     self.logger.info("Monitor configuration updated successfully")

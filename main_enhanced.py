@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Enhanced CLI for ADO Story Extractor with EPIC change detection and synchronization.
+Enhanced CLI for STAX (Story & Test Automation eXtractor) with EPIC change detection and synchronization.
+Former name: ADO Story Extractor
 """
 
 import argparse
@@ -150,7 +151,7 @@ def test_cases_command(agent: StoryExtractionAgent, story_id: str, upload: bool 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Enhanced ADO Story Extractor with EPIC synchronization",
+    description="Enhanced STAX (Story & Test Automation eXtractor) with EPIC synchronization",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -217,7 +218,7 @@ Examples:
         return
     
     print_separator()
-    print("🚀 Enhanced ADO Story Extractor")
+    print("🚀 Enhanced STAX (Story & Test Automation eXtractor)")
     print_separator()
     
     # Initialize agent

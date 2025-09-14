@@ -4,7 +4,7 @@ To interact with the API, you first need to start the server. The server can be 
 
 ### Starting the Server
 1. Open your terminal.
-2. Navigate to the directory where the ADO Story Extractor is located.
+2. Navigate to the directory where **STAX** (Story & Test Automation eXtractor) is located. (Formerly ADO Story Extractor)
 3. Run the command to start the server:
    ```bash
    python monitor_daemon.py --mode api --host 0.0.0.0 --port 5001
@@ -17,7 +17,7 @@ To interact with the API, you first need to start the server. The server can be 
 
 # API Documentation
 
-The ADO Story Extractor provides a REST API for controlling and interacting with the EPIC change monitoring service. Below is a comprehensive description of the available endpoints and their usage.
+STAX provides a REST API for controlling and interacting with the EPIC change monitoring service. (Formerly branded as ADO Story Extractor.) Below is a comprehensive description of the available endpoints and their usage.
 
 ---
 

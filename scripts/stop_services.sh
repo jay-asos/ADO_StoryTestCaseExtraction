@@ -1,5 +1,13 @@
 #!/bin/zsh
 
+# STAX Services Stop Script
+# Updated for new folder structure
+
+# Set up environment - navigate to project root
+SCRIPT_DIR=$(dirname "$0")
+PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
+cd "$PROJECT_ROOT"
+
 # Function to check if a port is in use
 check_port() {
     nc -z localhost $1 >/dev/null 2>&1
