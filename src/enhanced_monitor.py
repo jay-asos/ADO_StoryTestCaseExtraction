@@ -624,7 +624,7 @@ def create_enhanced_monitor(
     """Factory function to create an enhanced monitor with sensible defaults"""
     
     # Load base configuration
-    base_config_file = kwargs.get('config_file', 'monitor_config.json')
+    base_config_file = kwargs.get('config_file', 'config/monitor_config.json')
     try:
         with open(base_config_file, 'r') as f:
             base_config_data = json.load(f)

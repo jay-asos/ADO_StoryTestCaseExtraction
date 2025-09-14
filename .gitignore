@@ -5,6 +5,8 @@
 .env.test
 .env.production
 .env.docker
+config/.env
+config/.env.old
 
 # Python
 __pycache__/

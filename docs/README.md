@@ -1,220 +1,112 @@
-# STAX - Story and Test Case Extraction Tool# STAX (Story & Test Automation eXtractor) 🚀
+# STAX (Story & Test Automation eXtractor) 🚀
 
+> Formerly: ADO Story Extractor / ADO Story Test Case Extraction. The project has been rebranded to **STAX** to better reflect its broader, platform-agnostic focus on Story & Test Automation.
 
+> **Default Port**: This application runs on port **5001** by default. Replace `{port}` in commands below with `5001` unless you've configured a different port.
 
-A powerful tool for extracting user stories and test cases from Azure DevOps epics using AI.> Formerly: ADO Story Extractor / ADO Story Test Case Extraction. The project has been rebranded to **STAX** to better reflect its broader, platform-agnostic focus on Story & Test Automation.
+## Overview
 
-
-
-## 🚀 Quick Start> **Default Port**: This application runs on port **5001** by default. Replace `{port}` in commands below with `5001` unless you've configured a different port.
-
-
-
-### Using Docker (Recommended)## Overview
-
-```bash
-
-# Start the applicationA **Python-based Azure DevOps (ADO) Story Extractor** that uses AI to automatically extract user stories from requirements/epics and manage them in Azure DevOps. The system provides intelligent monitoring, change detection, and synchronization capabilities with both CLI and API interfaces.
-
-./run.sh
+A **Python-based Azure DevOps (ADO) Story Extractor** that uses AI to automatically extract user stories from requirements/epics and manage them in Azure DevOps. The system provides intelligent monitoring, change detection, and synchronization capabilities with both CLI and API interfaces.
 
 ## 🎯 Key Features
 
-# Or manually from deploy folder
-
-cd deploy- **🌐 Modern Web Dashboard**: Beautiful, responsive interface with dark theme support
-
-docker-compose up --build- **🎯 Selective Test Case Upload**: Individual checkboxes with bulk selection for precise control
-
-```- **⚙️ Dynamic Requirement Types**: Switch between Epic/Feature types on-the-fly via dropdown
-
+- **🌐 Modern Web Dashboard**: Beautiful, responsive interface with dark theme support
+- **🎯 Selective Test Case Upload**: Individual checkboxes with bulk selection for precise control
+- **⚙️ Dynamic Requirement Types**: Switch between Epic/Feature types on-the-fly via dropdown
 - **🤖 Dual AI Provider Support**: Choose between OpenAI and Azure OpenAI Service with seamless switching
-
-### Development Mode- **🔷 Azure OpenAI Integration**: Enterprise-grade AI with enhanced security, compliance, and regional control
-
-```bash- **🔄 Change Detection**: Monitors epics using content hashing for automatic updates
-
-# Install dependencies- **⚡ Automatic Synchronization**: Creates, updates, and manages user stories in ADO
-
-pip install -r requirements.txt- **📸 Snapshot Tracking**: Maintains history for change detection and rollback
-
+- **🔷 Azure OpenAI Integration**: Enterprise-grade AI with enhanced security, compliance, and regional control
+- **🔄 Change Detection**: Monitors epics using content hashing for automatic updates
+- **⚡ Automatic Synchronization**: Creates, updates, and manages user stories in ADO
+- **📸 Snapshot Tracking**: Maintains history for change detection and rollback
 - **🛡️ Persistent State Management**: Tracks processed epics to prevent duplicate extractions
-
-# Run the application- **💾 Graceful Shutdown**: Saves snapshots before shutdown and resumes from last state
-
-python main.py- **🧠 Smart Epic Processing**: Skips unchanged epics and prevents re-extraction of existing stories
-
-```- **🔌 REST API**: Provides API endpoints for integration with other systems
-
+- **💾 Graceful Shutdown**: Saves snapshots before shutdown and resumes from last state
+- **🧠 Smart Epic Processing**: Skips unchanged epics and prevents re-extraction of existing stories
+- **🔌 REST API**: Provides API endpoints for integration with other systems
 - **⌨️ Comprehensive CLI**: Multiple interfaces for different use cases
-
-## 📁 Project Structure- **🔄 Background Monitoring**: Continuous epic monitoring with configurable polling
-
+- **🔄 Background Monitoring**: Continuous epic monitoring with configurable polling
 - **🚀 Production Ready**: Comprehensive logging, error handling, and retry mechanisms
+- **🎨 Real-time UI**: Live updates, toast notifications, and intuitive controls
+- **🔒 Safe Log Management**: UI-only log clearing that preserves files and snapshots
+- **⚙️ Configurable Work Item Types**: Choose between User Story/Task for stories and Issue/Test Case for test cases
+- **🔍 Test Case Extraction**: Built-in AI-powered test case generation from user stories
+- **🚫 Duplicate Prevention**: Intelligent duplicate detection prevents story re-creation
+- **🎛️ Dashboard Configuration**: Complete configuration management through the web interface
+- **🔐 Smart Button Controls**: Auto-disable upload buttons after successful operations
+- **📊 Enhanced Logging**: Comprehensive logging for AI service calls and configuration changes
 
-```- **🎨 Real-time UI**: Live updates, toast notifications, and intuitive controls
+## 📁 Project Structure
 
-├── 📁 config/           # Configuration files- **🔒 Safe Log Management**: UI-only log clearing that preserves files and snapshots
-
-│   ├── .env*            # Environment configurations- **⚙️ Configurable Work Item Types**: Choose between User Story/Task for stories and Issue/Test Case for test cases
-
-│   ├── monitor_config.json- **🔍 Test Case Extraction**: Built-in AI-powered test case generation from user stories
-
-│   └── *_state.json     # Application state files- **🚫 Duplicate Prevention**: Intelligent duplicate detection prevents story re-creation
-
-├── 📁 deploy/           # Deployment & Docker files- **🎛️ Dashboard Configuration**: Complete configuration management through the web interface
-
-│   ├── Dockerfile*      # Docker configurations- **🔐 Smart Button Controls**: Auto-disable upload buttons after successful operations
-
-│   ├── docker-compose*.yml- **📊 Enhanced Logging**: Comprehensive logging for AI service calls and configuration changes
-
-│   ├── nginx.conf
-
-│   └── azure-pipelines.yml## 📁 Project Structure
-
-├── 📁 docs/             # Documentation
-
-│   ├── README.md        # Main documentation```
-
-│   ├── API_DOCUMENTATION.mdado-story-extractor/
-
-│   ├── DOCKER_GUIDE.md├── src/                    # Core application logic
-
-│   └── *.md             # Other documentation│   ├── agent.py           # Main orchestrator/coordinator
-
-├── 📁 scripts/          # Shell scripts & utilities│   ├── ado_client.py      # Azure DevOps API client
-
-│   ├── start_services.sh│   ├── story_extractor.py # AI-powered story extraction
-
-│   ├── stop_services.sh│   ├── test_case_extractor.py # AI-powered test case extraction
-
-│   └── monitor_daemon.py│   ├── models.py          # Data models (Pydantic)
-
-├── 📁 src/              # Source code│   ├── monitor.py         # Background monitoring service
-
-├── 📁 static/           # Web assets│   └── monitor_api.py     # REST API for monitoring
-
-├── 📁 templates/        # HTML templates├── templates/             # Web dashboard templates
-
-├── 📁 tests/            # Test files│   └── dashboard.html     # Modern web interface with configuration UI
-
-├── 📁 logs/             # Application logs├── static/                # Static assets for web dashboard
-
-├── 📁 snapshots/        # Epic snapshots│   └── styles.css         # Custom CSS styles
-
-├── 📁 backups/          # Backup files├── config/
-
-├── main.py              # Main application│   └── settings.py        # Configuration management with work item types
-
-├── main_enhanced.py     # Enhanced version├── tests/                 # Test suite
-
-├── requirements.txt     # Python dependencies├── snapshots/             # Epic snapshots for change detection
-
-└── requirements_enhanced.txt├── logs/                  # Application logs
-
-```├── monitor_state.json     # Persistent state tracking for processed epics
-
+```
+ado-story-extractor/
+├── src/                    # Core application logic
+│   ├── agent.py           # Main orchestrator/coordinator
+│   ├── ado_client.py      # Azure DevOps API client
+│   ├── story_extractor.py # AI-powered story extraction
+│   ├── test_case_extractor.py # AI-powered test case extraction
+│   ├── models.py          # Data models (Pydantic)
+│   ├── monitor.py         # Background monitoring service
+│   └── monitor_api.py     # REST API for monitoring
+├── templates/             # Web dashboard templates
+│   └── dashboard.html     # Modern web interface with configuration UI
+├── static/                # Static assets for web dashboard
+│   └── styles.css         # Custom CSS styles
+├── config/
+│   └── settings.py        # Configuration management with work item types
+├── tests/                 # Test suite
+├── snapshots/             # Epic snapshots for change detection
+├── logs/                  # Application logs
+├── monitor_state.json     # Persistent state tracking for processed epics
 ├── monitor_config.json    # Monitor configuration settings
-
-## 🔧 Configuration├── main.py               # Basic CLI interface
-
+├── main.py               # Basic CLI interface
 ├── main_enhanced.py      # Enhanced CLI with epic sync
-
-1. Copy environment template:├── monitor_daemon.py     # Monitoring daemon runner
-
-   ```bash└── demo_epic_sync.py     # Demo/showcase script
-
-   cp config/.env.example config/.env```
-
-   ```
+├── monitor_daemon.py     # Monitoring daemon runner
+└── demo_epic_sync.py     # Demo/showcase script
+```
 
 ## 🚀 Quick Start
 
-2. Update your configuration in `config/.env`
-
 ### Prerequisites
 
-3. Configure monitoring in `config/monitor_config.json`
-
 1. **Python 3.8+** installed
-
-## 🌐 Access2. **Azure DevOps** account with appropriate permissions
-
+2. **Azure DevOps** account with appropriate permissions
 3. **AI Service** - Choose one:
+   - **OpenAI API** key for OpenAI service, OR
+   - **Azure OpenAI Service** resource with deployed model
 
-- **Application**: http://localhost:5001   - **OpenAI API** key for OpenAI service, OR
+### Setup
 
-- **Health Check**: http://localhost:5001/api/health   - **Azure OpenAI Service** resource with deployed model
-
-
-
-## 📚 Documentation### Setup
-
-
-
-All documentation is now organized in the `docs/` folder:1. **Clone and Install Dependencies**:
-
-- [API Documentation](docs/API_DOCUMENTATION.md)   ```bash
-
-- [Docker Guide](docs/DOCKER_GUIDE.md)   git clone <your-repo>
-
-- [Security Report](docs/DOCKER_SECURITY_REPORT.md)   cd ado-story-extractor
-
-- [Enhanced Monitor Features](docs/ENHANCED_MONITOR_README.md)   pip install -r requirements.txt
-
+1. **Clone and Install Dependencies**:
+   ```bash
+   git clone <your-repo>
+   cd ado-story-extractor
+   pip install -r requirements.txt
    ```
 
-## 🧪 Testing
-
    **Dependencies include:**
-
-```bash   - `flask` - Web framework for the dashboard
-
-# Run all tests   - `azure-devops` - Azure DevOps integration
-
-pytest tests/   - `openai` - AI-powered story extraction (supports both OpenAI and Azure OpenAI)
-
+   - `flask` - Web framework for the dashboard
+   - `azure-devops` - Azure DevOps integration
+   - `openai` - AI-powered story extraction (supports both OpenAI and Azure OpenAI)
    - `requests` - HTTP client for API calls
-
-# Run specific test   - `pydantic` - Data validation and modeling
-
-pytest tests/test_specific.py   - `pytest` - Testing framework
-
-```
+   - `pydantic` - Data validation and modeling
+   - `pytest` - Testing framework
 
 2. **Configure Environment**:
-
-## 🛠️ Development   ```bash
-
+   ```bash
    cp .env.example .env
+   # Edit .env with your credentials
+   ```
 
-### Local Development   # Edit .env with your credentials
-
-```bash   ```
-
-# Install dependencies
-
-pip install -r requirements.txt   **Required variables (choose AI provider):**
-
+   **Required variables (choose AI provider):**
    
-
-# Run in development mode   For **OpenAI**:
-
-python main.py   ```env
-
-```   ADO_ORGANIZATION=your-organization
-
+   For **OpenAI**:
+   ```env
+   ADO_ORGANIZATION=your-organization
    ADO_PROJECT=your-project
-
-### Production Deployment   ADO_PAT=your-personal-access-token
-
-```bash   AI_SERVICE_PROVIDER=OPENAI
-
-cd deploy   OPENAI_API_KEY=your-openai-api-key
-
-docker-compose -f docker-compose.prod.yml up -d   ```
-
-```   
+   ADO_PAT=your-personal-access-token
+   AI_SERVICE_PROVIDER=OPENAI
+   OPENAI_API_KEY=your-openai-api-key
+   ```
+   
    For **Azure OpenAI Service**:
    ```env
    ADO_ORGANIZATION=your-organization

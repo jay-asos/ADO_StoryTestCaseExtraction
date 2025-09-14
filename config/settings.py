@@ -6,7 +6,10 @@ class Settings:
 
     # Load environment variables
     print("[CONFIG] 🔄 Loading environment variables...")
-    load_dotenv()
+    # Get the directory of this settings.py file (config/) and load .env from there
+    _config_dir = os.path.dirname(__file__)
+    _env_path = os.path.join(_config_dir, '.env')
+    load_dotenv(_env_path)
     print("[CONFIG] ✅ Environment variables loaded successfully")
     
     # Platform selection (ADO or JIRA)
@@ -178,7 +181,10 @@ class Settings:
     def reload_config(cls):
         """Reload configuration from .env file"""
         print("[CONFIG] 🔄 Starting configuration reload...")
-        load_dotenv(override=True)  # Force reload with override
+        # Get the directory of this settings.py file (config/) and load .env from there
+        _config_dir = os.path.dirname(__file__)
+        _env_path = os.path.join(_config_dir, '.env')
+        load_dotenv(_env_path, override=True)  # Force reload with override
         print("[CONFIG] ✅ Environment variables reloaded with override")
         
         # Platform selection

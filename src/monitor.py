@@ -220,7 +220,7 @@ class EpicChangeMonitor:
                     
                     # Save the updated configuration
                     try:
-                        save_config_to_file(self.config, "monitor_config.json")
+                        save_config_to_file(self.config, "config/monitor_config.json")
                     except Exception as e:
                         self.logger.error(f"Failed to save configuration after excluding EPIC {epic_id}: {e}")
             
@@ -958,7 +958,7 @@ def save_config_to_file(config: MonitorConfig, config_file: str):
         logging.error(f"Failed to save config to {config_file}: {e}")
 
 
-def create_default_config(config_file: str = "monitor_config.json"):
+def create_default_config(config_file: str = "config/monitor_config.json"):
     """Create a default configuration file"""
     default_config = MonitorConfig(
         poll_interval_seconds=300,  # 5 minutes

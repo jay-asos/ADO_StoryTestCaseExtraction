@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  stax-app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: stax-app
+    ports:
+      - "5001:5001"
+    # Load environment variables from config folder
+    env_file:
+      - ../config/.env
+    
+    volumes:
+      # Persist logs and snapshots
+      - ../logs:/app/logs
+      - ../snapshots:/app/snapshots
+      - ../config/monitor_config.json:/app/monitor_config.json
+      - ../config/monitor_state.json:/app/monitor_state.json
+      - ../config/enhanced_monitor_state.json:/app/enhanced_monitor_state.json
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  default:
+    name: stax-network

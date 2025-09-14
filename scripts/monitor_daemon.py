@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 
 # Add the project root to Python path
-project_root = Path(__file__).parent
+project_root = Path(__file__).parent.parent  # Go up one level from scripts/ to project root
 sys.path.insert(0, str(project_root))
 
 from src.monitor import EpicChangeMonitor, MonitorConfig, create_default_config, load_config_from_file
@@ -98,7 +98,7 @@ Examples:
     
     parser.add_argument('--mode', choices=['standalone', 'api'], default='standalone',
                        help='Monitoring mode: standalone or with REST API')
-    parser.add_argument('--config', default='monitor_config.json',
+    parser.add_argument('--config', default='config/monitor_config.json',
                        help='Configuration file path')
     parser.add_argument('--create-config', action='store_true',
                        help='Create default configuration file and exit')

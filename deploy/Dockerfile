@@ -62,9 +62,9 @@ COPY --chown=appuser:appgroup . .
 RUN mkdir -p logs snapshots && \
     chown -R appuser:appgroup logs snapshots && \
     chmod 755 logs snapshots && \
-    # Make scripts executable
-    chmod +x docker-entrypoint.sh && \
-    test -f start_services.sh && chmod +x start_services.sh || true
+    # Make scripts executable (docker-entrypoint.sh is now in deploy folder)
+    chmod +x deploy/docker-entrypoint.sh && \
+    test -f scripts/start_services.sh && chmod +x scripts/start_services.sh || true
 
 # Switch to non-root user for runtime security
 USER appuser
@@ -78,4 +78,4 @@ HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 \
 
 # Use dumb-init for proper signal handling and zombie reaping
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD ["/app/docker-entrypoint.sh"]
+CMD ["/app/deploy/docker-entrypoint.sh"]
