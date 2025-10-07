@@ -8,6 +8,21 @@ Get-Process | Where-Object { $_.Path -like '*python*' -and $_.CommandLine -match
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Definition
 Set-Location $SCRIPT_DIR
 
+# Load environment variables from .env file
+if (Test-Path ".env") {
+    Write-Host "📁 Loading environment variables from .env file..."
+    Get-Content ".env" | ForEach-Object {
+        if ($_ -match "^([^#][^=]+)=(.*)$") {
+            $name = $matches[1].Trim()
+            $value = $matches[2].Trim()
+            [Environment]::SetEnvironmentVariable($name, $value, "Process")
+            Write-Host "  ✅ Set $name"
+        }
+    }
+} else {
+    Write-Host "⚠️ No .env file found"
+}
+
 # Ensure logs directory exists
 if (-not (Test-Path -Path "logs")) {
     New-Item -ItemType Directory -Path "logs" | Out-Null
@@ -15,12 +30,16 @@ if (-not (Test-Path -Path "logs")) {
 
 # Export configuration from monitor_config.json to environment
 Write-Host "📝 Exporting configuration to environment..."
-$monitorConfig = Get-Content "monitor_config.json" | ConvertFrom-Json
-$env:ADO_AUTO_TEST_CASE_EXTRACTION = $monitorConfig.auto_test_case_extraction
+try {
+    $monitorConfig = Get-Content "monitor_config.json" | ConvertFrom-Json
+    $env:ADO_AUTO_TEST_CASE_EXTRACTION = $monitorConfig.auto_test_case_extraction
+} catch {
+    Write-Host "⚠️ Could not read monitor_config.json: $($_.Exception.Message)"
+}
 
 # Start the monitor API and dashboard
 Write-Host "🚀 Starting Monitor API and Dashboard..."
-Start-Process -NoNewWindow -FilePath "python" -ArgumentList "monitor_daemon.py", "--mode", "api", "--port", "5001", "--config", "monitor_config.json"
+Start-Process -NoNewWindow -FilePath "python" -ArgumentList "scripts\monitor_daemon.py", "--mode", "api", "--port", "5001", "--config", "monitor_config.json"
 
 Start-Sleep -Seconds 2
 
