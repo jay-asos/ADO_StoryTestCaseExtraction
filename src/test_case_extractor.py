@@ -127,14 +127,27 @@ class TestCaseExtractor:
 
     def _get_system_prompt(self) -> str:
         """Get the system prompt for test case extraction"""
-        return """You are an expert QA engineer specializing in creating comprehensive test cases from user stories.
+        return """You are a senior QA engineer and test architect with expertise in comprehensive test design patterns, risk-based testing, and modern testing methodologies.
 
-Your task is to analyze user stories and generate detailed test cases that cover:
-- Positive test scenarios (happy path)
-- Negative test scenarios (error cases)
-- Edge cases and boundary conditions
-- UI/UX validation where applicable
-- Data validation and business rule testing
+Your task is to analyze user stories and generate strategic, high-value test cases that cover:
+
+**CORE TESTING AREAS:**
+- Positive test scenarios (happy path with realistic user journeys)
+- Negative test scenarios (error handling, invalid inputs, system failures)
+- Edge cases and boundary conditions (limits, thresholds, corner cases)
+- Security testing (authentication, authorization, data protection)
+- Performance considerations (load, responsiveness, resource usage)
+- Accessibility and usability validation
+- Integration points and data flow validation
+- Business rule enforcement and compliance
+
+**TEST DESIGN PRINCIPLES:**
+- Apply risk-based testing (focus on high-impact, high-probability scenarios)
+- Consider user personas and real-world usage patterns
+- Include both functional and non-functional requirements
+- Design for automation potential where applicable
+- Consider cross-browser/platform compatibility when relevant
+- Include data validation at multiple layers (client, server, database)
 
 For each test case, you MUST provide:
 1. A clear, descriptive title that SPECIFICALLY describes what is being tested
@@ -166,19 +179,35 @@ Format your response as JSON with the following structure:
 {
   "test_cases": [
     {
-      "title": "Test case title",
+      "title": "Specific test case title starting with action verb",
       "description": "Brief description of what this test validates",
-      "test_type": "positive|negative|edge_case",
+      "test_type": "positive|negative|edge_case|security|performance|integration",
+      "priority": "Critical|High|Medium|Low",
+      "risk_level": "High|Medium|Low",
+      "user_persona": "Specific user type (e.g., 'Admin User', 'Guest Customer')",
       "steps": [
-        "Step 1: Action to perform",
-        "Step 2: Next action",
-        "Step 3: Verification step"
+        "Step 1: Specific action with clear inputs",
+        "Step 2: Expected system response or next action",
+        "Step 3: Verification step with specific criteria"
       ],
-      "expected_result": "Expected outcome of the test",
-      "prerequisites": "Any setup needed before test execution",
-      "test_data": "Specific data needed for the test"
+      "expected_result": "Clear, measurable expected outcome",
+      "prerequisites": "Specific setup requirements",
+      "test_data": {
+        "valid_inputs": ["example1", "example2"],
+        "invalid_inputs": ["invalid1", "invalid2"],
+        "boundary_values": ["min_value", "max_value"]
+      },
+      "automation_potential": "High|Medium|Low",
+      "estimated_duration": "5 minutes|15 minutes|30 minutes|1 hour",
+      "dependencies": ["Other test cases or system components"],
+      "business_impact": "Revenue|User_Experience|Compliance|Security|Performance"
     }
-  ]
+  ],
+  "coverage_summary": {
+    "functional_coverage": ["area1", "area2"],
+    "risk_coverage": ["high_risk_scenario1", "high_risk_scenario2"],
+    "user_journey_coverage": ["journey1", "journey2"]
+  }
 }
 
 Ensure test cases are practical, executable, and provide good coverage of the functionality."""
@@ -186,7 +215,10 @@ Ensure test cases are practical, executable, and provide good coverage of the fu
     def _build_extraction_prompt(self, user_story: UserStory) -> str:
         """Build the extraction prompt from user story details"""
 
-        prompt = f"""Please generate comprehensive test cases for the following user story:
+        # Analyze the user story for context
+        context_analysis = self._analyze_story_context(user_story)
+        
+        prompt = f"""Please generate comprehensive, high-value test cases for the following user story:
 
 **Story Title:** {user_story.heading}
 
@@ -197,11 +229,145 @@ Ensure test cases are practical, executable, and provide good coverage of the fu
         for i, criteria in enumerate(user_story.acceptance_criteria, 1):
             prompt += f"\n{i}. {criteria}"
 
+        # Add context-specific guidance
+        if context_analysis:
+            prompt += f"\n\n**Context Analysis:**"
+            if context_analysis.get('domain'):
+                prompt += f"\n- Domain: {context_analysis['domain']}"
+            if context_analysis.get('user_types'):
+                prompt += f"\n- User Types: {', '.join(context_analysis['user_types'])}"
+            if context_analysis.get('data_elements'):
+                prompt += f"\n- Key Data Elements: {', '.join(context_analysis['data_elements'])}"
+            if context_analysis.get('integrations'):
+                prompt += f"\n- System Integrations: {', '.join(context_analysis['integrations'])}"
+            if context_analysis.get('security_aspects'):
+                prompt += f"\n- Security Considerations: {', '.join(context_analysis['security_aspects'])}"
+
         prompt += """
 
-Generate test cases that thoroughly validate this user story, including positive scenarios, negative scenarios, and edge cases. Focus on creating practical, executable test cases that a QA engineer could implement."""
+**GENERATE TEST CASES WITH FOCUS ON:**
+1. **Business-Critical Scenarios**: Test cases that validate core business value
+2. **User Journey Coverage**: End-to-end workflows from different user perspectives
+3. **Risk Mitigation**: High-impact failure scenarios and their prevention
+4. **Data Integrity**: Validation of data accuracy, consistency, and security
+5. **Integration Points**: API calls, database operations, third-party services
+6. **Error Recovery**: Graceful handling of errors and system recovery
+7. **Performance Boundaries**: Response times, concurrent users, data volumes
+8. **Compliance & Security**: Authorization, data protection, audit trails
+
+**PRIORITIZE TEST CASES BY:**
+- Business impact (revenue, user experience, compliance)
+- Risk level (probability × impact of failure)
+- Test execution complexity and maintenance cost
+
+Generate practical, executable test cases that a QA engineer can implement effectively."""
 
         return prompt
+
+    def _analyze_story_context(self, user_story: UserStory) -> Dict[str, List[str]]:
+        """Analyze user story to extract testing context"""
+        context = {
+            'domain': self._detect_domain(user_story),
+            'user_types': self._extract_user_types(user_story),
+            'data_elements': self._extract_data_elements(user_story),
+            'integrations': self._extract_integrations(user_story),
+            'security_aspects': self._extract_security_aspects(user_story)
+        }
+        return {k: v for k, v in context.items() if v}
+    
+    def _detect_domain(self, user_story: UserStory) -> str:
+        """Detect the application domain for context-specific testing"""
+        text = f"{user_story.heading} {user_story.description}".lower()
+        
+        domains = {
+            'e-commerce': ['shop', 'cart', 'order', 'payment', 'product', 'checkout', 'purchase'],
+            'banking': ['account', 'transfer', 'balance', 'transaction', 'loan', 'credit'],
+            'healthcare': ['patient', 'medical', 'appointment', 'prescription', 'diagnosis'],
+            'education': ['student', 'course', 'grade', 'assignment', 'enrollment'],
+            'hrms': ['employee', 'payroll', 'leave', 'performance', 'attendance']
+        }
+        
+        for domain, keywords in domains.items():
+            if any(keyword in text for keyword in keywords):
+                return domain
+        return 'general'
+    
+    def _extract_user_types(self, user_story: UserStory) -> List[str]:
+        """Extract different user types mentioned in the story"""
+        import re
+        text = f"{user_story.heading} {user_story.description}"
+        
+        # Common user type patterns
+        patterns = [
+            r'(?:as an?|as a)\s+([a-zA-Z\s]+?)(?:,|\s+I)',
+            r'(?:user|customer|admin|manager|employee|student|patient)\w*',
+            r'(?:logged[\s-]?in|authenticated|authorized)\s+user'
+        ]
+        
+        user_types = set()
+        for pattern in patterns:
+            matches = re.finditer(pattern, text, re.IGNORECASE)
+            for match in matches:
+                user_type = match.group(1) if match.groups() else match.group(0)
+                user_types.add(user_type.strip().lower())
+        
+        return list(user_types)[:3]  # Limit to 3 most relevant
+    
+    def _extract_data_elements(self, user_story: UserStory) -> List[str]:
+        """Extract key data elements that need testing"""
+        import re
+        text = f"{user_story.heading} {user_story.description} {' '.join(user_story.acceptance_criteria)}"
+        
+        # Common data element patterns
+        patterns = [
+            r'\b(?:email|password|username|name|address|phone|date|amount|price|quantity)\b',
+            r'\b(?:id|code|number|reference|token|key)\b',
+            r'\b(?:status|type|category|level|priority)\b'
+        ]
+        
+        data_elements = set()
+        for pattern in patterns:
+            matches = re.finditer(pattern, text, re.IGNORECASE)
+            for match in matches:
+                data_elements.add(match.group(0).lower())
+        
+        return list(data_elements)[:5]  # Limit to 5 most relevant
+    
+    def _extract_integrations(self, user_story: UserStory) -> List[str]:
+        """Extract system integrations mentioned"""
+        import re
+        text = f"{user_story.heading} {user_story.description}"
+        
+        # Integration keywords
+        integration_keywords = [
+            'api', 'service', 'database', 'external', 'third.party', 'integration',
+            'payment.gateway', 'notification', 'email', 'sms', 'webhook'
+        ]
+        
+        integrations = []
+        for keyword in integration_keywords:
+            pattern = keyword.replace('.', r'[\s\-]?')
+            if re.search(pattern, text, re.IGNORECASE):
+                integrations.append(keyword.replace('.', ' '))
+        
+        return integrations[:3]  # Limit to 3 most relevant
+    
+    def _extract_security_aspects(self, user_story: UserStory) -> List[str]:
+        """Extract security-related aspects"""
+        import re
+        text = f"{user_story.heading} {user_story.description}"
+        
+        security_keywords = [
+            'login', 'authentication', 'authorization', 'permission', 'access',
+            'secure', 'encrypt', 'privacy', 'gdpr', 'compliance', 'audit'
+        ]
+        
+        security_aspects = []
+        for keyword in security_keywords:
+            if re.search(rf'\b{keyword}\w*', text, re.IGNORECASE):
+                security_aspects.append(keyword)
+        
+        return security_aspects[:3]  # Limit to 3 most relevant
 
     def _parse_test_cases_response(self, response_content: str) -> List[TestCase]:
         """Parse the AI response into TestCase objects"""
