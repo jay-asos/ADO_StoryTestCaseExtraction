@@ -39,7 +39,8 @@ try {
 
 # Start the monitor API and dashboard
 Write-Host "🚀 Starting Monitor API and Dashboard..."
-Start-Process -NoNewWindow -FilePath "python" -ArgumentList "scripts\monitor_daemon.py", "--mode", "api", "--port", "5001", "--config", "monitor_config.json"
+$pythonPath = "C:\Users\$env:USERNAME\AppData\Local\Programs\Python\Python312\python.exe"
+Start-Process -NoNewWindow -FilePath $pythonPath -ArgumentList "scripts\monitor_daemon.py", "--mode", "api", "--port", "5001", "--config", "monitor_config.json"
 
 Start-Sleep -Seconds 2
 

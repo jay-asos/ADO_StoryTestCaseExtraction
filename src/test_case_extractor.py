@@ -14,14 +14,17 @@ from src.ai_client import get_ai_client
 class TestCaseExtractor:
     """Extracts test cases from user stories using AI"""
 
-    def __init__(self):
+    def __init__(self, use_toon: bool = None):
         self.settings = Settings()
         self.ai_client = get_ai_client()
         self.logger = logging.getLogger(__name__)
+        # Use setting from config if not explicitly provided
+        self.use_toon = use_toon if use_toon is not None else getattr(Settings, 'USE_TOON', True)
         
         # Log which AI service is being used
         ai_provider = getattr(Settings, 'AI_SERVICE_PROVIDER', 'OPENAI')
         self.logger.info(f"🤖 TestCaseExtractor: Initialized with AI provider '{ai_provider}'")
+        self.logger.info(f"📊 TOON Mode: {'Enabled' if self.use_toon else 'Disabled'} (Token Optimization)")
         if ai_provider == 'AZURE_OPENAI':
             deployment = getattr(Settings, 'AZURE_OPENAI_DEPLOYMENT_NAME', 'Unknown')
             self.logger.info(f"🔷 TestCaseExtractor: Using Azure OpenAI deployment '{deployment}'")
@@ -40,9 +43,12 @@ class TestCaseExtractor:
 
             # Call AI service with better error handling
             try:
+                # Use TOON system prompt if enabled for token optimization
+                system_prompt = self._get_system_prompt_toon() if self.use_toon else self._get_system_prompt()
+                
                 response_content = self.ai_client.chat_completion(
                     messages=[
-                        {"role": "system", "content": self._get_system_prompt()},
+                        {"role": "system", "content": system_prompt},
                         {"role": "user", "content": prompt}
                     ],
                     temperature=0.7,
@@ -124,6 +130,63 @@ class TestCaseExtractor:
                 extraction_successful=False,
                 error_message=error_msg
             )
+
+    def _get_system_prompt_toon(self) -> str:
+        """Get the TOON-optimized system prompt for test case extraction (reduced token usage)"""
+        return """QA Expert. Generate test cases using Token Oriented Object Notation (TOON).
+
+**TOON FORMAT:**
+- Use abbrev. for common terms
+- Compact structure
+- Remove redundant words
+- Key fields only
+
+**Abbreviations:**
+TC=TestCase, desc=description, exp=expected, prereq=prerequisites, pos=positive, neg=negative, 
+edge=edge_case, sec=security, perf=performance, steps=test_steps, prio=priority, 
+auth=authentication, val=validation, UI=user_interface, API=application_interface, 
+DB=database, max=maximum, min=minimum, req=required, opt=optional
+
+**Test Types:** pos|neg|edge|sec|perf|integ
+
+**Priorities:** Crit|High|Med|Low
+
+**Coverage Areas:**
+1. Happy path (pos scenarios)
+2. Error handling (neg/edge)
+3. Boundaries (min/max limits)
+4. Security (auth/authz)
+5. Integration points
+6. Data validation
+
+**Output Format (JSON):**
+{
+  "tcs": [
+    {
+      "t": "Action Verb + Specific Target",
+      "desc": "Brief objective",
+      "type": "pos|neg|edge|sec",
+      "prio": "Crit|High|Med|Low",
+      "steps": ["1.Action+input", "2.Verify+criteria"],
+      "exp": "Clear outcome.",
+      "prereq": "Setup needs",
+      "data": {"valid":[],"invalid":[],"boundary":[]},
+      "auto": "High|Med|Low",
+      "time": "5m|15m|30m|1h"
+    }
+  ],
+  "cov": {
+    "func": ["area1","area2"],
+    "risk": ["high_risk1"]
+  }
+}
+
+**Title Rules:**
+- Start: Verify|Test|Check|Validate|Handle|Ensure
+- Be specific
+- No generic titles
+
+Generate practical, executable TCs with good coverage."""
 
     def _get_system_prompt(self) -> str:
         """Get the system prompt for test case extraction"""
@@ -213,8 +276,12 @@ Format your response as JSON with the following structure:
 Ensure test cases are practical, executable, and provide good coverage of the functionality."""
 
     def _build_extraction_prompt(self, user_story: UserStory) -> str:
-        """Build the extraction prompt from user story details"""
+        """Build the extraction prompt from user story details (TOON-optimized if enabled)"""
 
+        if self.use_toon:
+            return self._build_toon_prompt(user_story)
+        
+        # Standard prompt (existing logic)
         # Analyze the user story for context
         context_analysis = self._analyze_story_context(user_story)
         
@@ -262,6 +329,50 @@ Ensure test cases are practical, executable, and provide good coverage of the fu
 
 Generate practical, executable test cases that a QA engineer can implement effectively."""
 
+        return prompt
+
+    def _build_toon_prompt(self, user_story: UserStory) -> str:
+        """Build TOON-optimized prompt (reduced token usage by ~50-60%)"""
+        
+        # Compact context analysis
+        ctx = self._analyze_story_context(user_story)
+        
+        prompt = f"""Gen TCs for story (TOON format):
+
+**Title:** {user_story.heading}
+
+**Desc:** {user_story.description}
+
+**AC:**"""
+        
+        for i, ac in enumerate(user_story.acceptance_criteria, 1):
+            prompt += f"\n{i}. {ac}"
+        
+        # Add compact context if available
+        if ctx:
+            prompt += "\n\n**Ctx:**"
+            if ctx.get('domain'):
+                prompt += f" Dom:{ctx['domain']}"
+            if ctx.get('user_types'):
+                prompt += f" | Users:{','.join(ctx['user_types'][:2])}"
+            if ctx.get('data_elements'):
+                prompt += f" | Data:{','.join(ctx['data_elements'][:3])}"
+            if ctx.get('security_aspects'):
+                prompt += f" | Sec:{','.join(ctx['security_aspects'][:2])}"
+        
+        prompt += """
+
+**Focus:**
+1. Biz-critical scenarios
+2. User journeys (diff personas)
+3. High-risk failures
+4. Data integrity
+5. Integration pts
+6. Error recovery
+7. Perf boundaries
+
+Gen 5-8 high-value TCs covering pos/neg/edge/sec."""
+        
         return prompt
 
     def _analyze_story_context(self, user_story: UserStory) -> Dict[str, List[str]]:
@@ -370,7 +481,7 @@ Generate practical, executable test cases that a QA engineer can implement effec
         return security_aspects[:3]  # Limit to 3 most relevant
 
     def _parse_test_cases_response(self, response_content: str) -> List[TestCase]:
-        """Parse the AI response into TestCase objects"""
+        """Parse the AI response into TestCase objects (supports both TOON and standard format)"""
 
         try:
             # Clean up the response content
@@ -415,53 +526,14 @@ Generate practical, executable test cases that a QA engineer can implement effec
 
             # Parse JSON
             parsed_response = json.loads(json_content)
-            test_cases_data = parsed_response.get("test_cases", [])
-
-            test_cases = []
-            for tc_data in test_cases_data:
-                # Handle field name mismatch: steps vs test_steps
-                steps = tc_data.get("test_steps", tc_data.get("steps", []))
-
-                # Ensure prerequisites is a list if it's a string
-                prerequisites = tc_data.get("prerequisites", "")
-                if isinstance(prerequisites, str):
-                    prerequisites = [prerequisites] if prerequisites else []
-
-                # Format test steps as numbered steps if they're not already
-                formatted_steps = []
-                for i, step in enumerate(steps, 1):
-                    if not step.strip().startswith(str(i)):
-                        formatted_steps.append(f"{i}. {step}")
-                    else:
-                        formatted_steps.append(step)
-
-                # Ensure expected result is a complete sentence
-                expected_result = tc_data.get("expected_result", "")
-                if not expected_result.endswith('.'):
-                    expected_result += '.'
-
-                # Generate a descriptive title if none provided
-                title = tc_data.get("title")
-                if not title:
-                    # Create a title from test description or first test step
-                    description = tc_data.get("description", "").strip()
-                    first_step = next((step for step in formatted_steps if step), "")
-                    title = description or first_step.split(".", 1)[-1].strip() or "Validate User Story"
-
-                test_case = TestCase(
-                    title=title,
-                    description=tc_data.get("description", ""),
-                    test_type=tc_data.get("test_type", "positive"),
-                    test_steps=formatted_steps,
-                    expected_result=expected_result,
-                    preconditions=prerequisites,
-                    priority=tc_data.get("priority", "Medium"),
-                    parent_story_id=None
-                )
-                test_cases.append(test_case)
-
-            self.logger.info(f"Successfully parsed {len(test_cases)} test cases")
-            return test_cases
+            
+            # Check if this is TOON format or standard format
+            if "tcs" in parsed_response:
+                self.logger.info("Detected TOON format response")
+                return self._parse_toon_format(parsed_response)
+            else:
+                self.logger.info("Detected standard format response")
+                return self._parse_standard_format(parsed_response)
 
         except json.JSONDecodeError as e:
             self.logger.error(f"Failed to parse JSON response: {str(e)}")
@@ -473,82 +545,6 @@ Generate practical, executable test cases that a QA engineer can implement effec
             else:
                 self.logger.error(f"Response content: {response_content}")
             
-            # Check if there's valid JSON at the beginning
-            json_start = response_content.find('{')
-            if json_start != -1:
-                self.logger.info("Attempting to extract valid JSON portion from response...")
-                # Try to extract just the JSON part using the improved logic
-                try:
-                    # Find the matching closing brace for the first opening brace
-                    brace_count = 0
-                    json_end = json_start
-                    for i, char in enumerate(response_content[json_start:], json_start):
-                        if char == '{':
-                            brace_count += 1
-                        elif char == '}':
-                            brace_count -= 1
-                            if brace_count == 0:
-                                json_end = i + 1
-                                break
-                    
-                    if json_end > json_start:
-                        json_content = response_content[json_start:json_end]
-                        self.logger.info(f"Attempting to parse extracted JSON: {json_content[:100]}...")
-                        parsed_response = json.loads(json_content)
-                        test_cases_data = parsed_response.get("test_cases", [])
-                        
-                        # Continue with the same parsing logic
-                        test_cases = []
-                        for tc_data in test_cases_data:
-                            # Handle field name mismatch: steps vs test_steps
-                            steps = tc_data.get("test_steps", tc_data.get("steps", []))
-
-                            # Ensure prerequisites is a list if it's a string
-                            prerequisites = tc_data.get("prerequisites", "")
-                            if isinstance(prerequisites, str):
-                                prerequisites = [prerequisites] if prerequisites else []
-
-                            # Format test steps as numbered steps if they're not already
-                            formatted_steps = []
-                            for i, step in enumerate(steps, 1):
-                                if not step.strip().startswith(str(i)):
-                                    formatted_steps.append(f"{i}. {step}")
-                                else:
-                                    formatted_steps.append(step)
-
-                            # Ensure expected result is a complete sentence
-                            expected_result = tc_data.get("expected_result", "")
-                            if not expected_result.endswith('.'):
-                                expected_result += '.'
-
-                            # Generate a descriptive title if none provided
-                            title = tc_data.get("title")
-                            if not title:
-                                # Create a title from test description or first test step
-                                description = tc_data.get("description", "").strip()
-                                first_step = next((step for step in formatted_steps if step), "")
-                                title = description or first_step.split(".", 1)[-1].strip() or "Validate User Story"
-
-                            test_case = TestCase(
-                                title=title,
-                                description=tc_data.get("description", ""),
-                                test_type=tc_data.get("test_type", "positive"),
-                                test_steps=formatted_steps,
-                                expected_result=expected_result,
-                                preconditions=prerequisites,
-                                priority=tc_data.get("priority", "Medium"),
-                                parent_story_id=None
-                            )
-                            test_cases.append(test_case)
-
-                        self.logger.info(f"Successfully recovered and parsed {len(test_cases)} test cases from partial JSON")
-                        return test_cases
-                        
-                except json.JSONDecodeError as recovery_error:
-                    self.logger.error(f"Failed to parse even the extracted JSON: {str(recovery_error)}")
-                except Exception as recovery_error:
-                    self.logger.error(f"Error during JSON recovery: {str(recovery_error)}")
-
             # Fallback: Try to extract test cases using text parsing
             self.logger.info("Falling back to text-based parsing...")
             return self._fallback_parse_test_cases(response_content)
@@ -556,6 +552,121 @@ Generate practical, executable test cases that a QA engineer can implement effec
         except Exception as e:
             self.logger.error(f"Error parsing test cases: {str(e)}")
             return []
+
+    def _parse_toon_format(self, parsed_response: Dict) -> List[TestCase]:
+        """Parse TOON (Token Oriented Object Notation) format response"""
+        test_cases_data = parsed_response.get("tcs", [])
+        test_cases = []
+        
+        # TOON abbreviation mappings
+        type_map = {
+            "pos": "positive",
+            "neg": "negative",
+            "edge": "edge_case",
+            "sec": "security",
+            "perf": "performance",
+            "integ": "integration"
+        }
+        
+        prio_map = {
+            "Crit": "Critical",
+            "Med": "Medium"
+        }
+        
+        for tc_data in test_cases_data:
+            # Map TOON fields to standard fields
+            title = tc_data.get("t", "")
+            description = tc_data.get("desc", "")
+            test_type = type_map.get(tc_data.get("type", "pos"), "positive")
+            priority = prio_map.get(tc_data.get("prio", "Med"), tc_data.get("prio", "Medium"))
+            steps = tc_data.get("steps", [])
+            expected_result = tc_data.get("exp", "")
+            prerequisites = tc_data.get("prereq", "")
+            
+            # Ensure prerequisites is a list
+            if isinstance(prerequisites, str):
+                prerequisites = [prerequisites] if prerequisites else []
+            
+            # Format test steps as numbered steps if they're not already
+            formatted_steps = []
+            for i, step in enumerate(steps, 1):
+                if not step.strip().startswith(str(i)):
+                    formatted_steps.append(f"{i}. {step}")
+                else:
+                    formatted_steps.append(step)
+            
+            # Ensure expected result ends with a period
+            if expected_result and not expected_result.endswith('.'):
+                expected_result += '.'
+            
+            # Generate title if missing
+            if not title:
+                title = description or f"Test Case {len(test_cases) + 1}"
+            
+            test_case = TestCase(
+                title=title,
+                description=description,
+                test_type=test_type,
+                test_steps=formatted_steps,
+                expected_result=expected_result,
+                preconditions=prerequisites,
+                priority=priority,
+                parent_story_id=None
+            )
+            test_cases.append(test_case)
+        
+        self.logger.info(f"Successfully parsed {len(test_cases)} test cases from TOON format")
+        return test_cases
+
+    def _parse_standard_format(self, parsed_response: Dict) -> List[TestCase]:
+        """Parse standard format response"""
+        test_cases_data = parsed_response.get("test_cases", [])
+
+        test_cases = []
+        for tc_data in test_cases_data:
+            # Handle field name mismatch: steps vs test_steps
+            steps = tc_data.get("test_steps", tc_data.get("steps", []))
+
+            # Ensure prerequisites is a list if it's a string
+            prerequisites = tc_data.get("prerequisites", "")
+            if isinstance(prerequisites, str):
+                prerequisites = [prerequisites] if prerequisites else []
+
+            # Format test steps as numbered steps if they're not already
+            formatted_steps = []
+            for i, step in enumerate(steps, 1):
+                if not step.strip().startswith(str(i)):
+                    formatted_steps.append(f"{i}. {step}")
+                else:
+                    formatted_steps.append(step)
+
+            # Ensure expected result is a complete sentence
+            expected_result = tc_data.get("expected_result", "")
+            if not expected_result.endswith('.'):
+                expected_result += '.'
+
+            # Generate a descriptive title if none provided
+            title = tc_data.get("title")
+            if not title:
+                # Create a title from test description or first test step
+                description = tc_data.get("description", "").strip()
+                first_step = next((step for step in formatted_steps if step), "")
+                title = description or first_step.split(".", 1)[-1].strip() or "Validate User Story"
+
+            test_case = TestCase(
+                title=title,
+                description=tc_data.get("description", ""),
+                test_type=tc_data.get("test_type", "positive"),
+                test_steps=formatted_steps,
+                expected_result=expected_result,
+                preconditions=prerequisites,
+                priority=tc_data.get("priority", "Medium"),
+                parent_story_id=None
+            )
+            test_cases.append(test_case)
+
+        self.logger.info(f"Successfully parsed {len(test_cases)} test cases")
+        return test_cases
 
     def _fallback_parse_test_cases(self, content: str) -> List[TestCase]:
         """Fallback method to parse test cases when JSON parsing fails"""
