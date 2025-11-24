@@ -1487,7 +1487,7 @@
                     jira_username: '',
                     jira_token: '',
                     jira_project_key: '',
-                    ai_service_provider: 'OPENAI',
+                    ai_service_provider: 'AZURE_OPENAI',
                     openai_api_key: '',
                     openai_model: 'gpt-4',
                     azure_openai_endpoint: '',
@@ -1710,7 +1710,7 @@
                             }
                             
                             // Handle AI service provider - THIS WAS MISSING!
-                            this.configForm.ai_service_provider = this.config.ai_service_provider || 'OPENAI';
+                            this.configForm.ai_service_provider = this.config.ai_service_provider || 'AZURE_OPENAI';
                             
                             // Handle Azure OpenAI fields
                             this.configForm.azure_openai_endpoint = this.config.azure_openai_endpoint || '';

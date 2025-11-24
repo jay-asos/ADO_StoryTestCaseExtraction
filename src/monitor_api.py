@@ -116,6 +116,11 @@ class MonitorAPI:
             """Main dashboard page"""
             return render_template('dashboard.html')
 
+        @self.app.route('/dashboard')
+        def dashboard_route():
+            """Dashboard page accessible via /dashboard"""
+            return render_template('dashboard.html')
+
         @self.app.route('/api/health')
         def health_check():
             """Health check endpoint"""

@@ -1,0 +1,17 @@
+{
+  "poll_interval_seconds": 180,
+  "max_concurrent_syncs": 5,
+  "snapshot_directory": "snapshots",
+  "log_level": "INFO",
+  "epic_ids": [],
+  "auto_sync": true,
+  "auto_extract_new_epics": true,
+  "notification_webhook": null,
+  "retry_attempts": 3,
+  "retry_delay_seconds": 60,
+  "story_extraction_type": "User Story",
+  "test_case_extraction_type": "Issue",
+  "skip_duplicate_check": false,
+  "extraction_cooldown_hours": 12,
+  "enable_content_hash_comparison": true
+}
