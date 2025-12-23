@@ -874,11 +874,54 @@ class MonitorAPI:
                         else:
                             self.logger.info(f"[CONFIG-PUT] 📊   {env_var}: {change['old']} → {change['new']}")
 
-                return jsonify({
-                    'success': True,
-                    'message': 'Configuration updated successfully',
-                    'changes_made': {**config_changes, **({f"env_{k}": v for k, v in env_updates.items()} if 'env_updates' in locals() else {})}
-                })
+                # Check if running in Docker and trigger restart
+                import signal
+                import time
+                
+                is_docker = os.path.exists('/.dockerenv') or os.environ.get('RUNNING_IN_DOCKER', 'false').lower() == 'true'
+                
+                if is_docker:
+                    self.logger.info("[CONFIG-PUT] 🐳 Detected running in Docker container")
+                    self.logger.info("[CONFIG-PUT] 🔄 Triggering container restart to apply configuration changes...")
+                    
+                    try:
+                        # Create a restart marker file that can be monitored by docker-compose
+                        restart_marker = '/tmp/restart_required'
+                        with open(restart_marker, 'w') as f:
+                            f.write('restart')
+                        
+                        # Schedule graceful restart - give Flask time to send response
+                        def delayed_restart():
+                            time.sleep(2)
+                            os.kill(os.getpid(), signal.SIGTERM)
+                        
+                        restart_thread = threading.Thread(target=delayed_restart)
+                        restart_thread.daemon = True
+                        restart_thread.start()
+                        
+                        self.logger.info("[CONFIG-PUT] ✅ Restart scheduled - container will restart in 2 seconds")
+                        
+                        return jsonify({
+                            'success': True,
+                            'message': 'Configuration updated successfully. Docker container will restart to apply changes.',
+                            'docker_restart': True,
+                            'changes_made': {**config_changes, **({f"env_{k}": v for k, v in env_updates.items()} if 'env_updates' in locals() else {})}
+                        })
+                    except Exception as restart_error:
+                        self.logger.warning(f"[CONFIG-PUT] ⚠️ Failed to trigger Docker restart: {restart_error}")
+                        return jsonify({
+                            'success': True,
+                            'message': 'Configuration updated successfully (restart failed - please restart manually)',
+                            'changes_made': {**config_changes, **({f"env_{k}": v for k, v in env_updates.items()} if 'env_updates' in locals() else {})}
+                        })
+                else:
+                    self.logger.info("[CONFIG-PUT] 💻 Running locally (not in Docker) - no restart needed")
+                    
+                    return jsonify({
+                        'success': True,
+                        'message': 'Configuration updated successfully',
+                        'changes_made': {**config_changes, **({f"env_{k}": v for k, v in env_updates.items()} if 'env_updates' in locals() else {})}
+                    })
 
             except Exception as e:
                 self.logger.error(f"Error updating config: {str(e)}")

@@ -151,11 +151,11 @@
                                 AI & Automation
                             </h3>
                             <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>OpenAI GPT-4 powered story generation</li>
-                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Intelligent test case extraction from stories</li>
-                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Context-aware content analysis</li>
-                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Auto-upload to Azure DevOps work items</li>
-                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Customizable work item types (Story/Task/Issue)</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Azure OpenAI & OpenAI GPT-4 powered story generation</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Intelligent test case extraction with proper Steps formatting</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Context-aware content analysis with significance scoring</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Auto-upload to Azure DevOps with selective bulk operations</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Customizable work item types (Story/Task/Issue/Test Case)</li>
                             </ul>
                         </div>
 
@@ -168,7 +168,7 @@
                             <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                                 <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Azure DevOps REST API integration</li>
                                 <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Secure PAT (Personal Access Token) authentication</li>
-                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Environment-based configuration</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Docker deployment with auto-restart on config save</li>
                                 <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Comprehensive logging & error handling</li>
                                 <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Dark/Light theme with persistent settings</li>
                             </ul>
@@ -181,11 +181,11 @@
                                 Advanced Features
                             </h3>
                             <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Content hash-based change detection</li>
-                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Processed state management & reset capabilities</li>
-                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Detailed monitoring statistics & analytics</li>
-                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Snapshot-based version control</li>
-                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Concurrent processing with configurable limits</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Content hash-based change detection with significance scoring</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Epic/Feature type switching via UI configuration</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Detailed monitoring statistics & analytics dashboard</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Snapshot-based version control with state management</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Graceful container restart for live config updates</li>
                             </ul>
                         </div>
                     </div>
@@ -220,9 +220,10 @@
                         <div class="text-sm text-blue-800 dark:text-blue-200">
                             <strong>💡 Configuration Tips:</strong>
                             <ul class="mt-2 space-y-1 list-disc list-inside">
-                                <li>Ensure your .env file contains valid ADO_PAT and OPENAI_API_KEY</li>
+                                <li>Ensure your .env file contains valid ADO_PAT and Azure OpenAI credentials</li>
+                                <li>Docker deployments auto-restart when you save configuration changes</li>
+                                <li>Switch between Epic/Feature requirement types dynamically via Edit Config</li>
                                 <li>Use shorter check intervals (1-5 min) for active development</li>
-                                <li>Set story type to "Task" if your project uses Tasks instead of User Stories</li>
                                 <li>Test configuration changes with "Check Now" before starting the monitor</li>
                             </ul>
                         </div>
@@ -235,7 +236,7 @@
                             <i class="fas fa-folder text-blue-500"></i>
                             <h3 class="font-medium text-gray-900 dark:text-white">Configuration File</h3>
                         </div>
-                        <p class="text-xs text-gray-600 dark:text-gray-300" x-text="config.env_file_path || 'Not found'" title="Azure DevOps & OpenAI Keys location"></p>
+                        <p class="text-xs text-gray-600 dark:text-gray-300" x-text="config.env_file_path || 'Not found'" title="Azure DevOps & Azure OpenAI/OpenAI Keys location"></p>
                         <div class="flex items-center space-x-1 mt-1">
                             <span :class="config.env_file_writable ? 'text-green-500' : 'text-red-500'" class="text-xs">
                                 <i :class="config.env_file_writable ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle'" class="mr-1"></i>
@@ -305,11 +306,11 @@
                         <div class="text-sm text-amber-800 dark:text-amber-200">
                             <strong>⚠️ Monitor Operation Tips:</strong>
                             <ul class="mt-2 space-y-1 list-disc list-inside">
-                                <li><strong>Start Monitor:</strong> <span x-text="`Begins automatic ${config.requirement_type || 'EPIC'} scanning and story generation`">Begins automatic EPIC scanning and story generation</span></li>
-                                <li><strong>Check Now:</strong> Performs immediate scan without starting continuous monitoring</li>
-                                <li><strong>Stop Monitor:</strong> Safely stops monitoring while preserving current state</li>
-                                <li>Monitor state is preserved between browser sessions</li>
-                                <li>Use "Check Now" to test configuration before starting continuous monitoring</li>
+                                <li><strong>Start Monitor:</strong> <span x-text="`Begins automatic ${config.requirement_type || 'EPIC'} scanning with significance-based change detection`">Begins automatic EPIC scanning with significance-based change detection</span></li>
+                                <li><strong>Check Now:</strong> Performs immediate one-time scan without starting continuous monitoring</li>
+                                <li><strong>Stop Monitor:</strong> Gracefully stops monitoring while preserving state and snapshots</li>
+                                <li>Monitor state is preserved between browser sessions and container restarts</li>
+                                <li>Test cases include proper Steps formatting (Actions & Expected Results)</li>
                             </ul>
                         </div>
                     </div>
@@ -670,6 +671,11 @@
                                 <span x-text="`View all ${config.requirement_type || 'EPIC'}s being monitored and their current status`">View all EPICs being monitored and their current status</span>
                             </div>
                         </div>
+                        <button @click="showMonitoredEpics = !showMonitoredEpics"
+                                class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium">
+                            <i :class="showMonitoredEpics ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="mr-1"></i>
+                            <span x-text="showMonitoredEpics ? 'Hide' : 'Show'"></span>
+                        </button>
                     </div>
                     <div class="flex items-center space-x-2">
                         <input x-model="epicFilter"
@@ -686,6 +692,10 @@
                     </div>
                 </div>
 
+                <div x-show="showMonitoredEpics" 
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform scale-95"
+                     x-transition:enter-end="opacity-100 transform scale-100">
                 <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-4">
                     <div class="flex items-start space-x-3">
                         <i class="fas fa-layer-group text-indigo-600 mt-0.5"></i>
@@ -780,6 +790,7 @@
                 <div x-show="filteredEpics.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
                     <i class="fas fa-inbox text-4xl mb-4"></i>
                     <p>No EPICs found matching your criteria</p>
+                </div>
                 </div>
             </div>
 
@@ -1456,6 +1467,8 @@
                 showCapabilitiesDetail: false,
                 showTestCaseTemplates: false,
                 showMonitorLogs: false,
+                showMonitoredEpics: true,
+                showMonitoredEpics: true,
 
                 // Modals
                 showConfigModal: false,
