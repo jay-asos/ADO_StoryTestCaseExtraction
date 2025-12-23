@@ -23,29 +23,35 @@ class MonitorAPI:
     """Flask-based API for monitoring and controlling the story extraction process"""
 
     def _update_env_file(self, key: str, value: str):
-        """Update a value in the .env file"""
-        env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', '.env')
-        if not os.path.exists(env_path):
-            return
+        """Update a value in both .env files (root and config/)"""
+        root_dir = os.path.dirname(os.path.dirname(__file__))
+        env_paths = [
+            os.path.join(root_dir, '.env'),  # Root .env
+            os.path.join(root_dir, 'config', '.env')  # Config .env
+        ]
+        
+        for env_path in env_paths:
+            if not os.path.exists(env_path):
+                continue
+                
+            # Read current content
+            with open(env_path, 'r') as f:
+                lines = f.readlines()
             
-        # Read current content
-        with open(env_path, 'r') as f:
-            lines = f.readlines()
-        
-        # Update or add the key-value pair
-        key_found = False
-        for i, line in enumerate(lines):
-            if line.startswith(f'{key}='):
-                lines[i] = f'{key}={value}\n'
-                key_found = True
-                break
-        
-        if not key_found:
-            lines.append(f'{key}={value}\n')
-        
-        # Write back to file
-        with open(env_path, 'w') as f:
-            f.writelines(lines)
+            # Update or add the key-value pair
+            key_found = False
+            for i, line in enumerate(lines):
+                if line.startswith(f'{key}='):
+                    lines[i] = f'{key}={value}\n'
+                    key_found = True
+                    break
+            
+            if not key_found:
+                lines.append(f'{key}={value}\n')
+            
+            # Write back to file
+            with open(env_path, 'w') as f:
+                f.writelines(lines)
 
     def __init__(self, config: MonitorConfig = None, port: int = 5001):
         # Force reload settings from .env file at startup
@@ -1033,13 +1039,23 @@ class MonitorAPI:
                             'System.WorkItemType': work_item_type,
                         }
                         
-                        # Add test case specific fields if available
-                        if test_case.get('steps'):
-                            steps_html = '<ol>' + ''.join(f'<li>{step}</li>' for step in test_case['steps']) + '</ol>'
-                            work_item_data['System.Description'] += f'<br/><strong>Test Steps:</strong><br/>{steps_html}'
-                        
-                        if test_case.get('expected_result'):
-                            work_item_data['System.Description'] += f'<br/><strong>Expected Result:</strong><br/>{test_case["expected_result"]}'
+                        # Add test steps and expected result as additional fields for Test Case work items
+                        if work_item_type == 'Test Case':
+                            # Pass test_steps as additional field for proper formatting
+                            if test_case.get('steps') or test_case.get('test_steps'):
+                                work_item_data['test_steps'] = test_case.get('test_steps') or test_case.get('steps')
+                            
+                            if test_case.get('expected_result'):
+                                work_item_data['expected_result'] = test_case.get('expected_result')
+                        else:
+                            # For other work item types (like Issue), add to description
+                            if test_case.get('steps') or test_case.get('test_steps'):
+                                steps = test_case.get('test_steps') or test_case.get('steps')
+                                steps_html = '<ol>' + ''.join(f'<li>{step}</li>' for step in steps) + '</ol>'
+                                work_item_data['System.Description'] += f'<br/><strong>Test Steps:</strong><br/>{steps_html}'
+                            
+                            if test_case.get('expected_result'):
+                                work_item_data['System.Description'] += f'<br/><strong>Expected Result:</strong><br/>{test_case["expected_result"]}'
                         
                         # Create the work item
                         created_item = self.agent.ado_client.create_work_item(
