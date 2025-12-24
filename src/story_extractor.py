@@ -223,7 +223,7 @@ Please analyze the following requirement and extract user stories from it.
     "stories": [
         {
             "heading": "Specific, action-oriented title",
-            "description": "Detailed description in 'As a [specific user type], I want [specific goal] so that [clear benefit]' format with Technical Context and Business Requirements sections",
+            "description": "As a [specific user type], I want [specific goal] so that [clear benefit].\n\n**Technical Context:** Implementation details and technical requirements.\n\n**Business Requirements:** Business rules and constraints",
             "acceptance_criteria": [
                 "Given [specific context/state] When [specific action] Then [specific outcome] And [additional outcomes]",
                 "Given [error condition] When [action] Then [error handling behavior]",
@@ -265,7 +265,7 @@ Your expertise includes:
 **STORY STRUCTURE REQUIREMENTS:**
 - **Heading**: Action-oriented, specific, under 80 characters
 - **Description**: Follow "As a [specific persona], I want [specific capability] so that [business value]" format
-  Include Technical Context and Business Requirements sections
+  Then add "\n\n**Technical Context:** [implementation details]" and "\n\n**Business Requirements:** [business rules]"
 - **Acceptance Criteria**: Use Given/When/Then format, cover positive, negative, and edge cases
 - **Priority**: Based on business value, risk, and dependencies
 - **Story Points**: Relative sizing (1=simple, 2=straightforward, 3=moderate, 5=complex, 8=very complex)
@@ -578,8 +578,8 @@ Provide response as valid JSON only. Ensure all stories are well-formed and foll
         # This could be extended to add more context-aware enhancements
         return story
     
-    def _filter_duplicate_stories(self, stories: List[EnhancedUserStory], existing_stories: List[dict]) -> List[UserStory]:
-        """Filter out duplicate stories and convert to UserStory objects"""
+    def _filter_duplicate_stories(self, stories: List[EnhancedUserStory], existing_stories: List[dict]) -> List[EnhancedUserStory]:
+        """Filter out duplicate stories while preserving EnhancedUserStory objects with complexity analysis"""
         filtered_stories = []
         
         self.logger.debug(f"Checking against {len(existing_stories)} existing stories")
@@ -594,27 +594,14 @@ Provide response as valid JSON only. Ensure all stories are well-formed and foll
             )
             
             if not is_duplicate:
-                # Convert EnhancedUserStory to UserStory
-                if isinstance(story, EnhancedUserStory):
-                    # Handle case where acceptance_criteria might be a string
-                    if isinstance(story.acceptance_criteria, str):
-                        acceptance_criteria = [story.acceptance_criteria]
-                    else:
-                        acceptance_criteria = list(story.acceptance_criteria)
-
-                    user_story = UserStory(
-                        heading=story.heading,
-                        description=story.description,
-                        acceptance_criteria=acceptance_criteria,
-                        test_cases=[]  # Empty list since test cases are generated later
-                    )
-                    filtered_stories.append(user_story)
+                # Keep the EnhancedUserStory object to preserve complexity analysis and story points
+                filtered_stories.append(story)
             else:
                 self.logger.debug(f"Duplicate story filtered out: {story.heading}")
         
         return filtered_stories
     
-    def _prioritize_stories(self, stories: List[UserStory], context: dict) -> List[UserStory]:
+    def _prioritize_stories(self, stories: List[EnhancedUserStory], context: dict) -> List[EnhancedUserStory]:
         """Prioritize stories based on business value and dependencies"""
         # Simple prioritization based on context
         priority_keywords = {
@@ -623,7 +610,7 @@ Provide response as valid JSON only. Ensure all stories are well-formed and foll
             'low': ['nice to have', 'optional', 'enhancement', 'improvement']
         }
         
-        def get_priority_score(story: UserStory) -> int:
+        def get_priority_score(story: EnhancedUserStory) -> int:
             text = f"{story.heading} {story.description}".lower()
             
             high_count = sum(1 for keyword in priority_keywords['high'] if keyword in text)
