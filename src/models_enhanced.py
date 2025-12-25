@@ -29,8 +29,8 @@ class EnhancedUserStory(BaseModel):
         print(f"[DEBUG] EnhancedUserStory.to_ado_format() called for: {self.heading}")
         print(f"[DEBUG] Has complexity_analysis: {self.complexity_analysis is not None}")
         
-        # Use the description as-is (already contains Technical Context and Business Requirements)
-        formatted_description = self.description
+        # Convert newlines to HTML breaks for proper ADO rendering
+        formatted_description = self.description.replace("\n\n", "<br><br>").replace("\n", "<br>")
 
         # Format acceptance criteria as HTML for better ADO display
         if isinstance(self.acceptance_criteria, list):
