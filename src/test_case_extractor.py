@@ -587,13 +587,8 @@ Gen 5-8 high-value TCs covering pos/neg/edge/sec."""
             if isinstance(prerequisites, str):
                 prerequisites = [prerequisites] if prerequisites else []
             
-            # Format test steps as numbered steps if they're not already
-            formatted_steps = []
-            for i, step in enumerate(steps, 1):
-                if not step.strip().startswith(str(i)):
-                    formatted_steps.append(f"{i}. {step}")
-                else:
-                    formatted_steps.append(step)
+            # Use test steps as-is without adding numbers (ADO has default numbering)
+            formatted_steps = [step.strip() for step in steps if step.strip()]
             
             # Ensure expected result ends with a period
             if expected_result and not expected_result.endswith('.'):
@@ -632,13 +627,8 @@ Gen 5-8 high-value TCs covering pos/neg/edge/sec."""
             if isinstance(prerequisites, str):
                 prerequisites = [prerequisites] if prerequisites else []
 
-            # Format test steps as numbered steps if they're not already
-            formatted_steps = []
-            for i, step in enumerate(steps, 1):
-                if not step.strip().startswith(str(i)):
-                    formatted_steps.append(f"{i}. {step}")
-                else:
-                    formatted_steps.append(step)
+            # Use test steps as-is without adding numbers (ADO has default numbering)
+            formatted_steps = [step.strip() for step in steps if step.strip()]
 
             # Ensure expected result is a complete sentence
             expected_result = tc_data.get("expected_result", "")

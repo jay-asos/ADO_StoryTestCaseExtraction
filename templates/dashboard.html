@@ -151,7 +151,7 @@
                                 AI & Automation
                             </h3>
                             <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Azure OpenAI & OpenAI GPT-4 powered story generation</li>
+                                <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Azure OpenAI, OpenAI, & GitHub Models GPT-4 powered story generation</li>
                                 <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Intelligent test case extraction with proper Steps formatting</li>
                                 <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Context-aware content analysis with significance scoring</li>
                                 <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2 text-xs"></i>Auto-upload to Azure DevOps with selective bulk operations</li>
@@ -220,7 +220,8 @@
                         <div class="text-sm text-blue-800 dark:text-blue-200">
                             <strong>💡 Configuration Tips:</strong>
                             <ul class="mt-2 space-y-1 list-disc list-inside">
-                                <li>Ensure your .env file contains valid ADO_PAT and Azure OpenAI credentials</li>
+                                <li>Ensure your .env file contains valid ADO_PAT and AI provider credentials (Azure OpenAI, OpenAI, or GitHub Token)</li>
+                                <li>GitHub Models provides free unlimited access to GPT-4o and GPT-4o-mini - perfect for testing</li>
                                 <li>Docker deployments auto-restart when you save configuration changes</li>
                                 <li>Switch between Epic/Feature requirement types dynamically via Edit Config</li>
                                 <li>Use shorter check intervals (1-5 min) for active development</li>
@@ -236,7 +237,7 @@
                             <i class="fas fa-folder text-blue-500"></i>
                             <h3 class="font-medium text-gray-900 dark:text-white">Configuration File</h3>
                         </div>
-                        <p class="text-xs text-gray-600 dark:text-gray-300" x-text="config.env_file_path || 'Not found'" title="Azure DevOps & Azure OpenAI/OpenAI Keys location"></p>
+                        <p class="text-xs text-gray-600 dark:text-gray-300" x-text="config.env_file_path || 'Not found'" title="Azure DevOps & AI Service (Azure OpenAI/OpenAI/GitHub) Keys location"></p>
                         <div class="flex items-center space-x-1 mt-1">
                             <span :class="config.env_file_writable ? 'text-green-500' : 'text-red-500'" class="text-xs">
                                 <i :class="config.env_file_writable ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle'" class="mr-1"></i>
@@ -1099,6 +1100,13 @@
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600">
                                         <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Azure OpenAI Service</span>
                                     </label>
+                                    <label class="flex items-center">
+                                        <input x-model="configForm.ai_service_provider" 
+                                               type="radio" 
+                                               value="GITHUB"
+                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600">
+                                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">GitHub Models</span>
+                                    </label>
                                 </div>
                             </div>
 
@@ -1216,6 +1224,65 @@
                                             <option value="2023-12-01-preview">2023-12-01-preview</option>
                                             <option value="2023-10-01-preview">2023-10-01-preview</option>
                                         </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- GitHub Models Settings -->
+                            <div x-show="configForm.ai_service_provider === 'GITHUB'" class="space-y-4">
+                                <h5 class="text-sm font-semibold text-gray-800 dark:text-gray-200">GitHub Models Configuration</h5>
+                                <div class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mr-2 mt-0.5"></i>
+                                        <div class="text-sm text-blue-800 dark:text-blue-200">
+                                            <strong>Free & Unlimited:</strong> GitHub Models provides free access to GPT-4o, GPT-4o-mini, and other models. 
+                                            Perfect for unlimited testing without any cost. Requires a GitHub Personal Access Token with 'models' permission.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            GitHub Token
+                                        </label>
+                                        <!-- Security Warning for incomplete configuration -->
+                                        <div x-show="shouldHideSensitiveInfo()" class="mb-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                            <div class="flex items-center text-yellow-800 dark:text-yellow-200">
+                                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                                <span class="text-xs">Complete required fields to view/edit sensitive information</span>
+                                            </div>
+                                        </div>
+                                        <div class="relative">
+                                            <input x-model="configForm.github_token"
+                                                   :type="showGithubToken && !shouldHideSensitiveInfo() ? 'text' : 'password'"
+                                                   :placeholder="shouldHideSensitiveInfo() ? 'Complete configuration to edit' : 'Enter new GitHub token to update (currently hidden for security)'"
+                                                   :disabled="shouldHideSensitiveInfo()"
+                                                   :value="shouldHideSensitiveInfo() ? '••••••••••••••••' : configForm.github_token"
+                                                   class="w-full px-3 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-500">
+                                            <button type="button" @click="showGithubToken = !showGithubToken"
+                                                    :disabled="shouldHideSensitiveInfo()"
+                                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed">
+                                                <i :class="showGithubToken && !shouldHideSensitiveInfo() ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                            </button>
+                                        </div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                            <span x-show="!shouldHideSensitiveInfo()">Leave empty to keep current token. Only provide if updating.</span>
+                                            <span x-show="shouldHideSensitiveInfo()" class="text-yellow-600 dark:text-yellow-400">
+                                                <i class="fas fa-lock mr-1"></i>Protected - Complete required fields first
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Model
+                                        </label>
+                                        <select x-model="configForm.github_model"
+                                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                            <option value="gpt-4o">GPT-4o</option>
+                                            <option value="gpt-4o-mini">GPT-4o-mini (Recommended)</option>
+                                            <option value="Phi-3-medium-128k-instruct">Phi-3 Medium 128k</option>
+                                        </select>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Select from GitHub's free model catalog</p>
                                     </div>
                                 </div>
                             </div>
@@ -1507,6 +1574,8 @@
                     azure_openai_api_key: '',
                     azure_openai_deployment_name: '',
                     azure_openai_api_version: '2024-02-15-preview',
+                    github_token: '',
+                    github_model: 'gpt-4o-mini',
                     requirement_type: 'Epic',
                     story_extraction_type: 'User Story',
                     test_case_extraction_type: 'Issue',
@@ -1518,6 +1587,7 @@
                 showAdoPat: false,
                 showOpenAiKey: false,
                 showAzureOpenAiKey: false,
+                showGithubToken: false,
                 showJiraToken: false,
 
                 savingConfig: false,
@@ -1722,8 +1792,10 @@
                                 this.configForm.openai_api_key = this.config.openai_api_key || '';
                             }
                             
-                            // Handle AI service provider - THIS WAS MISSING!
-                            this.configForm.ai_service_provider = this.config.ai_service_provider || 'AZURE_OPENAI';
+                            // Handle AI service provider - validate and default to valid option
+                            const validProviders = ['OPENAI', 'AZURE_OPENAI', 'GITHUB'];
+                            const loadedProvider = this.config.ai_service_provider || 'GITHUB';
+                            this.configForm.ai_service_provider = validProviders.includes(loadedProvider) ? loadedProvider : 'GITHUB';
                             
                             // Handle Azure OpenAI fields
                             this.configForm.azure_openai_endpoint = this.config.azure_openai_endpoint || '';
@@ -1735,6 +1807,14 @@
                             } else {
                                 this.configForm.azure_openai_api_key = this.config.azure_openai_api_key || '';
                             }
+                            
+                            // Handle GitHub Models fields
+                            if (this.config.github_token && this.config.github_token.startsWith('*')) {
+                                this.configForm.github_token = '';  // Empty for new input
+                            } else {
+                                this.configForm.github_token = this.config.github_token || '';
+                            }
+                            this.configForm.github_model = this.config.github_model || 'gpt-4o-mini';
                             
                             // Handle other fields
                             this.configForm.openai_model = this.config.openai_model || 'gpt-4';
