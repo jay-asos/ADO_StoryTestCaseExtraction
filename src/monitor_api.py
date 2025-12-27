@@ -625,6 +625,8 @@ class MonitorAPI:
                     'azure_openai_api_key': '***hidden***',  # Don't expose the actual API key
                     'azure_openai_deployment_name': getattr(self.settings, 'AZURE_OPENAI_DEPLOYMENT_NAME', ''),
                     'azure_openai_api_version': getattr(self.settings, 'AZURE_OPENAI_API_VERSION', '2024-02-15-preview'),
+                    'github_token': '***hidden***',  # Don't expose the actual token
+                    'github_model': getattr(self.settings, 'GITHUB_MODEL', 'gpt-4o-mini'),
                     'openai_max_retries': self.settings.OPENAI_MAX_RETRIES,
                     'openai_retry_delay': self.settings.OPENAI_RETRY_DELAY,
                     'requirement_type': self.settings.REQUIREMENT_TYPE,
@@ -665,7 +667,7 @@ class MonitorAPI:
                 self.logger.info(f"[CONFIG-PUT] 📥 Received {len(data)} configuration parameters")
                 # Log each parameter (hide sensitive values)
                 for key, value in data.items():
-                    if key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token']:
+                    if key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token', 'github_token']:
                         self.logger.info(f"[CONFIG-PUT] 📋 {key}: ***hidden***")
                     else:
                         self.logger.info(f"[CONFIG-PUT] 📋 {key}: {value}")
@@ -738,6 +740,8 @@ class MonitorAPI:
                         'azure_openai_api_key': 'AZURE_OPENAI_API_KEY',
                         'azure_openai_deployment_name': 'AZURE_OPENAI_DEPLOYMENT_NAME',
                         'azure_openai_api_version': 'AZURE_OPENAI_API_VERSION',
+                        'github_token': 'GITHUB_TOKEN',
+                        'github_model': 'GITHUB_MODEL',
                         'story_extraction_type': 'ADO_STORY_EXTRACTION_TYPE',
                         'test_case_extraction_type': 'ADO_TEST_CASE_EXTRACTION_TYPE',
                         'auto_test_case_extraction': 'ADO_AUTO_TEST_CASE_EXTRACTION',
@@ -765,10 +769,10 @@ class MonitorAPI:
                             value = data[config_key]
                             
                             # Get current value for comparison
-                            current_value = getattr(self.settings, env_var.replace('ADO_', '').replace('OPENAI_', '').replace('AZURE_OPENAI_', ''), None)
+                            current_value = getattr(self.settings, env_var.replace('ADO_', '').replace('OPENAI_', '').replace('AZURE_OPENAI_', '').replace('GITHUB_', ''), None)
                             
                             # Log configuration updates (with proper masking for sensitive data)
-                            if config_key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token']:
+                            if config_key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token', 'github_token']:
                                 if value:
                                     self.logger.info(f"[CONFIG-PUT] 🔒 Updating {config_key} (env: {env_var}) = ***hidden***")
                                 else:
@@ -788,7 +792,7 @@ class MonitorAPI:
                                 value = str(value)
                                 self.logger.info(f"[CONFIG-PUT] 🔢 String conversion for {config_key}: {old_value} → {value}")
                             # Skip empty sensitive values to prevent accidental clearing
-                            elif config_key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token'] and not value:
+                            elif config_key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token', 'github_token'] and not value:
                                 self.logger.warning(f"[CONFIG-PUT] ⚠️ Skipping empty sensitive value for {config_key}")
                                 continue
                             else:
@@ -823,6 +827,9 @@ class MonitorAPI:
                         self.logger.info(f"[CONFIG-PUT] 🔷 Azure OpenAI Endpoint: {endpoint}")
                         self.logger.info(f"[CONFIG-PUT] 🔷 Azure OpenAI Deployment: {deployment}")
                         self.logger.info(f"[CONFIG-PUT] 🔷 Azure OpenAI API Version: {api_version}")
+                    elif current_ai_provider == 'GITHUB':
+                        github_model = getattr(Settings, 'GITHUB_MODEL', 'Not configured')
+                        self.logger.info(f"[CONFIG-PUT] 🔶 GitHub Model: {github_model}")
                     else:
                         openai_model = getattr(Settings, 'OPENAI_MODEL', 'Not configured')
                         self.logger.info(f"[CONFIG-PUT] 🔶 OpenAI Model: {openai_model}")
@@ -869,7 +876,7 @@ class MonitorAPI:
                 if 'env_updates' in locals():
                     self.logger.info(f"[CONFIG-PUT] 📊 - Environment updates: {len(env_updates)}")
                     for env_var, change in env_updates.items():
-                        if env_var in ['ADO_PAT', 'OPENAI_API_KEY', 'AZURE_OPENAI_API_KEY', 'JIRA_TOKEN']:
+                        if env_var in ['ADO_PAT', 'OPENAI_API_KEY', 'AZURE_OPENAI_API_KEY', 'JIRA_TOKEN', 'GITHUB_TOKEN']:
                             self.logger.info(f"[CONFIG-PUT] 📊   {env_var}: ***hidden***")
                         else:
                             self.logger.info(f"[CONFIG-PUT] 📊   {env_var}: {change['old']} → {change['new']}")
@@ -989,15 +996,19 @@ class MonitorAPI:
                     from src.ado_client import ADOClient
                     ado_client = ADOClient()
                     
-                    # Try to get project info as a connection test
+                    # Try to get work item types as a connection test
                     try:
                         # This will raise an exception if connection fails
-                        projects = ado_client.get_projects()
+                        work_item_types = ado_client.get_work_item_types()
                         return jsonify({
                             'success': True,
                             'platform': 'ADO',
                             'message': 'ADO connection successful',
-                            'project_info': {'name': Settings.ADO_PROJECT}
+                            'project_info': {
+                                'name': Settings.ADO_PROJECT,
+                                'organization': Settings.ADO_ORGANIZATION,
+                                'work_item_types': work_item_types[:5]  # Return first 5 types
+                            }
                         })
                     except Exception as e:
                         return jsonify({
