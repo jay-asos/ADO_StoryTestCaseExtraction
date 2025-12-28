@@ -223,7 +223,7 @@ Please analyze the following requirement and extract user stories from it.
     "stories": [
         {
             "heading": "Specific, action-oriented title",
-            "description": "Detailed description in 'As a [specific user type], I want [specific goal] so that [clear benefit]' format with Technical Context and Business Requirements sections",
+            "description": "Detailed description in 'As a [specific user type], I want [specific goal] so that [clear benefit]' format.\n\n**Technical Context:**\n[Technical details here]\n\n**Business Requirements:**\n[Business requirements here]",
             "acceptance_criteria": [
                 "Given [specific context/state] When [specific action] Then [specific outcome] And [additional outcomes]",
                 "Given [error condition] When [action] Then [error handling behavior]",
@@ -264,8 +264,10 @@ Your expertise includes:
 
 **STORY STRUCTURE REQUIREMENTS:**
 - **Heading**: Action-oriented, specific, under 80 characters
-- **Description**: Follow "As a [specific persona], I want [specific capability] so that [business value]" format
-  Include Technical Context and Business Requirements sections
+- **Description**: Follow "As a [specific persona], I want [specific capability] so that [business value]" format.
+  Add two separate sections with proper formatting:
+  \n\n**Technical Context:** [technical details]
+  \n\n**Business Requirements:** [business requirements]
 - **Acceptance Criteria**: Use Given/When/Then format, cover positive, negative, and edge cases
 - **Priority**: Based on business value, risk, and dependencies
 - **Story Points**: Relative sizing (1=simple, 2=straightforward, 3=moderate, 5=complex, 8=very complex)

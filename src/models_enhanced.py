@@ -26,27 +26,36 @@ class EnhancedUserStory(BaseModel):
 
     def to_ado_format(self) -> dict:
         """Convert the story to ADO work item format"""
+        # Convert description to HTML format (ADO expects HTML in System.Description)
+        # Replace markdown bold with HTML strong tags and newlines with HTML br tags
+        html_description = self.description.replace("**", "<strong>", 1).replace("**", "</strong>", 1)
+        # Replace remaining markdown bold markers
+        while "**" in html_description:
+            html_description = html_description.replace("**", "<strong>", 1).replace("**", "</strong>", 1)
+        # Replace newlines with HTML breaks
+        html_description = html_description.replace("\n", "<br/>")
+        
         # Format description with technical context and business requirements
         formatted_description = (
-            f"{self.description}\n\n"
-            "**Complexity Analysis:**\n"
+            f"{html_description}<br/><br/>"
+            "<strong>Complexity Analysis:</strong><br/>"
         )
         
         if self.complexity_analysis:
             formatted_description += (
-                f"- Overall Complexity: {self.complexity_analysis.overall_complexity}\n"
-                f"- Story Points: {self.complexity_analysis.story_points}\n"
-                f"- Rationale: {self.complexity_analysis.rationale}\n\n"
-                "**Complexity Factors:**\n"
+                f"- Overall Complexity: {self.complexity_analysis.overall_complexity}<br/>"
+                f"- Story Points: {self.complexity_analysis.story_points}<br/>"
+                f"- Rationale: {self.complexity_analysis.rationale}<br/><br/>"
+                "<strong>Complexity Factors:</strong><br/>"
             )
             for factor in self.complexity_analysis.factors:
-                formatted_description += f"\n- {factor.name} (Impact: {factor.assessment.value})\n  {factor.impact}"
+                formatted_description += f"<br/>- {factor.name} (Impact: {factor.assessment.value})<br/>  {factor.impact}"
 
         # Format acceptance criteria as a string with line breaks
         if isinstance(self.acceptance_criteria, list):
-            formatted_ac = "\n\n".join(self.acceptance_criteria)
+            formatted_ac = "<br/><br/>".join(self.acceptance_criteria)
         else:
-            formatted_ac = str(self.acceptance_criteria)
+            formatted_ac = str(self.acceptance_criteria).replace("\n", "<br/>")
 
         # Return Azure DevOps fields
         return {
