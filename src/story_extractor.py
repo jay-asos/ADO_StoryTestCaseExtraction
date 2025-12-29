@@ -134,22 +134,27 @@ class StoryExtractor:
                 if isinstance(acceptance_criteria, str):
                     acceptance_criteria = acceptance_criteria.split("\n")
                 
+                # Combine description, technical_context, and business_requirements
+                description = story_data.get("description", "")
+                technical_context = story_data.get("technical_context", "")
+                business_requirements = story_data.get("business_requirements", "")
+                
+                # Format the complete description with HTML formatting
+                full_description = description
+                if technical_context:
+                    full_description += f"<br><br><strong>Technical Context:</strong><br>{technical_context}"
+                if business_requirements:
+                    full_description += f"<br><br><strong>Business Requirements:</strong><br>{business_requirements}"
+                
                 # Create an enhanced story with complexity analysis and additional metadata
                 story = self.story_creator.create_enhanced_story(
                     heading=story_data["heading"],
-                    description=story_data["description"],
+                    description=full_description,
                     acceptance_criteria=acceptance_criteria
                 )
                 
-                # Add additional metadata if present in AI response
-                if hasattr(story, 'priority'):
-                    story.priority = story_data.get("priority", "Medium")
-                if hasattr(story, 'story_points'):
-                    story.story_points = story_data.get("story_points", "3")
-                if hasattr(story, 'business_value'):
-                    story.business_value = story_data.get("business_value", "")
-                if hasattr(story, 'dependencies'):
-                    story.dependencies = story_data.get("dependencies", [])
+                # Note: story_points is automatically calculated and stored in story.complexity_analysis.story_points
+                # by the enhanced_story_creator during complexity analysis
                 
                 stories.append(story)
             
@@ -223,7 +228,9 @@ Please analyze the following requirement and extract user stories from it.
     "stories": [
         {
             "heading": "Specific, action-oriented title",
-            "description": "Detailed description in 'As a [specific user type], I want [specific goal] so that [clear benefit]' format.\n\n**Technical Context:**\n[Technical details here]\n\n**Business Requirements:**\n[Business requirements here]",
+            "description": "As a [specific user type], I want [specific goal] so that [clear benefit]",
+            "technical_context": "Technical details and implementation requirements",
+            "business_requirements": "Business rules, constraints, and requirements",
             "acceptance_criteria": [
                 "Given [specific context/state] When [specific action] Then [specific outcome] And [additional outcomes]",
                 "Given [error condition] When [action] Then [error handling behavior]",
@@ -264,10 +271,9 @@ Your expertise includes:
 
 **STORY STRUCTURE REQUIREMENTS:**
 - **Heading**: Action-oriented, specific, under 80 characters
-- **Description**: Follow "As a [specific persona], I want [specific capability] so that [business value]" format.
-  Add two separate sections with proper formatting:
-  \n\n**Technical Context:** [technical details]
-  \n\n**Business Requirements:** [business requirements]
+- **Description**: Follow "As a [specific persona], I want [specific capability] so that [business value]" format
+- **Technical Context**: Separate field with technical details, implementation requirements, and system interactions
+- **Business Requirements**: Separate field with business rules, constraints, and domain-specific requirements
 - **Acceptance Criteria**: Use Given/When/Then format, cover positive, negative, and edge cases
 - **Priority**: Based on business value, risk, and dependencies
 - **Story Points**: Relative sizing (1=simple, 2=straightforward, 3=moderate, 5=complex, 8=very complex)
