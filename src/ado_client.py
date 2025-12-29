@@ -115,18 +115,23 @@ class ADOClient:
     def create_user_story(self, story_data: Dict[str, Any], parent_requirement_id: Optional[int] = None, item_type: Optional[str] = None) -> Any:
         """Create a user story with the specified type"""
         try:
-            print(f"[DEBUG] Creating {story_data}")
+            print(f"[DEBUG] Creating story with {len(story_data)} fields: {list(story_data.keys())}")
+            print(f"[DEBUG] Story data: {story_data}")
             
             # Prepare document for create
             document = []
             for field, value in story_data.items():
-                document.append({
-                    "op": "add",
-                    "path": f"/fields/{field}",
-                    "value": value
-                })
+                # Skip fields with None values - ADO doesn't accept them
+                if value is not None:
+                    document.append({
+                        "op": "add",
+                        "path": f"/fields/{field}",
+                        "value": value
+                    })
+                else:
+                    print(f"[DEBUG] Skipping field '{field}' with None value")
             
-            print(f"[DEBUG] Document prepared for Azure DevOps: {document}")
+            print(f"[DEBUG] Document prepared for Azure DevOps with {len(document)} fields: {document}")
             
             # Create the work item
             work_item = self.wit_client.create_work_item(

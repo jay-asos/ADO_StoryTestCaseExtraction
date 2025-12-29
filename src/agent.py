@@ -90,7 +90,16 @@ class StoryExtractionAgent:
         
         for story in stories:
             try:
+                # Debug logging to see story type and complexity analysis
+                story_type = type(story).__name__
+                has_complexity = hasattr(story, 'complexity_analysis') and story.complexity_analysis is not None
+                self.logger.info(f"[AGENT] Uploading story type: {story_type}, has complexity: {has_complexity}")
+                if has_complexity:
+                    self.logger.info(f"[AGENT] Story points: {story.complexity_analysis.story_points}")
+                
                 story_data = story.to_ado_format()
+                self.logger.info(f"[AGENT] Story data fields: {list(story_data.keys())}")
+                
                 result = self.ado_client.create_user_story(story_data, parent_id)
                 
                 # Ensure we got a valid ID
@@ -496,8 +505,16 @@ class StoryExtractionAgent:
                 for story in stories_to_create:
                     story_id = None
                     try:
+                        # Debug logging to see story type and complexity analysis
+                        story_type = type(story).__name__
+                        has_complexity = hasattr(story, 'complexity_analysis') and story.complexity_analysis is not None
+                        self.logger.info(f"[AGENT] Story type: {story_type}, has complexity: {has_complexity}")
+                        if has_complexity:
+                            self.logger.info(f"[AGENT] Story points: {story.complexity_analysis.story_points}")
+                        
                         # Use existing create_user_story method with proper format
                         story_data = story.to_ado_format()
+                        self.logger.info(f"[AGENT] Story data fields: {list(story_data.keys())}")
                         story_id = self.ado_client.create_user_story(story_data, epic_id)
                     except Exception as upload_exc:
                         self.logger.error(f"[AGENT] Failed to upload story '{story.heading}': {upload_exc}")
