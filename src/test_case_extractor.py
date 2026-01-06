@@ -152,10 +152,10 @@ DB=database, max=maximum, min=minimum, req=required, opt=optional
 **Priorities:** Crit|High|Med|Low
 
 **Coverage Areas:**
-1. Happy path (pos scenarios)
-2. Error handling (neg/edge)
-3. Boundaries (min/max limits)
-4. Security (auth/authz)
+1. Happy path (pos scenarios) - PRIORITIZE: Generate 8-10 positive test cases
+2. Error handling (neg/edge) - Generate 3-4 negative test cases
+3. Boundaries (min/max limits) - Generate 2-3 edge cases
+4. Security (auth/authz) - Generate 1-2 security test cases
 5. Integration points
 6. Data validation
 
@@ -327,7 +327,13 @@ Ensure test cases are practical, executable, and provide good coverage of the fu
 - Risk level (probability × impact of failure)
 - Test execution complexity and maintenance cost
 
-Generate practical, executable test cases that a QA engineer can implement effectively."""
+**TEST CASE DISTRIBUTION (Minimum 15-18 test cases total):**
+- **POSITIVE Test Cases: 8-10 cases** (happy path scenarios, main user journeys, valid data flows, successful operations)
+- **NEGATIVE Test Cases: 3-4 cases** (error handling, invalid inputs, system failures)
+- **EDGE Cases: 2-3 cases** (boundary conditions, limits, thresholds)
+- **SECURITY Test Cases: 1-2 cases** (authentication, authorization, data protection - if applicable)
+
+Generate practical, executable test cases that a QA engineer can implement effectively. ENSURE strong coverage of positive test scenarios."""
 
         return prompt
 
@@ -371,7 +377,13 @@ Generate practical, executable test cases that a QA engineer can implement effec
 6. Error recovery
 7. Perf boundaries
 
-Gen 5-8 high-value TCs covering pos/neg/edge/sec."""
+**TC Distribution (Min 15-18 TCs):**
+- Pos: 8-10 (happy path, user journeys, main flows)
+- Neg: 3-4 (error handling, invalid inputs)
+- Edge: 2-3 (boundaries, limits)
+- Sec: 1-2 (auth/authz if relevant)
+
+Gen comprehensive TCs with strong pos coverage."""
         
         return prompt
 
