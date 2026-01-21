@@ -3,17 +3,7 @@
 # STAX Services Startup Script
 # Updated for new folder structure
 
-echo "🔄 Stop    echo "📝 Log locations:"
-    echo "   - Application: logs/enhanced_epic_monitor.log"
-    echo "   - Epic Monitor: logs/epic_monitor.log"
-    echo ""
-    echo "📊 To monitor services:"
-    echo "   tail -f logs/enhanced_epic_monitor.log"
-    echo ""
-    echo "🛑 To stop services:"
-    echo "   ./scripts/stop_services.sh"
-    echo ""
-    echo "💡 Note: Live logs are displayed above. Service continues running in background."ting services..."
+echo "🔄 Stopping any existing services..."
 pkill -f "python.*monitor_daemon.py" || true
 pkill -f "python.*main.py" || true
 

@@ -23,29 +23,35 @@ class MonitorAPI:
     """Flask-based API for monitoring and controlling the story extraction process"""
 
     def _update_env_file(self, key: str, value: str):
-        """Update a value in the .env file"""
-        env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', '.env')
-        if not os.path.exists(env_path):
-            return
+        """Update a value in both .env files (root and config/)"""
+        root_dir = os.path.dirname(os.path.dirname(__file__))
+        env_paths = [
+            os.path.join(root_dir, '.env'),  # Root .env
+            os.path.join(root_dir, 'config', '.env')  # Config .env
+        ]
+        
+        for env_path in env_paths:
+            if not os.path.exists(env_path):
+                continue
+                
+            # Read current content
+            with open(env_path, 'r') as f:
+                lines = f.readlines()
             
-        # Read current content
-        with open(env_path, 'r') as f:
-            lines = f.readlines()
-        
-        # Update or add the key-value pair
-        key_found = False
-        for i, line in enumerate(lines):
-            if line.startswith(f'{key}='):
-                lines[i] = f'{key}={value}\n'
-                key_found = True
-                break
-        
-        if not key_found:
-            lines.append(f'{key}={value}\n')
-        
-        # Write back to file
-        with open(env_path, 'w') as f:
-            f.writelines(lines)
+            # Update or add the key-value pair
+            key_found = False
+            for i, line in enumerate(lines):
+                if line.startswith(f'{key}='):
+                    lines[i] = f'{key}={value}\n'
+                    key_found = True
+                    break
+            
+            if not key_found:
+                lines.append(f'{key}={value}\n')
+            
+            # Write back to file
+            with open(env_path, 'w') as f:
+                f.writelines(lines)
 
     def __init__(self, config: MonitorConfig = None, port: int = 5001):
         # Force reload settings from .env file at startup
@@ -619,6 +625,8 @@ class MonitorAPI:
                     'azure_openai_api_key': '***hidden***',  # Don't expose the actual API key
                     'azure_openai_deployment_name': getattr(self.settings, 'AZURE_OPENAI_DEPLOYMENT_NAME', ''),
                     'azure_openai_api_version': getattr(self.settings, 'AZURE_OPENAI_API_VERSION', '2024-02-15-preview'),
+                    'github_token': '***hidden***',  # Don't expose the actual token
+                    'github_model': getattr(self.settings, 'GITHUB_MODEL', 'gpt-4o-mini'),
                     'openai_max_retries': self.settings.OPENAI_MAX_RETRIES,
                     'openai_retry_delay': self.settings.OPENAI_RETRY_DELAY,
                     'requirement_type': self.settings.REQUIREMENT_TYPE,
@@ -659,7 +667,7 @@ class MonitorAPI:
                 self.logger.info(f"[CONFIG-PUT] 📥 Received {len(data)} configuration parameters")
                 # Log each parameter (hide sensitive values)
                 for key, value in data.items():
-                    if key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token']:
+                    if key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token', 'github_token']:
                         self.logger.info(f"[CONFIG-PUT] 📋 {key}: ***hidden***")
                     else:
                         self.logger.info(f"[CONFIG-PUT] 📋 {key}: {value}")
@@ -732,6 +740,8 @@ class MonitorAPI:
                         'azure_openai_api_key': 'AZURE_OPENAI_API_KEY',
                         'azure_openai_deployment_name': 'AZURE_OPENAI_DEPLOYMENT_NAME',
                         'azure_openai_api_version': 'AZURE_OPENAI_API_VERSION',
+                        'github_token': 'GITHUB_TOKEN',
+                        'github_model': 'GITHUB_MODEL',
                         'story_extraction_type': 'ADO_STORY_EXTRACTION_TYPE',
                         'test_case_extraction_type': 'ADO_TEST_CASE_EXTRACTION_TYPE',
                         'auto_test_case_extraction': 'ADO_AUTO_TEST_CASE_EXTRACTION',
@@ -759,10 +769,10 @@ class MonitorAPI:
                             value = data[config_key]
                             
                             # Get current value for comparison
-                            current_value = getattr(self.settings, env_var.replace('ADO_', '').replace('OPENAI_', '').replace('AZURE_OPENAI_', ''), None)
+                            current_value = getattr(self.settings, env_var.replace('ADO_', '').replace('OPENAI_', '').replace('AZURE_OPENAI_', '').replace('GITHUB_', ''), None)
                             
                             # Log configuration updates (with proper masking for sensitive data)
-                            if config_key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token']:
+                            if config_key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token', 'github_token']:
                                 if value:
                                     self.logger.info(f"[CONFIG-PUT] 🔒 Updating {config_key} (env: {env_var}) = ***hidden***")
                                 else:
@@ -782,7 +792,7 @@ class MonitorAPI:
                                 value = str(value)
                                 self.logger.info(f"[CONFIG-PUT] 🔢 String conversion for {config_key}: {old_value} → {value}")
                             # Skip empty sensitive values to prevent accidental clearing
-                            elif config_key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token'] and not value:
+                            elif config_key in ['ado_pat', 'openai_api_key', 'azure_openai_api_key', 'jira_token', 'github_token'] and not value:
                                 self.logger.warning(f"[CONFIG-PUT] ⚠️ Skipping empty sensitive value for {config_key}")
                                 continue
                             else:
@@ -817,6 +827,9 @@ class MonitorAPI:
                         self.logger.info(f"[CONFIG-PUT] 🔷 Azure OpenAI Endpoint: {endpoint}")
                         self.logger.info(f"[CONFIG-PUT] 🔷 Azure OpenAI Deployment: {deployment}")
                         self.logger.info(f"[CONFIG-PUT] 🔷 Azure OpenAI API Version: {api_version}")
+                    elif current_ai_provider == 'GITHUB':
+                        github_model = getattr(Settings, 'GITHUB_MODEL', 'Not configured')
+                        self.logger.info(f"[CONFIG-PUT] 🔶 GitHub Model: {github_model}")
                     else:
                         openai_model = getattr(Settings, 'OPENAI_MODEL', 'Not configured')
                         self.logger.info(f"[CONFIG-PUT] 🔶 OpenAI Model: {openai_model}")
@@ -863,16 +876,59 @@ class MonitorAPI:
                 if 'env_updates' in locals():
                     self.logger.info(f"[CONFIG-PUT] 📊 - Environment updates: {len(env_updates)}")
                     for env_var, change in env_updates.items():
-                        if env_var in ['ADO_PAT', 'OPENAI_API_KEY', 'AZURE_OPENAI_API_KEY', 'JIRA_TOKEN']:
+                        if env_var in ['ADO_PAT', 'OPENAI_API_KEY', 'AZURE_OPENAI_API_KEY', 'JIRA_TOKEN', 'GITHUB_TOKEN']:
                             self.logger.info(f"[CONFIG-PUT] 📊   {env_var}: ***hidden***")
                         else:
                             self.logger.info(f"[CONFIG-PUT] 📊   {env_var}: {change['old']} → {change['new']}")
 
-                return jsonify({
-                    'success': True,
-                    'message': 'Configuration updated successfully',
-                    'changes_made': {**config_changes, **({f"env_{k}": v for k, v in env_updates.items()} if 'env_updates' in locals() else {})}
-                })
+                # Check if running in Docker and trigger restart
+                import signal
+                import time
+                
+                is_docker = os.path.exists('/.dockerenv') or os.environ.get('RUNNING_IN_DOCKER', 'false').lower() == 'true'
+                
+                if is_docker:
+                    self.logger.info("[CONFIG-PUT] 🐳 Detected running in Docker container")
+                    self.logger.info("[CONFIG-PUT] 🔄 Triggering container restart to apply configuration changes...")
+                    
+                    try:
+                        # Create a restart marker file that can be monitored by docker-compose
+                        restart_marker = '/tmp/restart_required'
+                        with open(restart_marker, 'w') as f:
+                            f.write('restart')
+                        
+                        # Schedule graceful restart - give Flask time to send response
+                        def delayed_restart():
+                            time.sleep(2)
+                            os.kill(os.getpid(), signal.SIGTERM)
+                        
+                        restart_thread = threading.Thread(target=delayed_restart)
+                        restart_thread.daemon = True
+                        restart_thread.start()
+                        
+                        self.logger.info("[CONFIG-PUT] ✅ Restart scheduled - container will restart in 2 seconds")
+                        
+                        return jsonify({
+                            'success': True,
+                            'message': 'Configuration updated successfully. Docker container will restart to apply changes.',
+                            'docker_restart': True,
+                            'changes_made': {**config_changes, **({f"env_{k}": v for k, v in env_updates.items()} if 'env_updates' in locals() else {})}
+                        })
+                    except Exception as restart_error:
+                        self.logger.warning(f"[CONFIG-PUT] ⚠️ Failed to trigger Docker restart: {restart_error}")
+                        return jsonify({
+                            'success': True,
+                            'message': 'Configuration updated successfully (restart failed - please restart manually)',
+                            'changes_made': {**config_changes, **({f"env_{k}": v for k, v in env_updates.items()} if 'env_updates' in locals() else {})}
+                        })
+                else:
+                    self.logger.info("[CONFIG-PUT] 💻 Running locally (not in Docker) - no restart needed")
+                    
+                    return jsonify({
+                        'success': True,
+                        'message': 'Configuration updated successfully',
+                        'changes_made': {**config_changes, **({f"env_{k}": v for k, v in env_updates.items()} if 'env_updates' in locals() else {})}
+                    })
 
             except Exception as e:
                 self.logger.error(f"Error updating config: {str(e)}")
@@ -940,15 +996,19 @@ class MonitorAPI:
                     from src.ado_client import ADOClient
                     ado_client = ADOClient()
                     
-                    # Try to get project info as a connection test
+                    # Try to get work item types as a connection test
                     try:
                         # This will raise an exception if connection fails
-                        projects = ado_client.get_projects()
+                        work_item_types = ado_client.get_work_item_types()
                         return jsonify({
                             'success': True,
                             'platform': 'ADO',
                             'message': 'ADO connection successful',
-                            'project_info': {'name': Settings.ADO_PROJECT}
+                            'project_info': {
+                                'name': Settings.ADO_PROJECT,
+                                'organization': Settings.ADO_ORGANIZATION,
+                                'work_item_types': work_item_types[:5]  # Return first 5 types
+                            }
                         })
                     except Exception as e:
                         return jsonify({
@@ -1033,13 +1093,23 @@ class MonitorAPI:
                             'System.WorkItemType': work_item_type,
                         }
                         
-                        # Add test case specific fields if available
-                        if test_case.get('steps'):
-                            steps_html = '<ol>' + ''.join(f'<li>{step}</li>' for step in test_case['steps']) + '</ol>'
-                            work_item_data['System.Description'] += f'<br/><strong>Test Steps:</strong><br/>{steps_html}'
-                        
-                        if test_case.get('expected_result'):
-                            work_item_data['System.Description'] += f'<br/><strong>Expected Result:</strong><br/>{test_case["expected_result"]}'
+                        # Add test steps and expected result as additional fields for Test Case work items
+                        if work_item_type == 'Test Case':
+                            # Pass test_steps as additional field for proper formatting
+                            if test_case.get('steps') or test_case.get('test_steps'):
+                                work_item_data['test_steps'] = test_case.get('test_steps') or test_case.get('steps')
+                            
+                            if test_case.get('expected_result'):
+                                work_item_data['expected_result'] = test_case.get('expected_result')
+                        else:
+                            # For other work item types (like Issue), add to description
+                            if test_case.get('steps') or test_case.get('test_steps'):
+                                steps = test_case.get('test_steps') or test_case.get('steps')
+                                steps_html = '<ol>' + ''.join(f'<li>{step}</li>' for step in steps) + '</ol>'
+                                work_item_data['System.Description'] += f'<br/><strong>Test Steps:</strong><br/>{steps_html}'
+                            
+                            if test_case.get('expected_result'):
+                                work_item_data['System.Description'] += f'<br/><strong>Expected Result:</strong><br/>{test_case["expected_result"]}'
                         
                         # Create the work item
                         created_item = self.agent.ado_client.create_work_item(

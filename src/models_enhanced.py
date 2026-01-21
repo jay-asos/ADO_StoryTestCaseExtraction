@@ -26,33 +26,29 @@ class EnhancedUserStory(BaseModel):
 
     def to_ado_format(self) -> dict:
         """Convert the story to ADO work item format"""
-        # Format description with technical context and business requirements
-        formatted_description = (
-            f"{self.description}\n\n"
-            "**Complexity Analysis:**\n"
-        )
+        print(f"[DEBUG] EnhancedUserStory.to_ado_format() called for: {self.heading}")
+        print(f"[DEBUG] Has complexity_analysis: {self.complexity_analysis is not None}")
         
-        if self.complexity_analysis:
-            formatted_description += (
-                f"- Overall Complexity: {self.complexity_analysis.overall_complexity}\n"
-                f"- Story Points: {self.complexity_analysis.story_points}\n"
-                f"- Rationale: {self.complexity_analysis.rationale}\n\n"
-                "**Complexity Factors:**\n"
-            )
-            for factor in self.complexity_analysis.factors:
-                formatted_description += f"\n- {factor.name} (Impact: {factor.assessment.value})\n  {factor.impact}"
+        # Convert newlines to HTML breaks for proper ADO rendering
+        formatted_description = self.description.replace("\n\n", "<br><br>").replace("\n", "<br>")
 
-        # Format acceptance criteria as a string with line breaks
+        # Format acceptance criteria as HTML for better ADO display
         if isinstance(self.acceptance_criteria, list):
-            formatted_ac = "\n\n".join(self.acceptance_criteria)
+            # Use HTML formatting for cleaner display in ADO
+            formatted_ac = "<br>".join([f"• {criteria}" for criteria in self.acceptance_criteria])
         else:
             formatted_ac = str(self.acceptance_criteria)
 
         # Return Azure DevOps fields
-        return {
+        result = {
             "System.Title": self.heading,
             "System.Description": formatted_description,
-            "Microsoft.VSTS.Common.AcceptanceCriteria": formatted_ac,  # Format AC as string with line breaks
-            "System.State": "New",  # Set initial state as New
+            "Microsoft.VSTS.Common.AcceptanceCriteria": formatted_ac,
+            "System.State": "New",
             "Microsoft.VSTS.Scheduling.StoryPoints": self.complexity_analysis.story_points if self.complexity_analysis else None
         }
+        
+        print(f"[DEBUG] EnhancedUserStory.to_ado_format() returning {len(result)} fields: {list(result.keys())}")
+        if self.complexity_analysis:
+            print(f"[DEBUG] Story Points value: {self.complexity_analysis.story_points}")
+        return result

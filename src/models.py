@@ -54,6 +54,8 @@ class UserStory(BaseModel):
     
     def to_ado_format(self) -> dict:
         """Convert to Azure DevOps work item format with acceptance criteria in description"""
+        print(f"[DEBUG] UserStory.to_ado_format() called for: {self.heading}")
+        
         # Format acceptance criteria as HTML bulleted list for proper ADO display
         acceptance_criteria_html = "<br>".join([f"• {criteria}" for criteria in self.acceptance_criteria])
         
@@ -61,10 +63,13 @@ class UserStory(BaseModel):
         # ADO description field expects HTML format for proper newline rendering
         full_description = f"{self.description}<br><br><strong>Acceptance Criteria:</strong><br>{acceptance_criteria_html}"
         
-        return {
+        result = {
             "System.Title": self.heading,
             "System.Description": full_description
         }
+        
+        print(f"[DEBUG] UserStory.to_ado_format() returning {len(result)} fields: {list(result.keys())}")
+        return result
 
 class Requirement(BaseModel):
     """Model representing an ADO requirement"""

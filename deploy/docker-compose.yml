@@ -12,6 +12,9 @@ services:
     env_file:
       - ../config/.env
     
+    environment:
+      - RUNNING_IN_DOCKER=true
+    
     volumes:
       # Persist logs and snapshots
       - ../logs:/app/logs
@@ -19,6 +22,9 @@ services:
       - ../config/monitor_config.json:/app/monitor_config.json
       - ../config/monitor_state.json:/app/monitor_state.json
       - ../config/enhanced_monitor_state.json:/app/enhanced_monitor_state.json
+      # Mount .env files so UI changes persist
+      - ../config/.env:/app/config/.env
+      - ../.env:/app/.env
     
     restart: unless-stopped
     

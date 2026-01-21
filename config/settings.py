@@ -67,7 +67,7 @@ class Settings:
     print(f"[CONFIG]  Auto Test Case Extraction: {AUTO_TEST_CASE_EXTRACTION}")
 
     # AI Service Configuration
-    AI_SERVICE_PROVIDER = os.getenv('AI_SERVICE_PROVIDER', 'OPENAI')  # 'OPENAI' or 'AZURE_OPENAI'
+    AI_SERVICE_PROVIDER = os.getenv('AI_SERVICE_PROVIDER', 'OPENAI')  # 'OPENAI' or 'AZURE_OPENAI' or 'GITHUB'
     print(f"[CONFIG]  AI Service Provider Configuration: {AI_SERVICE_PROVIDER}")
 
     # OpenAI settings
@@ -75,6 +75,12 @@ class Settings:
     OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo')
     OPENAI_MAX_RETRIES = int(os.getenv('OPENAI_MAX_RETRIES', 3))
     print(f"[CONFIG]  OpenAI Settings - Model: {OPENAI_MODEL}, Max Retries: {OPENAI_MAX_RETRIES}")
+
+    # GitHub Models settings (uses OpenAI-compatible API)
+    GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')  # GitHub Personal Access Token
+    GITHUB_MODEL = os.getenv('GITHUB_MODEL', 'gpt-4o-mini')  # Default to gpt-4o-mini (free)
+    GITHUB_API_BASE = 'https://models.inference.ai.azure.com'
+    print(f"[CONFIG]  GitHub Models Settings - Model: {GITHUB_MODEL}, Endpoint: {GITHUB_API_BASE}")
 
     # Azure OpenAI settings
     AZURE_OPENAI_ENDPOINT = os.getenv('AZURE_OPENAI_ENDPOINT')

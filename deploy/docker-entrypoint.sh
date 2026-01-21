@@ -61,8 +61,14 @@ elif [ "$AI_SERVICE_PROVIDER" = "AZURE_OPENAI" ]; then
         exit 1
     fi
     echo "[DOCKER-STARTUP] Azure OpenAI configuration validated"
+elif [ "$AI_SERVICE_PROVIDER" = "GITHUB" ]; then
+    if [ -z "$GITHUB_TOKEN" ] || [ -z "$GITHUB_MODEL" ]; then
+        echo "[DOCKER-STARTUP] ERROR: GitHub Models configuration incomplete. Required: GITHUB_TOKEN, GITHUB_MODEL"
+        exit 1
+    fi
+    echo "[DOCKER-STARTUP] GitHub Models configuration validated"
 else
-    echo "[DOCKER-STARTUP] ERROR: AI_SERVICE_PROVIDER must be either 'OPENAI' or 'AZURE_OPENAI'"
+    echo "[DOCKER-STARTUP] ERROR: AI_SERVICE_PROVIDER must be either 'OPENAI', 'AZURE_OPENAI', or 'GITHUB'"
     exit 1
 fi
 

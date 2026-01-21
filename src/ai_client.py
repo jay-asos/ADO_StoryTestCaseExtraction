@@ -22,6 +22,9 @@ class AIClientFactory:
         if provider == 'AZURE_OPENAI':
             logger.info(f"🔷 Initializing Azure OpenAI Service client")
             return AzureOpenAIClient()
+        elif provider == 'GITHUB':
+            logger.info(f"🐙 Initializing GitHub Models client")
+            return GitHubModelsClient()
         else:
             logger.info(f"🔶 Initializing OpenAI client")
             return OpenAIClient()
@@ -120,6 +123,37 @@ def get_ai_client():
     """Get AI client instance based on current configuration"""
     return AIClientFactory.create_client()
 
+class GitHubModelsClient(BaseAIClient):
+    """Client for GitHub Models (free tier with GitHub PAT)"""
+    
+    def __init__(self):
+        super().__init__()
+        self.client = OpenAI(
+            base_url=Settings.GITHUB_API_BASE,
+            api_key=Settings.GITHUB_TOKEN
+        )
+        self.model = Settings.GITHUB_MODEL
+        logger.info(f"Initialized GitHub Models client with model: {self.model}")
+        logger.info(f"Using endpoint: {Settings.GITHUB_API_BASE}")
+    
+    def chat_completion(self, messages, temperature=0.7, max_tokens=2000):
+        """Make chat completion request to GitHub Models"""
+        def _make_request():
+            logger.info(f"🐙 GitHub Models: Making chat completion request with model '{self.model}'")
+            
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+            
+            result = response.choices[0].message.content.strip()
+            logger.info(f"🐙 GitHub Models: Request completed successfully, response length: {len(result)} characters")
+            return result
+        
+        return self._retry_request(_make_request)
+
 # Legacy compatibility functions
 def create_openai_client():
     """Legacy function for OpenAI client creation"""
@@ -128,3 +162,7 @@ def create_openai_client():
 def create_azure_openai_client():
     """Legacy function for Azure OpenAI client creation"""
     return AzureOpenAIClient()
+
+def create_github_models_client():
+    """Legacy function for GitHub Models client creation"""
+    return GitHubModelsClient()
