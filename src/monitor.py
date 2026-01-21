@@ -940,7 +940,13 @@ def load_config_from_file(config_file: str) -> MonitorConfig:
     try:
         with open(config_file, 'r') as f:
             config_data = json.load(f)
-        return MonitorConfig(**config_data)
+        
+        # Filter out fields that aren't part of MonitorConfig (like ADO credentials)
+        from dataclasses import fields
+        valid_fields = {f.name for f in fields(MonitorConfig)}
+        filtered_config = {k: v for k, v in config_data.items() if k in valid_fields}
+        
+        return MonitorConfig(**filtered_config)
     except Exception as e:
         logging.error(f"Failed to load config from {config_file}: {e}")
         return MonitorConfig()
@@ -1007,7 +1013,11 @@ if __name__ == "__main__":
                 config_data = json.load(f)
                 logger.info("✅ Configuration file found")
                 logger.debug(f"Configuration data: {json.dumps(config_data, indent=2)}")
-                config = MonitorConfig(**config_data)
+                # Filter out fields that aren't part of MonitorConfig (like ADO credentials)
+                from dataclasses import fields
+                valid_fields = {f.name for f in fields(MonitorConfig)}
+                filtered_config = {k: v for k, v in config_data.items() if k in valid_fields}
+                config = MonitorConfig(**filtered_config)
                 logger.info("✅ Configuration loaded successfully")
         else:
             logger.warning(f"⚠️ Configuration file {config_file} not found, creating default")

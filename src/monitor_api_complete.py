@@ -41,7 +41,11 @@ class MonitorAPI:
             try:
                 with open('monitor_config_enhanced.json', 'r') as f:
                     config_data = json.load(f)
-                    config = MonitorConfig(**config_data)
+                    # Filter out fields that aren't part of MonitorConfig (like ADO credentials)
+                    from dataclasses import fields
+                    valid_fields = {f.name for f in fields(MonitorConfig)}
+                    filtered_config = {k: v for k, v in config_data.items() if k in valid_fields}
+                    config = MonitorConfig(**filtered_config)
                     self.logger.info("Loaded monitor configuration from monitor_config_enhanced.json")
             except Exception as e:
                 self.logger.error(f"Failed to load monitor configuration: {str(e)}")
