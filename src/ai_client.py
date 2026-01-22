@@ -10,6 +10,31 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+def estimate_tokens(text: str) -> int:
+    """
+    Estimate token count for text
+    Simple approximation: ~4 characters per token for English text
+    For more accuracy, use tiktoken library
+    """
+    if not text:
+        return 0
+    # Simple estimation: 4 chars per token (conservative estimate)
+    return len(text) // 4
+
+
+def count_message_tokens(messages: list) -> int:
+    """Estimate total tokens for a list of messages"""
+    total = 0
+    for message in messages:
+        if isinstance(message, dict):
+            content = message.get('content', '')
+            role = message.get('role', '')
+            total += estimate_tokens(content)
+            total += estimate_tokens(role)
+            total += 4  # Every message has overhead tokens
+    return total
+
 class AIClientFactory:
     """Factory class for creating AI clients with provider abstraction"""
     
@@ -35,10 +60,19 @@ class BaseAIClient:
     def __init__(self):
         self.max_retries = Settings.OPENAI_MAX_RETRIES
         self.retry_delay = Settings.OPENAI_RETRY_DELAY
+        self.last_request_tokens = {
+            'prompt_tokens': 0,
+            'completion_tokens': 0,
+            'total_tokens': 0
+        }
     
     def chat_completion(self, messages, temperature=0.7, max_tokens=2000):
         """Abstract method for chat completion"""
         raise NotImplementedError
+    
+    def get_last_token_usage(self):
+        """Get token usage from last API call"""
+        return self.last_request_tokens.copy()
     
     def _retry_request(self, func, *args, **kwargs):
         """Helper method for retrying requests with exponential backoff"""
@@ -79,8 +113,17 @@ class OpenAIClient(BaseAIClient):
                 max_tokens=max_tokens
             )
             
+            # Track token usage from response
+            if hasattr(response, 'usage'):
+                self.last_request_tokens = {
+                    'prompt_tokens': response.usage.prompt_tokens,
+                    'completion_tokens': response.usage.completion_tokens,
+                    'total_tokens': response.usage.total_tokens
+                }
+            
             result = response.choices[0].message.content.strip()
             logger.info(f"🔶 OpenAI: Request completed successfully, response length: {len(result)} characters")
+            logger.info(f"🔶 OpenAI: Token usage - Prompt: {self.last_request_tokens['prompt_tokens']}, Completion: {self.last_request_tokens['completion_tokens']}, Total: {self.last_request_tokens['total_tokens']}")
             return result
         
         return self._retry_request(_make_request)
@@ -112,8 +155,17 @@ class AzureOpenAIClient(BaseAIClient):
                 max_tokens=max_tokens
             )
             
+            # Track token usage from response
+            if hasattr(response, 'usage'):
+                self.last_request_tokens = {
+                    'prompt_tokens': response.usage.prompt_tokens,
+                    'completion_tokens': response.usage.completion_tokens,
+                    'total_tokens': response.usage.total_tokens
+                }
+            
             result = response.choices[0].message.content.strip()
             logger.info(f"🔷 Azure OpenAI: Request completed successfully, response length: {len(result)} characters")
+            logger.info(f"🔷 Azure OpenAI: Token usage - Prompt: {self.last_request_tokens['prompt_tokens']}, Completion: {self.last_request_tokens['completion_tokens']}, Total: {self.last_request_tokens['total_tokens']}")
             return result
         
         return self._retry_request(_make_request)
@@ -148,8 +200,17 @@ class GitHubModelsClient(BaseAIClient):
                 max_tokens=max_tokens
             )
             
+            # Track token usage from response
+            if hasattr(response, 'usage'):
+                self.last_request_tokens = {
+                    'prompt_tokens': response.usage.prompt_tokens,
+                    'completion_tokens': response.usage.completion_tokens,
+                    'total_tokens': response.usage.total_tokens
+                }
+            
             result = response.choices[0].message.content.strip()
             logger.info(f"🐙 GitHub Models: Request completed successfully, response length: {len(result)} characters")
+            logger.info(f"🐙 GitHub Models: Token usage - Prompt: {self.last_request_tokens['prompt_tokens']}, Completion: {self.last_request_tokens['completion_tokens']}, Total: {self.last_request_tokens['total_tokens']}")
             return result
         
         return self._retry_request(_make_request)

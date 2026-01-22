@@ -127,6 +127,10 @@ class TestCaseExtractionResult(BaseModel):
     extraction_successful: bool = True
     error_message: Optional[str] = None
     created_issue_ids: List[int] = Field(default_factory=list, description="IDs of created Issue work items for test cases")
+    estimated_tokens: Optional[int] = Field(None, description="Estimated token count without TOON optimization")
+    actual_tokens: Optional[int] = Field(None, description="Actual token count used in API call")
+    tokens_saved: Optional[int] = Field(None, description="Number of tokens saved by TOON optimization")
+    toon_enabled: Optional[bool] = Field(None, description="Whether TOON was enabled for this extraction")
 
 class EpicSyncResult(BaseModel):
     """Result of synchronizing an EPIC with its user stories"""
@@ -138,6 +142,27 @@ class EpicSyncResult(BaseModel):
     unchanged_stories: List[int] = Field(default_factory=list)
     created_test_cases: List[int] = Field(default_factory=list)  # Track created test cases
     error_message: Optional[str] = None
+
+class TokenUsageRecord(BaseModel):
+    """Single record of token usage for an AI API call"""
+    timestamp: datetime = Field(default_factory=datetime.now)
+    story_id: str
+    story_title: str
+    estimated_tokens: int
+    actual_tokens: int
+    tokens_saved: int
+    toon_enabled: bool
+    api_call_type: str = Field(default="test_case_extraction", description="Type of AI API call")
+
+class TokenUsageStats(BaseModel):
+    """Aggregate statistics for token usage"""
+    total_api_calls: int = 0
+    total_estimated_tokens: int = 0
+    total_actual_tokens: int = 0
+    total_tokens_saved: int = 0
+    average_tokens_saved_percentage: float = 0.0
+    records: List[TokenUsageRecord] = Field(default_factory=list)
+    last_updated: datetime = Field(default_factory=datetime.now)
     
 class RequirementSnapshot(BaseModel):
     """Snapshot of a requirement for change tracking"""

@@ -1,0 +1,20 @@
+{
+  "total_api_calls": 1,
+  "total_estimated_tokens": 2315,
+  "total_actual_tokens": 1632,
+  "total_tokens_saved": 683,
+  "average_tokens_saved_percentage": 29.503239740820735,
+  "records": [
+    {
+      "timestamp": "2026-01-22T09:58:00.557945",
+      "story_id": "1150037",
+      "story_title": "[Reviews API] - Implement Review Summary Cache Infrastructure",
+      "estimated_tokens": 2315,
+      "actual_tokens": 1632,
+      "tokens_saved": 683,
+      "toon_enabled": true,
+      "api_call_type": "test_case_extraction"
+    }
+  ],
+  "last_updated": "2026-01-22T09:58:00.557945"
+}

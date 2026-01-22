@@ -602,6 +602,47 @@ class MonitorAPI:
                     'total_test_cases': 0
                 })
 
+        @self.app.route('/api/token-stats', methods=['GET'])
+        def get_token_stats():
+            """Get TOON token usage statistics"""
+            try:
+                from src.token_stats_manager import get_token_stats_manager
+                
+                token_manager = get_token_stats_manager()
+                stats = token_manager.get_stats()
+                
+                # Convert records to dict format
+                records_data = []
+                for record in token_manager.get_recent_records(limit=50):
+                    records_data.append({
+                        'timestamp': record.timestamp.isoformat(),
+                        'story_id': record.story_id,
+                        'story_title': record.story_title,
+                        'estimated_tokens': record.estimated_tokens,
+                        'actual_tokens': record.actual_tokens,
+                        'tokens_saved': record.tokens_saved,
+                        'savings_percentage': round((record.tokens_saved / record.estimated_tokens * 100) if record.estimated_tokens > 0 else 0, 2),
+                        'toon_enabled': record.toon_enabled
+                    })
+                
+                return jsonify({
+                    'summary': token_manager.get_summary(),
+                    'records': records_data
+                })
+            except Exception as e:
+                self.logger.error(f"Error getting token stats: {str(e)}")
+                return jsonify({
+                    'summary': {
+                        'total_api_calls': 0,
+                        'total_estimated_tokens': 0,
+                        'total_actual_tokens': 0,
+                        'total_tokens_saved': 0,
+                        'average_savings_percentage': 0,
+                        'last_updated': None
+                    },
+                    'records': []
+                }), 200
+
         @self.app.route('/api/config', methods=['GET'])
         def get_config():
             """Get current configuration"""

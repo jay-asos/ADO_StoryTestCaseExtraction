@@ -9,6 +9,7 @@ from typing import List, Dict, Any
 from src.models import UserStory, TestCase, TestCaseExtractionResult
 from config.settings import Settings
 from src.ai_client import get_ai_client
+from src.token_stats_manager import get_token_stats_manager
 
 
 class TestCaseExtractor:
@@ -46,14 +47,36 @@ class TestCaseExtractor:
                 # Use TOON system prompt if enabled for token optimization
                 system_prompt = self._get_system_prompt_toon() if self.use_toon else self._get_system_prompt()
                 
+                # Estimate tokens for comparison (non-TOON vs TOON)
+                from src.ai_client import count_message_tokens
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ]
+                
+                # Calculate what the prompt would have been without TOON
+                if self.use_toon:
+                    non_toon_system = self._get_system_prompt()
+                    non_toon_prompt = self._build_extraction_prompt_standard(user_story)
+                    estimated_tokens_without_toon = count_message_tokens([
+                        {"role": "system", "content": non_toon_system},
+                        {"role": "user", "content": non_toon_prompt}
+                    ])
+                else:
+                    estimated_tokens_without_toon = count_message_tokens(messages)
+                
                 response_content = self.ai_client.chat_completion(
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": prompt}
-                    ],
+                    messages=messages,
                     temperature=0.7,
                     max_tokens=3000
                 )
+                
+                # Get actual token usage from API
+                token_usage = self.ai_client.get_last_token_usage()
+                actual_tokens = token_usage.get('prompt_tokens', 0)
+                
+                # Calculate tokens saved
+                tokens_saved = estimated_tokens_without_toon - actual_tokens if self.use_toon else 0
                 
                 # Validate that we got a response
                 if not response_content or not response_content.strip():
@@ -110,13 +133,32 @@ class TestCaseExtractor:
                 test_cases = [fallback_test_case]
 
             self.logger.info(f"Successfully extracted {len(test_cases)} test cases")
+            self.logger.info(f"Token usage - Estimated (non-TOON): {estimated_tokens_without_toon}, Actual: {actual_tokens}, Saved: {tokens_saved}")
+            
+            # Save token usage statistics
+            try:
+                token_manager = get_token_stats_manager()
+                token_manager.add_record(
+                    story_id=parent_story_id or "unknown",
+                    story_title=user_story.heading,
+                    estimated_tokens=estimated_tokens_without_toon,
+                    actual_tokens=actual_tokens,
+                    tokens_saved=tokens_saved,
+                    toon_enabled=self.use_toon
+                )
+            except Exception as stats_error:
+                self.logger.warning(f"Failed to save token stats: {stats_error}")
             
             return TestCaseExtractionResult(
                 story_id=parent_story_id or "unknown",
                 story_title=user_story.heading,
                 test_cases=test_cases,
                 extraction_successful=True,
-                error_message=""
+                error_message="",
+                estimated_tokens=estimated_tokens_without_toon,
+                actual_tokens=actual_tokens,
+                tokens_saved=tokens_saved,
+                toon_enabled=self.use_toon
             )
 
         except Exception as e:
@@ -280,7 +322,11 @@ Ensure test cases are practical, executable, and provide good coverage of the fu
 
         if self.use_toon:
             return self._build_toon_prompt(user_story)
-        
+        else:
+            return self._build_extraction_prompt_standard(user_story)
+    
+    def _build_extraction_prompt_standard(self, user_story: UserStory) -> str:
+        """Build standard (non-TOON) extraction prompt"""
         # Standard prompt (existing logic)
         # Analyze the user story for context
         context_analysis = self._analyze_story_context(user_story)

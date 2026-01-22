@@ -829,6 +829,189 @@
                     </template>
                 </div>
             </div>
+
+            <!-- TOON Token Optimization Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300 mt-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-coins text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                TOON Token Optimization
+                            </h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Token-Oriented Object Notation - AI cost reduction through smart prompting
+                            </p>
+                        </div>
+                    </div>
+                    <button @click="refreshTokenStats()"
+                            :disabled="loadingTokenStats"
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-sync-alt mr-2" :class="{'animate-spin': loadingTokenStats}"></i>
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">Total API Calls</p>
+                                <p class="text-2xl font-bold text-blue-900 dark:text-blue-100 mt-1" x-text="tokenStats.summary.total_api_calls || 0"></p>
+                            </div>
+                            <i class="fas fa-network-wired text-blue-600 dark:text-blue-400 text-2xl opacity-50"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-medium text-orange-600 dark:text-orange-400 uppercase tracking-wide">Estimated Tokens</p>
+                                <p class="text-2xl font-bold text-orange-900 dark:text-orange-100 mt-1" x-text="formatNumber(tokenStats.summary.total_estimated_tokens || 0)"></p>
+                                <p class="text-xs text-orange-600 dark:text-orange-400 mt-1">Without TOON</p>
+                            </div>
+                            <i class="fas fa-file-alt text-orange-600 dark:text-orange-400 text-2xl opacity-50"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-lg p-4 border border-purple-200 dark:border-purple-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wide">Actual Tokens</p>
+                                <p class="text-2xl font-bold text-purple-900 dark:text-purple-100 mt-1" x-text="formatNumber(tokenStats.summary.total_actual_tokens || 0)"></p>
+                                <p class="text-xs text-purple-600 dark:text-purple-400 mt-1">With TOON</p>
+                            </div>
+                            <i class="fas fa-check-circle text-purple-600 dark:text-purple-400 text-2xl opacity-50"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-lg p-4 border border-green-200 dark:border-green-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-medium text-green-600 dark:text-green-400 uppercase tracking-wide">Tokens Saved</p>
+                                <p class="text-2xl font-bold text-green-900 dark:text-green-100 mt-1" x-text="formatNumber(tokenStats.summary.total_tokens_saved || 0)"></p>
+                                <p class="text-xs text-green-600 dark:text-green-400 mt-1">
+                                    <span x-text="(tokenStats.summary.average_savings_percentage || 0).toFixed(1)"></span>% avg savings
+                                </p>
+                            </div>
+                            <i class="fas fa-piggy-bank text-green-600 dark:text-green-400 text-2xl opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Token Usage Table -->
+                <div class="overflow-x-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-md font-semibold text-gray-900 dark:text-white">
+                            Recent API Calls
+                        </h3>
+                        <span class="text-sm text-gray-500 dark:text-gray-400" x-show="tokenStats.records && tokenStats.records.length > 0">
+                            Showing last <span x-text="tokenStats.records.length"></span> calls
+                        </span>
+                    </div>
+
+                    <div x-show="!tokenStats.records || tokenStats.records.length === 0" 
+                         class="text-center py-12 text-gray-400 dark:text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-4"></i>
+                        <p class="text-lg font-medium">No token usage data yet</p>
+                        <p class="text-sm mt-2">Token statistics will appear here after AI API calls are made</p>
+                    </div>
+
+                    <table x-show="tokenStats.records && tokenStats.records.length > 0" 
+                           class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Timestamp
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Story
+                                </th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Estimated
+                                </th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Actual
+                                </th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Saved
+                                </th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Savings %
+                                </th>
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    TOON
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <template x-for="record in tokenStats.records" :key="record.timestamp">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        <span x-text="formatDateTime(record.timestamp)"></span>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                                        <div class="max-w-xs truncate" :title="record.story_title">
+                                            <span x-text="record.story_title"></span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                                            ID: <span x-text="record.story_id"></span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100 font-mono">
+                                        <span x-text="formatNumber(record.estimated_tokens)"></span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100 font-mono">
+                                        <span x-text="formatNumber(record.actual_tokens)"></span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-right font-mono">
+                                        <span class="text-green-600 dark:text-green-400 font-semibold" x-text="formatNumber(record.tokens_saved)"></span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-right font-mono">
+                                        <span :class="record.savings_percentage > 50 ? 'text-green-600 dark:text-green-400' : record.savings_percentage > 30 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-600 dark:text-gray-400'" 
+                                              class="font-semibold">
+                                            <span x-text="record.savings_percentage.toFixed(1)"></span>%
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-center">
+                                        <span x-show="record.toon_enabled" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                            <i class="fas fa-check mr-1"></i> ON
+                                        </span>
+                                        <span x-show="!record.toon_enabled" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                            <i class="fas fa-times mr-1"></i> OFF
+                                        </span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Info Box -->
+                <div class="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5 mr-3"></i>
+                        <div class="text-sm text-blue-700 dark:text-blue-300">
+                            <p class="font-semibold mb-2">About TOON (Token-Oriented Object Notation)</p>
+                            <p class="mb-2">
+                                TOON is a compact notation system that reduces AI API token usage by 50-60% through:
+                            </p>
+                            <ul class="list-disc ml-5 space-y-1">
+                                <li>Abbreviated terminology for common testing terms</li>
+                                <li>Compact JSON structure with minimal verbosity</li>
+                                <li>Removal of redundant words while preserving meaning</li>
+                                <li>Key fields only approach</li>
+                            </ul>
+                            <p class="mt-2">
+                                <strong>Result:</strong> Significant cost savings on AI API usage without compromising test case quality.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
 
         <!-- Configuration Modal -->
@@ -1617,6 +1800,20 @@
                     failed_syncs: 0
                 },
 
+                // Token Statistics (TOON)
+                tokenStats: {
+                    summary: {
+                        total_api_calls: 0,
+                        total_estimated_tokens: 0,
+                        total_actual_tokens: 0,
+                        total_tokens_saved: 0,
+                        average_savings_percentage: 0,
+                        last_updated: null
+                    },
+                    records: []
+                },
+                loadingTokenStats: false,
+
                 // Configuration Security Methods
                 get isConfigurationComplete() {
                     // Check platform-specific required fields
@@ -1722,6 +1919,7 @@
                     await this.loadMonitorStatus();
                     await this.loadEpics();
                     await this.loadStats();
+                    await this.loadTokenStats();
                     this.startPolling();
                     this.updateLastUpdated();
                     
@@ -1960,13 +2158,38 @@
                     }
                 },
 
+                async loadTokenStats() {
+                    try {
+                        const response = await fetch('/api/token-stats');
+                        if (response.ok) {
+                            this.tokenStats = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Failed to load token statistics:', error);
+                    }
+                },
+
+                async refreshTokenStats() {
+                    this.loadingTokenStats = true;
+                    try {
+                        await this.loadTokenStats();
+                        this.showNotification('Token statistics refreshed successfully', 'success', 'TOON Stats');
+                    } catch (error) {
+                        console.error('Failed to refresh token stats:', error);
+                        this.showNotification('Failed to refresh token statistics', 'error');
+                    } finally {
+                        this.loadingTokenStats = false;
+                    }
+                },
+
                 async refreshData() {
                     this.loading = true;
                     try {
                         await Promise.all([
                             this.loadMonitorStatus(),
                             this.loadEpics(),
-                            this.loadStats()
+                            this.loadStats(),
+                            this.loadTokenStats()
                         ]);
                         this.updateLastUpdated();
                     } catch (error) {
@@ -2145,6 +2368,23 @@
                         return new Date(timestamp).toLocaleTimeString();
                     } catch {
                         return 'Invalid time';
+                    }
+                },
+
+                formatDateTime(timestamp) {
+                    try {
+                        const date = new Date(timestamp);
+                        return date.toLocaleString();
+                    } catch {
+                        return 'Invalid date';
+                    }
+                },
+
+                formatNumber(num) {
+                    try {
+                        return num.toLocaleString();
+                    } catch {
+                        return num;
                     }
                 },
 
